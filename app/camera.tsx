@@ -16,6 +16,7 @@ export default function App() {
   const [uri, setUri] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
+  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   if (!permission) {
     return null;
@@ -55,6 +56,7 @@ export default function App() {
     if (error) {
       console.error("Error uploading image: ", error);
     }
+    setUploadStatus("Image successfully uploaded!");
   };
 
   const renderPicture = () => {
@@ -77,6 +79,11 @@ export default function App() {
             <MaterialIcons name={"check-circle"} size={32} color="black" />
           </Pressable>
         </View>
+        {uploadStatus && (
+          <View>
+            <Text>{uploadStatus}</Text>
+          </View>
+        )}
       </>
     );
   };
