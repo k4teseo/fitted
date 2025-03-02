@@ -1,115 +1,111 @@
 import {
-  CameraView,
   CameraType,
-  FlashMode,
+  CameraView,
   useCameraPermissions,
+  FlashMode,
 } from "expo-camera";
-import { useState, useRef } from "react";
-import { Button, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import * as MediaLibrary from "expo-media-library";
-import CameraButton from "../components/CameraButton";
-import PhotoPreviewSection from "@/components/PhotoPreview";
+import { useRef, useState } from "react";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function App() {
+  const [permission, requestPermission] = useCameraPermissions();
+  const ref = useRef<CameraView>(null);
+  const [uri, setUri] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
-  const [cameraPermission, requestCameraPermission] = useCameraPermissions();
-  const [mediaLibraryPermission, requestMediaLibraryPermission] =
-    MediaLibrary.usePermissions();
-  const [photo, setPhoto] = useState<any>(null);
-  const cameraRef = useRef<CameraView | null>(null);
 
-  if (!cameraPermission || !mediaLibraryPermission) {
-    // Camera permissions are still loading.
-    return <View />;
+  if (!permission) {
+    return null;
   }
 
-  if (
-    !cameraPermission.granted ||
-    mediaLibraryPermission.status !== "granted"
-  ) {
-    // Camera permissions are not granted yet.
+  if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Text style={styles.message}>
-          Grant "Fitted" permission to access your camera?
+        <Text style={{ textAlign: "center" }}>
+          We need your permission to use the camera
         </Text>
-        <Button
-          onPress={() => {
-            requestCameraPermission();
-            requestMediaLibraryPermission();
-          }}
-          title="Grant Permission"
-        />
+        <Button onPress={requestPermission} title="Grant permission" />
       </View>
     );
   }
 
-  // function to change camera facing direction
-  function toggleCameraFacing() {
-    setFacing((current) => (current === "back" ? "front" : "back"));
-  }
-
-  // function to turn flash on or off
-  function toggleFlash() {
-    setFlash((current) => (current === "off" ? "on" : "off"));
-  }
-
-  //function to take photo
-  const handleTakePhoto = async () => {
-    if (cameraRef.current) {
-      const options = {
-        quality: 1,
-        base64: true,
-        exif: false,
-      };
-
-      // Wait for the photo to be taken
-      const currentPhoto = await cameraRef.current.takePictureAsync(options);
-
-      // Log the captured photo to check the result
-      console.log("Captured Photo: ", currentPhoto);
-
-      setPhoto(currentPhoto); // Update state with the captured photo
-    }
+  const takePicture = async () => {
+    const photo = await ref.current?.takePictureAsync();
+    setUri(photo?.uri);
   };
 
-  // function to retake photo
-  const handleRetakePhoto = () => setPhoto(null);
+  const toggleFacing = () => {
+    setFacing((prev) => (prev === "back" ? "front" : "back"));
+  };
 
-  if (photo) {
-    // Log if photo is set before rendering the preview
-    console.log("Rendering PhotoPreview with photo:", photo);
+  const toggleFlash = () => {
+    setFlash((prev) => (prev === "off" ? "on" : "off"));
+  };
+
+  const renderPicture = () => {
     return (
-      <PhotoPreviewSection
-        photo={photo}
-        handleRetakePhoto={handleRetakePhoto}
-      />
+      <View>
+        <Image
+          source={{ uri }}
+          contentFit="contain"
+          style={{ width: "100%", aspectRatio: 1 }}
+        />
+        <Button onPress={() => setUri(null)} title="Take another picture" />
+      </View>
     );
-  }
+  };
+
+  const renderCamera = () => {
+    return (
+      <CameraView
+        style={styles.camera}
+        ref={ref}
+        facing={facing}
+        flash={flash}
+        responsiveOrientationWhenOrientationLocked
+      >
+        <View style={styles.shutterContainer}>
+          <Pressable onPress={toggleFlash}>
+            <MaterialIcons
+              name={flash === "off" ? "flash-off" : "flash-on"}
+              size={32}
+              color="white"
+            />
+          </Pressable>
+          <Pressable onPress={takePicture}>
+            {({ pressed }) => (
+              <View
+                style={[
+                  styles.shutterBtn,
+                  {
+                    opacity: pressed ? 0.5 : 1,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.shutterBtnInner,
+                    {
+                      backgroundColor: "white",
+                    },
+                  ]}
+                />
+              </View>
+            )}
+          </Pressable>
+          <Pressable onPress={toggleFacing}>
+            <MaterialIcons name="flip-camera-ios" size={32} color="white" />
+          </Pressable>
+        </View>
+      </CameraView>
+    );
+  };
 
   return (
     <View style={styles.container}>
-      <CameraView style={styles.camera} facing={facing} flash={flash}>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity>
-            <CameraButton
-              icon="flip-camera-ios"
-              size={35}
-              color="#fff"
-              style={styles.button}
-              onPress={toggleCameraFacing}
-            />
-            <CameraButton
-              icon="camera"
-              size={35}
-              color="#fff"
-              style={styles.button}
-              onPress={handleTakePhoto}
-            />
-          </TouchableOpacity>
-        </View>
-      </CameraView>
+      {uri ? renderPicture() : renderCamera()}
     </View>
   );
 }
@@ -117,32 +113,37 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
+    alignItems: "center",
     justifyContent: "center",
-  },
-  message: {
-    textAlign: "center",
-    paddingBottom: 10,
   },
   camera: {
     flex: 1,
-  },
-  buttonContainer: {
-    height: 150,
-    position: "absolute",
-    backgroundColor: "black",
-    justifyContent: "center",
-    alignItems: "center",
-    bottom: 0,
     width: "100%",
-    flexDirection: "row",
   },
-
-  button: {
+  shutterContainer: {
+    position: "absolute",
+    bottom: 44,
+    left: 0,
+    width: "100%",
     alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 30,
   },
-  text: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "white",
+  shutterBtn: {
+    backgroundColor: "transparent",
+    borderWidth: 5,
+    borderColor: "white",
+    width: 85,
+    height: 85,
+    borderRadius: 45,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shutterBtnInner: {
+    width: 70,
+    height: 70,
+    borderRadius: 50,
   },
 });
