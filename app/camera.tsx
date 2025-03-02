@@ -8,7 +8,6 @@ import { useRef, useState } from "react";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
-import { supabase } from "@/lib/supabase";
 import { useRouter } from "expo-router";
 
 export default function App() {
