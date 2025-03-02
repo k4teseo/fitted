@@ -8,6 +8,9 @@ import { useRef, useState } from "react";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
+import { supabase } from "@/lib/supabase";
+import * as FileSystem from "expo-file-system";
+
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -44,6 +47,25 @@ export default function App() {
     setFlash((prev) => (prev === "off" ? "on" : "off"));
   };
 
+  const uploadImage = async (uri: string) => {
+    const base64 = await FileSystem.readAsStringAsync(uri, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
+  
+    const { data, error } = await supabase.storage
+      .from("images")
+      .upload(`uploads/${Date.now()}.jpg`, Buffer.from(base64, "base64"), {
+        contentType: "image/jpeg",
+      });
+  
+    if (error) {
+      console.error("Upload error:", error);
+      return;
+    }
+  
+    console.log("Upload successful:", data);
+  };
+
   const renderPicture = () => {
     return (
       <>
@@ -58,7 +80,7 @@ export default function App() {
           <Pressable onPress={() => setUri(null)}>
             <MaterialIcons name={"cached"} size={32} color="black" />
           </Pressable>
-          <Pressable onPress={null}>
+          <Pressable onPress={() => uploadImage(uri!)}>
             <MaterialIcons name={"check-circle"} size={32} color="black" />
           </Pressable>
         </View>
