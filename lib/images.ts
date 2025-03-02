@@ -5,12 +5,14 @@ interface Image {
     id: string;
     image_path: string;
     caption: string;
+    username: string;
 }
 
 interface UploadedImage {
     id: string;
     imageUrl: string;
     caption: string;
+    username: string;
 }
 
 const supabaseUrl = Constants.expoConfig?.extra?.databaseUrl;
@@ -19,7 +21,7 @@ const supabaseUrl = Constants.expoConfig?.extra?.databaseUrl;
 const SUPABASE_STORAGE_URL = `${supabaseUrl}/storage/v1/object/public`;
 
 // Upload Image & Store Metadata
-export const uploadImageWithCaption = async (file: File, caption: string): Promise<Image | null> => {
+export const uploadImageWithCaption = async (file: File, caption: string, username: string): Promise<Image | null> => {
     if (!file) return null;
 
     const filePath = `public/${file.name}`;
@@ -34,10 +36,10 @@ export const uploadImageWithCaption = async (file: File, caption: string): Promi
         return null;
     }
 
-    // Insert image path and caption into the database
+    // Insert image path, caption, and username into the database
     const { data: insertData, error: insertError } = await supabase
         .from('images')
-        .insert([{ image_path: uploadData.path, caption }])
+        .insert([{ image_path: uploadData.path, caption, username }])
         .select('*')
         .single();
 
@@ -63,5 +65,6 @@ export const getImagesWithCaptions = async (): Promise<UploadedImage[]> => {
         // Construct the public URL directly here
         imageUrl: `${SUPABASE_STORAGE_URL}/images/${image.image_path}`,
         caption: image.caption,
+        username: image.username,
     }));
 };

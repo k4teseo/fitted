@@ -116,6 +116,13 @@ const feedStyles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
+  loadingText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#888",
+    marginTop: 20,
+  },
+
 });
 
 export default feedStyles;

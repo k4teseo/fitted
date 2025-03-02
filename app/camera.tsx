@@ -9,6 +9,7 @@ import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { useRouter } from "expo-router";
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -17,6 +18,8 @@ export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  
+  const router = useRouter(); 
 
   if (!permission) {
     return null;
@@ -35,7 +38,9 @@ export default function App() {
 
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
-    setUri(photo?.uri || null);
+    if (photo?.uri) {
+      setUri(photo.uri);
+    }
   };
 
   const toggleFacing = () => {
@@ -44,19 +49,6 @@ export default function App() {
 
   const toggleFlash = () => {
     setFlash((prev) => (prev === "off" ? "on" : "off"));
-  };
-
-  const uploadImage = async (uri: string) => {
-    const response = await fetch(uri);
-    const blob = await response.blob();
-    const arrayBuffer = await new Response(blob).arrayBuffer();
-    console.log("arrayBuffer", arrayBuffer.byteLength);
-    const fileName = `public/${Date.now()}.jpg`;
-    const { error } = await supabase.storage.from('images').upload(fileName, arrayBuffer, {contentType: 'image/jpeg', upsert: false });
-    if (error) {
-      console.error("Error uploading image: ", error);
-    }
-    setUploadStatus("Image successfully uploaded!");
   };
 
   const renderPicture = () => {
@@ -75,7 +67,12 @@ export default function App() {
           <Pressable onPress={() => setUri(null)}>
             <MaterialIcons name={"cached"} size={32} color="black" />
           </Pressable>
-          <Pressable onPress={() => uploadImage(uri!)}>
+          <Pressable
+            onPress={() => {
+              // Navigate to the upload page after confirmation
+              router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`);
+            }}
+          >
             <MaterialIcons name={"check-circle"} size={32} color="black" />
           </Pressable>
         </View>
