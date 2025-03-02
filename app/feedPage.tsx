@@ -53,7 +53,7 @@ export default function FeedPage() {
     const { data, error } = await supabase
       .from("images")
       .select("id, caption, username, image_path")
-      .order("id", { ascending: false }); 
+      .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching images:", error);
