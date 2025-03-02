@@ -18,6 +18,7 @@ export default function App() {
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
   const [uploadStatus, setUploadStatus] = useState<string | null>(null);
+  
   const router = useRouter(); 
 
   if (!permission) {

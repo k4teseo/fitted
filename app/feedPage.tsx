@@ -1,6 +1,6 @@
 // app/FeedPage.tsx
-import React, { useEffect, useState } from "react";
-import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import { useRouter, useFocusEffect } from "expo-router";
 import {
   SafeAreaView,
   View,
@@ -42,36 +42,39 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
 // The main feed page component
 export default function FeedPage() {
   // Track the active tab: 'home' or 'add'
+  const [activeTab, setActiveTab] = useState<"home" | "add">("home");
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"home" | "add">("home");
-  const router = useRouter();
+  const router = useRouter(); // Initialize router
 
-   // Fetch images from Supabase
-   useEffect(() => {
-    const fetchImages = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("images")
-        .select("id, caption, username, image_path");
+  // Fetch images from Supabase
+  const fetchImages = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("images")
+      .select("id, caption, username, image_path")
+      .order("id", { ascending: false }); 
 
-      if (error) {
-        console.error("Error fetching images:", error);
-      } else {
-        const formattedData = data.map((item) => ({
-          id: item.id,
-          caption: item.caption,
-          username: item.username,
-          postImage: `${supabase.storage.from("images").getPublicUrl(item.image_path).data.publicUrl}`,
-        }));
+    if (error) {
+      console.error("Error fetching images:", error);
+    } else {
+      const formattedData = data.map((item) => ({
+        id: item.id,
+        caption: item.caption,
+        username: item.username,
+        postImage: supabase.storage.from("images").getPublicUrl(item.image_path)?.data?.publicUrl || "", // Ensure URL is valid
+      }));
 
-        setFeedData(formattedData);
-      }
-      setLoading(false);
-    };
+      setFeedData(formattedData);
+    }
+    setLoading(false);
+  };
 
-    fetchImages();
-  }, []);
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchImages();
+    }, []) // Dependency array is empty, so it runs when screen is focused
+  );
 
   return (
     <SafeAreaView style={feedStyles.container}>

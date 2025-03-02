@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
@@ -9,6 +9,8 @@ export default function UploadPage() {
 
   const [name, setName] = useState('');
   const [caption, setCaption] = useState('');
+
+  const router = useRouter(); 
 
   if (!imageUri) {
     return (
@@ -44,7 +46,8 @@ export default function UploadPage() {
           console.error('Error saving image metadata:', insertError);
         } else {
           console.log('Image uploaded successfully with name and caption:', name, caption);
-          // Optionally navigate or reset state after successful upload
+           // Navigate back and trigger a refresh
+            router.replace("/feedPage");
         }
       }
     } catch (error) {
