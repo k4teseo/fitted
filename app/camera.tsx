@@ -24,9 +24,9 @@ export default function App() {
     return (
       <View style={styles.container}>
         <Text style={{ textAlign: "center" }}>
-          We need your permission to use the camera
+          Allow "Fitted" to access your camera?
         </Text>
-        <Button onPress={requestPermission} title="Grant permission" />
+        <Button onPress={requestPermission} title="Grant Permission" />
       </View>
     );
   }
@@ -46,14 +46,23 @@ export default function App() {
 
   const renderPicture = () => {
     return (
-      <View>
-        <Image
-          source={{ uri }}
-          contentFit="contain"
-          style={{ width: "100%", aspectRatio: 1 }}
-        />
-        <Button onPress={() => setUri(null)} title="Take another picture" />
-      </View>
+      <>
+        <View style={{ width: "140%" }}>
+          <Image
+            source={{ uri }}
+            contentFit="contain"
+            style={{ width: "100%", aspectRatio: 1 }}
+          />
+        </View>
+        <View style={styles.shutterContainer}>
+          <Pressable onPress={() => setUri(null)}>
+            <MaterialIcons name={"cached"} size={32} color="black" />
+          </Pressable>
+          <Pressable onPress={null}>
+            <MaterialIcons name={"check-circle"} size={32} color="black" />
+          </Pressable>
+        </View>
+      </>
     );
   };
 
@@ -145,5 +154,8 @@ const styles = StyleSheet.create({
     width: 70,
     height: 70,
     borderRadius: 50,
+  },
+  fullScreen: {
+    width: "100%",
   },
 });
