@@ -8,7 +8,6 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
-  Pressable,
 } from "react-native";
 import feedStyles from "./feedStyles";
 import { FittedLogo, FeedPageIcon, PlusIcon } from "./Icons"; // icons from Icons.tsx
