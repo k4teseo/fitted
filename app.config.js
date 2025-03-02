@@ -42,7 +42,10 @@ export default {
           "cameraPermission": "Allow $(PRODUCT_NAME) to access your camera."
         }
       ],
-      "expo-font"
+      "expo-font",
+      [
+        "expo-secure-store"
+      ]
     ],
     experiments: {
       typedRoutes: true,

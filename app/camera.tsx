@@ -9,8 +9,6 @@ import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import * as FileSystem from "expo-file-system";
-
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -36,7 +34,7 @@ export default function App() {
 
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
-    setUri(photo?.uri);
+    setUri(photo?.uri || null);
   };
 
   const toggleFacing = () => {
@@ -48,25 +46,20 @@ export default function App() {
   };
 
   const uploadImage = async (uri: string) => {
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
-  
-    const { data, error } = await supabase.storage
-      .from("images")
-      .upload(`uploads/${Date.now()}.jpg`, Buffer.from(base64, "base64"), {
-        contentType: "image/jpeg",
-      });
-  
+    const response = await fetch(uri);
+    const blob = await response.blob();
+    const arrayBuffer = await new Response(blob).arrayBuffer();
+    console.log("arrayBuffer", arrayBuffer.byteLength);
+    const fileName = `public/${Date.now()}.jpg`;
+    const { error } = await supabase.storage.from('images').upload(fileName, arrayBuffer, {contentType: 'image/jpeg', upsert: false });
     if (error) {
-      console.error("Upload error:", error);
-      return;
+      console.error("Error uploading image: ", error);
     }
-  
-    console.log("Upload successful:", data);
   };
 
   const renderPicture = () => {
+    console.log("URI", uri);
+
     return (
       <>
         <View style={{ width: "140%" }}>
