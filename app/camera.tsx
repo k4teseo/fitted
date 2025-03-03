@@ -39,7 +39,7 @@ export default function App() {
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
 
-    let finalUri: string | null = photo?.uri ?? null;
+    let finalUri: string = photo?.uri ?? "";
 
     if (facing === "front") {
       try {
@@ -48,12 +48,12 @@ export default function App() {
           flip: FlipType.Horizontal,
         },
       ]);
-      finalUri = flippedPhoto.uri ?? photo?.uri;
+      finalUri = flippedPhoto.uri;
     } catch (error) {
       console.error("Error flipping image:", error);
   }
-    setUri(finalUri);
   };
+  setUri(finalUri);
 };
 
   const toggleFacing = () => {
