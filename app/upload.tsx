@@ -1,7 +1,9 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Button, StyleSheet, Image } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import uploadStyles from "./uploadStyles";
+import { MaterialIcons } from "@expo/vector-icons";
 
 export default function UploadPage() {
   const params = useLocalSearchParams() as { imageUri?: string };
@@ -14,8 +16,19 @@ export default function UploadPage() {
 
   if (!imageUri) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>No image found</Text>
+      <View style={uploadStyles.container}>
+        <View style={uploadStyles.topBar}>
+          <TouchableOpacity 
+            style={uploadStyles.backButton} 
+            onPress={() => router.back()}
+          >
+            <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+          </TouchableOpacity>
+          <View />
+        </View>
+        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+          No image found
+        </Text>
       </View>
     );
   }
@@ -54,49 +67,45 @@ export default function UploadPage() {
       console.error('Error during upload:', error);
     }
   };
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Upload Image</Text>
-      {imageUri && <Image source={{ uri: imageUri }} style={styles.image} />}
-      <TextInput
-        style={styles.input}
-        placeholder="Enter your name"
-        value={name}
-        onChangeText={setName}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Enter caption"
-        value={caption}
-        onChangeText={setCaption}
-      />
-      <Button title="Upload" onPress={uploadImage} />
+    <View style={uploadStyles.container}>
+      {/* Top Bar */}
+      <View style={uploadStyles.topBar}>
+        <TouchableOpacity 
+          style={uploadStyles.backButton} 
+          onPress={() => router.back()}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+        </TouchableOpacity>
+
+        {/* Post Button */}
+        <TouchableOpacity style={uploadStyles.postButton} onPress={uploadImage}>
+          <Text style={uploadStyles.postButtonText}>Post</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Image Preview */}
+      <View style={uploadStyles.imageContainer}>
+        <Image source={{ uri: imageUri }} style={uploadStyles.image} />
+      </View>
+
+      {/* Inputs */}
+      <View style={uploadStyles.inputContainer}>
+        <TextInput
+          style={uploadStyles.input}
+          placeholder="Write caption..."
+          placeholderTextColor="#7E8487"
+          value={caption}
+          onChangeText={setCaption}
+        />
+        <TextInput
+          style={uploadStyles.input}
+          placeholder="Write your name..."
+          placeholderTextColor="#7E8487"
+          value={name}
+          onChangeText={setName}
+        />
+      </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  image: {
-    width: '100%',
-    height: 400,
-    marginBottom: 20,
-  },
-  input: {
-    width: '100%',
-    padding: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderRadius: 5,
-  },
-});
