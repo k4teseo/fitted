@@ -77,6 +77,9 @@ export default function App() {
         flash={flash}
         responsiveOrientationWhenOrientationLocked
       >
+        <Pressable style={styles.closeButton} onPress={() => router.back()}>
+          <MaterialIcons name="close" size={32} color="white" />
+        </Pressable>
         <View style={styles.shutterContainer}>
           <Pressable onPress={toggleFlash}>
             <MaterialIcons
@@ -164,4 +167,13 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
+  closeButton: {
+    position: "absolute",
+    top: 10, // Adjust based on status bar height
+    left: 10,
+    zIndex: 10, // Ensure it appears on top
+    backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility
+    borderRadius: 10,
+    padding: 4,
+  },  
 });
