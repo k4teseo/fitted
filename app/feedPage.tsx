@@ -72,6 +72,7 @@ export default function FeedPage() {
 
   useFocusEffect(
     React.useCallback(() => {
+      setActiveTab("home");
       fetchImages();
     }, []) // Dependency array is empty, so it runs when screen is focused
   );
