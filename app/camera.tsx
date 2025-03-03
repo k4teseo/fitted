@@ -9,6 +9,7 @@ import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { FlipType, manipulateAsync } from "expo-image-manipulator";
 
 export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
@@ -37,10 +38,23 @@ export default function App() {
 
   const takePicture = async () => {
     const photo = await ref.current?.takePictureAsync();
-    if (photo?.uri) {
-      setUri(photo.uri);
-    }
+
+    let finalUri: string | null = photo?.uri ?? null;
+
+    if (facing === "front") {
+      try {
+      const flippedPhoto = await manipulateAsync(photo?.uri!, [
+        {
+          flip: FlipType.Horizontal,
+        },
+      ]);
+      finalUri = flippedPhoto.uri ?? photo?.uri;
+    } catch (error) {
+      console.error("Error flipping image:", error);
+  }
+    setUri(finalUri);
   };
+};
 
   const toggleFacing = () => {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
