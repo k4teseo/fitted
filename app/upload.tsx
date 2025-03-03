@@ -54,51 +54,53 @@ export default function UploadPage() {
     };
 
     return (
-        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-            <KeyboardAvoidingView 
-                style={styles.container} 
+        <KeyboardAvoidingView 
+                style={{ flex: 1 }} 
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} // Adjusts for different platforms
-            >
-                <TouchableOpacity 
-                    style={styles.backButton} 
-                    onPress={() => {
-                        router.back();
-                    }}
-                >
-                    <Text style={styles.backButtonText}>←</Text>
-                </TouchableOpacity>
-                <ScrollView 
-                    contentContainerStyle={styles.scrollViewContainer} 
-                    keyboardShouldPersistTaps="handled"
-                >
-                    <Text style={styles.title}>Upload Image</Text>
-                    <Image source={{ uri: imageUri }} style={styles.image} />
-                    
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your name"
-                        value={name}
-                        placeholderTextColor="#F5EEE3"
-                        onChangeText={setName}
-                    />
-
-                    <TextInput
-                        style={styles.captionInput}
-                        placeholder="Enter caption"
-                        value={caption}
-                        placeholderTextColor="#F5EEE3"
-                        multiline={true}
-                        scrollEnabled={true}
-                        onChangeText={setCaption}
-                    />
-
-                    <TouchableOpacity style={styles.button} onPress={uploadImage}>
-                        <Text style={styles.buttonText}>Upload</Text>
+        >
+            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+                <View style={styles.container}>
+                    <TouchableOpacity 
+                        style={styles.backButton} 
+                        onPress={() => {
+                            router.back();
+                        }}
+                    >
+                        <Text style={styles.backButtonText}>←</Text>
                     </TouchableOpacity>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
+                    <ScrollView 
+                        contentContainerStyle={styles.scrollViewContainer} 
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        <Text style={styles.title}>Upload Image</Text>
+                        <Image source={{ uri: imageUri }} style={styles.image} />
+                        
+                        <TextInput
+                            style={styles.input}
+                            placeholder="Enter your name"
+                            value={name}
+                            placeholderTextColor="#F5EEE3"
+                            onChangeText={setName}
+                        />
+
+                        <TextInput
+                            style={styles.captionInput}
+                            placeholder="Enter caption"
+                            value={caption}
+                            placeholderTextColor="#F5EEE3"
+                            multiline={true}
+                            scrollEnabled={true}
+                            onChangeText={setCaption}
+                        />
+
+                        <TouchableOpacity style={styles.button} onPress={uploadImage}>
+                            <Text style={styles.buttonText}>Upload</Text>
+                        </TouchableOpacity>
+                    </ScrollView>
+                </View>
+            </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>                
     );
 }
 
@@ -107,7 +109,6 @@ const styles = StyleSheet.create({
         flex: 1, 
         backgroundColor: '#15181B', // Dark background (same as feedStyles container)
         width: '100%',
-        marginBottom: 20,
       },
       scrollViewContainer: {
         flexGrow: 1, 
@@ -115,6 +116,7 @@ const styles = StyleSheet.create({
         alignItems: 'center', // Centers content horizontally
         paddingVertical: 30, // Prevents cut-off at top/bottom
         width: '100%',
+        height: '100%',
       },
       title: {
         fontSize: 26,
