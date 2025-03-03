@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { 
     View, Text, TextInput, StyleSheet, Image, ScrollView, Platform, 
-    TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, TouchableOpacity, Pressable
+    TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, TouchableOpacity,
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
