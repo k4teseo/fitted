@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { 
     View, Text, TextInput, StyleSheet, Image, ScrollView, Platform, 
-    TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, TouchableOpacity 
+    TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, TouchableOpacity, Pressable
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
 
@@ -60,6 +60,14 @@ export default function UploadPage() {
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} // Adjusts for different platforms
             >
+                <TouchableOpacity 
+                    style={styles.backButton} 
+                    onPress={() => {
+                        router.back();
+                    }}
+                >
+                    <Text style={styles.backButtonText}>←</Text>
+                </TouchableOpacity>
                 <ScrollView 
                     contentContainerStyle={styles.scrollViewContainer} 
                     keyboardShouldPersistTaps="handled"
@@ -71,6 +79,7 @@ export default function UploadPage() {
                         style={styles.input}
                         placeholder="Enter your name"
                         value={name}
+                        placeholderTextColor="#F5EEE3"
                         onChangeText={setName}
                     />
 
@@ -78,6 +87,7 @@ export default function UploadPage() {
                         style={styles.captionInput}
                         placeholder="Enter caption"
                         value={caption}
+                        placeholderTextColor="#F5EEE3"
                         multiline={true}
                         scrollEnabled={true}
                         onChangeText={setCaption}
@@ -95,61 +105,80 @@ export default function UploadPage() {
 const styles = StyleSheet.create({
     container: {
         flex: 1, 
-        backgroundColor: '#fff',
+        backgroundColor: '#15181B', // Dark background (same as feedStyles container)
         width: '100%',
         marginBottom: 20,
-    },
-    scrollViewContainer: {
+      },
+      scrollViewContainer: {
         flexGrow: 1, 
         justifyContent: 'center', // Centers content vertically
         alignItems: 'center', // Centers content horizontally
         paddingVertical: 30, // Prevents cut-off at top/bottom
         width: '100%',
-    },
-    title: {
+      },
+      title: {
         fontSize: 26,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-    },
-    image: {
+        color: '#F5EEE3', // White text (same as captions in feedStyles)
+      },
+      image: {
         width: '60%',
         height: 300,
         borderRadius: 10,
         marginBottom: 20,
-    },
-    input: {
+        backgroundColor: '#9AA8B6', // Matches card background color in feedStyles
+      },
+      input: {
         padding: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#595F66', // Same as userInfo background in feedStyles
         borderRadius: 8,
         fontSize: 16,
         width: '80%', // Ensures consistent width
-    },
-    captionInput: {
+        backgroundColor: '#2D3338', // Same as feedHeader background in feedStyles
+        color: `#F5EEE3`,
+      },
+      captionInput: {
         padding: 12,
         marginBottom: 12,
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#595F66', // Same as userInfo background in feedStyles
         borderRadius: 8,
         fontSize: 16,
         width: '80%',
         height: 150, 
         textAlignVertical: 'top',  
-        backgroundColor: '#fff', 
-    },
-    button: {
-        backgroundColor: '#007bff',
+        backgroundColor: '#2D3338', // Same as feedHeader background in feedStyles
+        color: `#F5EEE3`,
+      },
+      button: {
+        backgroundColor: '#4A6FA5', // Blue background (same as bottomNav in feedStyles)
         paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
         width: '80%',
         marginTop: 20,
-    },
-    buttonText: {
-        color: '#fff',
+      },
+      buttonText: {
+        color: '#F5EEE3', // White text (same as captions in feedStyles)
         fontSize: 18,
+        fontWeight: 'bold',
+      },
+      backButton: {
+        position: 'absolute',
+        top: 20, // Adjust for notch safety
+        left: 5,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        zIndex: 10,
+    },
+    backButtonText: {
+        fontSize: 30,
+        color: '#F5EEE3', // Same as other text colors
         fontWeight: 'bold',
     },
 });
