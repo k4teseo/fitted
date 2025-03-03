@@ -51,38 +51,22 @@ export default function App() {
   };
 
   const renderPicture = () => {
-    console.log("URI", uri);
-
     return (
-      <>
-        <View style={{ width: "140%" }}>
-          <Image
-            source={{ uri }}
-            contentFit="contain"
-            style={{ width: "100%", aspectRatio: 1 }}
-          />
+      <View style={styles.container}>
+        <View style={styles.imageContainer}>
+          <Image source={{ uri }} style={styles.imagePreview} />
         </View>
         <View style={styles.shutterContainer}>
           <Pressable onPress={() => setUri(null)}>
-            <MaterialIcons name={"cached"} size={32} color="black" />
+            <MaterialIcons name="cached" size={32} color="white" />
           </Pressable>
-          <Pressable
-            onPress={() => {
-              // Navigate to the upload page after confirmation
-              router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`);
-            }}
-          >
-            <MaterialIcons name={"check-circle"} size={32} color="black" />
+          <Pressable onPress={() => router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`)}>
+            <MaterialIcons name="check-circle" size={32} color="white" />
           </Pressable>
         </View>
-        {uploadStatus && (
-          <View>
-            <Text>{uploadStatus}</Text>
-          </View>
-        )}
-      </>
+      </View>
     );
-  };
+  };  
 
   const renderCamera = () => {
     return (
@@ -93,6 +77,9 @@ export default function App() {
         flash={flash}
         responsiveOrientationWhenOrientationLocked
       >
+        <Pressable style={styles.closeButton} onPress={() => router.back()}>
+          <MaterialIcons name="close" size={32} color="white" />
+        </Pressable>
         <View style={styles.shutterContainer}>
           <Pressable onPress={toggleFlash}>
             <MaterialIcons
@@ -113,9 +100,9 @@ export default function App() {
               >
                 <View
                   style={[
-                    styles.shutterBtnInner,
+                    styles.shutterBtn,
                     {
-                      backgroundColor: "white",
+                      opacity: pressed ? 0.5 : 1,
                     },
                   ]}
                 />
@@ -140,10 +127,10 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#15181B",
     alignItems: "center",
     justifyContent: "center",
-  },
+  },  
   camera: {
     flex: 1,
     width: "100%",
@@ -152,28 +139,41 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 44,
     left: 0,
-    width: "100%",
-    alignItems: "center",
+    right: 0,
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 30,
+    alignItems: "center",
+    paddingHorizontal: 5, 
   },
   shutterBtn: {
-    backgroundColor: "transparent",
-    borderWidth: 5,
-    borderColor: "white",
-    width: 85,
-    height: 85,
-    borderRadius: 45,
-    alignItems: "center",
+    width: 80, 
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "white",
     justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 5,
+    borderColor: "gray",
+    flexShrink: 0, // Prevents unwanted resizing
+  },  
+  imageContainer: {
+    width: "90%",
+    aspectRatio: 3 / 4, // Adjust ratio as needed
+    borderRadius: 30,
+    marginBottom: 40,
+    overflow: "hidden", // This is REQUIRED for borderRadius to work
   },
-  shutterBtnInner: {
-    width: 70,
-    height: 70,
-    borderRadius: 50,
-  },
-  fullScreen: {
+  imagePreview: {
     width: "100%",
+    height: "100%",
   },
+  closeButton: {
+    position: "absolute",
+    top: 10, // Adjust based on status bar height
+    left: 10,
+    zIndex: 10, // Ensure it appears on top
+    backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility
+    borderRadius: 10,
+    padding: 4,
+  },  
 });
