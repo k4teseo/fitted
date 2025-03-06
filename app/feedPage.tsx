@@ -23,8 +23,16 @@ type FeedItemData = {
 
 // A small component for each feed item
 const FeedItem = ({ item }: { item: FeedItemData }) => {
+  const router = useRouter();
+
   return (
-    <View style={feedStyles.card}>
+    <TouchableOpacity
+      style={feedStyles.card}
+      onPress={() => {
+        // Navigate to postPage with the post's id in the query
+        router.push(`/postPage?id=${item.id}`);
+      }}
+    >
       {/* Image Container */}
       <View style={feedStyles.imageContainer}>
         <Image source={{ uri: item.postImage }} style={feedStyles.postImage} />
@@ -35,7 +43,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
         <Text style={feedStyles.caption}>{item.caption}</Text>
         <Text style={feedStyles.username}>{item.username}</Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
