@@ -14,6 +14,8 @@ export default function UploadPage() {
 
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
+    const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
+    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
 
     const router = useRouter();
 
@@ -39,37 +41,46 @@ export default function UploadPage() {
     // Function to handle image upload
     const handlePost = async () => {
         if (!imageUri || !name) return;
-
+    
         try {
             const response = await fetch(imageUri);
             const blob = await response.blob();
             const arrayBuffer = await new Response(blob).arrayBuffer();
             const fileName = `public/${Date.now()}.jpg`;
-
-            const { error } = await supabase.storage.from('images').upload(fileName, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
-
-            if (error) {
-                console.error('Error uploading image:', error);
+    
+            const { error: uploadError } = await supabase.storage
+                .from("images")
+                .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
+    
+            if (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                return;
+            }
+    
+            const { error: insertError } = await supabase
+                .from("images")
+                .insert([{
+                    image_path: fileName,
+                    caption: postTitle,
+                    username: name,
+                    occasions: selectedOccasions,  
+                    brands: selectedBrands         
+                }]);
+    
+            if (insertError) {
+                console.error("Error saving image with tags:", insertError);
             } else {
-                const { error: insertError } = await supabase
-                    .from('images')
-                    .insert([{ image_path: fileName, caption: postTitle, username: name }]);
-
-                if (insertError) {
-                    console.error('Error saving image metadata:', insertError);
-                } else {
-                    console.log('Image uploaded successfully:', postTitle, name);
-                    router.replace("/feedPage");
-                }
+                console.log("Post uploaded successfully with tags:", postTitle, selectedOccasions, selectedBrands);
+                router.replace("/feedPage");
             }
         } catch (error) {
-            console.error('Error during upload:', error);
+            console.error("Error during upload:", error);
         }
-    };
+    };    
 
     const handleTagsSelected = (occasions: string[], brands: string[]) => {
-      console.log("Selected Occasions:", occasions);
-      console.log("Selected Brands:", brands);
+        setSelectedOccasions(occasions);
+        setSelectedBrands(brands);
     };
     
     return (
