@@ -1,5 +1,5 @@
 // app/addOccasion.tsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -7,41 +7,67 @@ import {
   Pressable,
   TextInput,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-
-// Example occasion data
-const ALL_OCCASIONS = [
-  "Gym Fit",
-  "Beach Day",
-  "Business Casual",
-  "Date Night",
-  "Formal Wear",
-  "Hiking",
-  "Ski Outfit",
-  "Girls Nights Out",
-  "Graduation",
-  "Party Look",
-  "Job Interview",
-  "Street Style",
-  "Black Tie Event",
-];
+import { supabase } from "@/lib/supabase"
 
 export default function AddOccasion() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [occasions, setOccasions] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
 
-  // Filter occasion list based on search term
-  const filteredOccasions = ALL_OCCASIONS.filter((occasion) =>
+  useEffect(() => {
+    const fetchOccasions = async () => {
+      const { data, error } = await supabase
+        .from("tags")
+        .select("name")
+        .eq("tag_type", "occasion");
+
+      if (error) {
+        console.error("Error fetching occasions:", error);
+      } else {
+        setOccasions(data.map((item) => item.name)); // Extracting names
+      }
+
+      setLoading(false);
+    };
+
+    fetchOccasions();
+  }, []);
+
+  // Filter occasions based on search input
+  const filteredOccasions = occasions.filter((occasion) =>
     occasion.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleSelectOccasion = (occasion: string) => {
+    setSelectedOccasions((prevSelected) => {
+      if (prevSelected.includes(occasion)) {
+        // Remove from selected if already selected
+        return prevSelected.filter((item) => item !== occasion);
+      } else {
+        // Add to selected if not already selected
+        return [...prevSelected, occasion];
+      }
+    });
+  };
+
   // Render each occasion as a pressable item
   const renderOccasionItem = ({ item }: { item: string }) => {
+    const isSelected = selectedOccasions.includes(item); // Check if the item is selected
+
     return (
-      <Pressable style={styles.occasionItem} onPress={() => console.log(item)}>
-        <Text style={styles.occasionText}>{item}</Text>
+      <Pressable
+        style={[styles.occasionItem, isSelected && styles.selectedOccasion]} // Apply style if selected
+        onPress={() => handleSelectOccasion(item)}
+      >
+        <Text style={[styles.occasionText, isSelected && styles.selectedOccasionText]}>
+          {item}
+        </Text>
       </Pressable>
     );
   };
@@ -77,6 +103,9 @@ export default function AddOccasion() {
       </View>
 
       {/* Occasion List */}
+      {loading ? (
+        <ActivityIndicator size="large" color="#B4CFEA" style={styles.loader} />
+      ) : (
       <FlatList
         data={filteredOccasions}
         keyExtractor={(item) => item}
@@ -84,6 +113,7 @@ export default function AddOccasion() {
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
       />
+      )}
     </View>
   );
 }
@@ -144,6 +174,32 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   occasionText: {
+    color: "#B4CFEA",
+    fontSize: 14,
+  },
+  selectedOccasion: {
+    backgroundColor: "#7F8A95", // Highlight selected occasion
+  },
+  selectedOccasionText: {
+    color: "#15181B", // Change text color for selected occasion
+    fontWeight: "bold",
+  },
+  loader: {
+    marginTop: 20,
+  },
+  selectedContainer: {
+    padding: 20,
+    backgroundColor: "#15181B",
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#B4CFEA",
+  },
+  selectedTitle: {
+    color: "#F5EEE3",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  selectedOccasions: {
     color: "#B4CFEA",
     fontSize: 14,
   },
