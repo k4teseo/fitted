@@ -30,6 +30,10 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
   // Combine brand + occasion tags
   const combinedTags = [...(item.selectedbrands ?? []), ...(item.selectedoccasions ?? [])];
 
+  // Limit the number of tags you want to show
+  const MAX_TAGS = 2;
+  const displayedTags = combinedTags.slice(0, MAX_TAGS); // first 2 tags
+  
   return (
     <TouchableOpacity
       style={feedStyles.card}
@@ -49,9 +53,9 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
         <Text style={feedStyles.caption}>{item.caption}</Text>
 
         {/* Tag Pills */}
-        {combinedTags.length > 0 && (
+        {displayedTags.length > 0 && (
           <View style={feedStyles.tagContainer}>
-            {combinedTags.map((tag, index) => (
+            {displayedTags.map((tag, index) => (
               <View key={index} style={feedStyles.tagPill}>
                 <Text style={feedStyles.tagText}>{tag}</Text>
               </View>
@@ -84,8 +88,7 @@ export default function FeedPage() {
     if (error) {
       console.error("Error fetching images:", error);
     } else {
-      // Format data for display
-      const formattedData: FeedItemData[] = data.map((row: any) => ({
+      const formattedData = data.map((row: any) => ({
         id: row.id,
         caption: row.caption,
         username: row.username,

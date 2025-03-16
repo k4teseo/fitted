@@ -118,16 +118,15 @@ export default function PostPage() {
         {/* Post Title (User’s caption) */}
         <Text style={styles.postTitle}>{post.caption}</Text>
 
-        {/* Tags (if any) */}
+        {/* Tag Section */}
         {combinedTags.length > 0 && (
-          <FlatList
-            data={combinedTags}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tagsContainer}
-            keyExtractor={(item) => item}
-            renderItem={renderTag}
-          />
+          <View style={styles.tagsContainer}>
+            {combinedTags.map((tag, index) => (
+              <View key={index} style={styles.tagPill}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -170,10 +169,13 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#A5C6E8",
-    marginBottom: 12,
+    marginBottom: 14,
   },
+  // Tag layout: multi-line wrap
   tagsContainer: {
     flexDirection: "row",
+    flexWrap: "wrap", // allows multiple lines
+    marginBottom: 20,
   },
   tagPill: {
     backgroundColor: "#262A2F",
@@ -181,7 +183,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 4,
     marginRight: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   tagText: {
     color: "#6D757E",

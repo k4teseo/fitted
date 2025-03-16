@@ -81,7 +81,6 @@ const feedStyles = StyleSheet.create({
 
   tagContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',   
   },
   tagPill: {
     backgroundColor: '#A5C6E8', 
