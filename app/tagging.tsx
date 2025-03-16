@@ -17,19 +17,21 @@ const OCCASIONS = ["Everyday Wear", "Coffee Date", "Job Interview"];
 const BRANDS = ["Abercrombie & Fitch", "Lululemon", "Uniqlo"];
 
 type TaggingProps = {
+  selectedBrands: string[];
+  selectedOccasions: string[];
   onTagsSelected?: (occasions: string[], brands: string[]) => void;
 };
 
-export default function Tagging({ onTagsSelected }: TaggingProps) {
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+export default function Tagging({ selectedBrands = [], selectedOccasions = [], onTagsSelected }: TaggingProps) {
+  const [localSelectedOccasions, setLocalSelectedOccasions] = useState<string[]>(selectedOccasions);
+  const [localSelectedBrands, setLocalSelectedBrands] = useState<string[]>(selectedBrands);
   const [openAIEnabled, setOpenAIEnabled] = useState(false);
 
   const router = useRouter();
 
   // Toggle an occasion tag on/off
   const toggleOccasion = (occasion: string) => {
-    setSelectedOccasions((prev) =>
+    setLocalSelectedOccasions((prev) =>
       prev.includes(occasion)
         ? prev.filter((item) => item !== occasion)
         : [...prev, occasion]
@@ -38,7 +40,7 @@ export default function Tagging({ onTagsSelected }: TaggingProps) {
 
   // Toggle a brand tag on/off
   const toggleBrand = (brand: string) => {
-    setSelectedBrands((prev) =>
+    setLocalSelectedBrands((prev) =>
       prev.includes(brand)
         ? prev.filter((item) => item !== brand)
         : [...prev, brand]
@@ -48,9 +50,9 @@ export default function Tagging({ onTagsSelected }: TaggingProps) {
   // Whenever selections change, call onTagsSelected
   useEffect(() => {
     if (onTagsSelected) {
-      onTagsSelected(selectedOccasions, selectedBrands);
+      onTagsSelected(localSelectedOccasions, localSelectedBrands);
     }
-  }, [selectedOccasions, selectedBrands]);
+  }, [localSelectedOccasions, localSelectedBrands]);
 
   // Renders a single tag "pill"
   const renderTag = (tag: string, selected: boolean, onPress: () => void) => {
@@ -96,7 +98,7 @@ export default function Tagging({ onTagsSelected }: TaggingProps) {
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
         renderItem={({ item }) =>
-          renderTag(item, selectedOccasions.includes(item), () =>
+          renderTag(item, localSelectedOccasions.includes(item), () =>
             toggleOccasion(item)
           )
         }
@@ -121,7 +123,7 @@ export default function Tagging({ onTagsSelected }: TaggingProps) {
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
         renderItem={({ item }) =>
-          renderTag(item, selectedBrands.includes(item), () =>
+          renderTag(item, localSelectedBrands.includes(item), () =>
             toggleBrand(item)
           )
         }

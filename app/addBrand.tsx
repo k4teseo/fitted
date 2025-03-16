@@ -70,6 +70,13 @@ export default function AddBrand() {
     );
   };
 
+  const handleConfirmSelection = () => {
+    router.push({
+      pathname: "/upload",
+      params: { selectedBrands: JSON.stringify(selectedBrands) },
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -83,6 +90,10 @@ export default function AddBrand() {
         </View>
 
         <View style={{ width: 24 }} />
+
+        <Pressable style={styles.confirmButton} onPress={handleConfirmSelection}>
+          <Text style={styles.confirmText}>Confirm</Text>
+        </Pressable>
       </View>
 
       {/* Search Bar */}
@@ -181,5 +192,18 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 20,
+  },
+  confirmButton: {
+    backgroundColor: "#7F8A95",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  confirmText: {
+    color: "#15181B",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

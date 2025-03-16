@@ -72,6 +72,13 @@ export default function AddOccasion() {
     );
   };
 
+  const handleConfirmSelection = () => {
+    router.push({
+      pathname: "/upload",
+      params: { selectedBrands: JSON.stringify(selectedOccasions) },
+    });
+  };
+
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -114,6 +121,10 @@ export default function AddOccasion() {
         showsVerticalScrollIndicator={false}
       />
       )}
+
+      <Pressable style={styles.confirmButton} onPress={handleConfirmSelection}>
+        <Text style={styles.confirmText}>Confirm</Text>
+      </Pressable>
     </View>
   );
 }
@@ -202,5 +213,18 @@ const styles = StyleSheet.create({
   selectedOccasions: {
     color: "#B4CFEA",
     fontSize: 14,
+  },
+  confirmButton: {
+    backgroundColor: "#7F8A95",
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  confirmText: {
+    color: "#15181B",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });

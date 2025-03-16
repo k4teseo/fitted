@@ -9,13 +9,21 @@ import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
 
 export default function UploadPage() {
-    const params = useLocalSearchParams() as { imageUri?: string };
+    const params = useLocalSearchParams() as { 
+        imageUri?: string;
+        selectedBrands?: string;
+        selectedOccasions?: string;
+    };
     const imageUri = params.imageUri;
 
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
-    const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
-    const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+    const [selectedBrands, setSelectedBrands] = useState<string[]>(
+        params.selectedBrands ? JSON.parse(params.selectedBrands as string) : []
+      );
+    const [selectedOccasions, setSelectedOccasions] = useState<string[]>(
+        params.selectedOccasions ? JSON.parse(params.selectedOccasions as string) : []
+    );
 
     const router = useRouter();
 
@@ -63,8 +71,8 @@ export default function UploadPage() {
                     image_path: fileName,
                     caption: postTitle,
                     username: name,
-                    occasions: selectedOccasions,  
-                    brands: selectedBrands         
+                    selectedBrands: selectedBrands,  
+                    selectedOccasions: selectedOccasions         
                 }]);
     
             if (insertError) {
@@ -129,7 +137,7 @@ export default function UploadPage() {
                 </View>
 
                 {/* Tagging UI below */}
-                <Tagging onTagsSelected={handleTagsSelected} />
+                <Tagging selectedBrands={selectedBrands} selectedOccasions={selectedOccasions} />
               </ScrollView>
                               </KeyboardAvoidingView>
                             </TouchableWithoutFeedback>
