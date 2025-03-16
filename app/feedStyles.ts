@@ -39,7 +39,6 @@ const feedStyles = StyleSheet.create({
     backgroundColor: '#9AA8B6',
     borderRadius: 24,
     marginBottom: 30,
-    height: 479,
     overflow: 'hidden', // Ensures the image corners match card corners
     alignSelf: 'center',
     width: 317, // Fixed width
@@ -59,15 +58,16 @@ const feedStyles = StyleSheet.create({
   // User Info
   userInfo: {
     backgroundColor: '#595F66',
-    padding: 20,
+    padding: 16,
   },
   caption: {
     fontFamily: 'Raleway',    // Use Raleway font
     fontWeight: '700',        // Bold
     fontSize: 17,
-    lineHeight: 16,
+    lineHeight: 20,
     letterSpacing: 0.1,
     color: '#F5EEE3',
+    marginBottom: 12,
   },
   username: {
     fontFamily: 'Raleway',    // Use Raleway font
@@ -76,8 +76,26 @@ const feedStyles = StyleSheet.create({
     lineHeight: 20,
     letterSpacing: 0.1,
     color: '#9AA8B6',      
-    marginTop: 5,
+    marginTop: 4,
   },
+
+  tagContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',   
+  },
+  tagPill: {
+    backgroundColor: '#A5C6E8', 
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 12,
+    marginBottom: 6,
+  },
+  tagText: {
+    color: '#262A2F',
+    fontWeight: '500',
+    fontSize: 10,
+  },  
 
   //
   // BOTTOM NAVIGATION
@@ -122,6 +140,8 @@ const feedStyles = StyleSheet.create({
     color: "#888",
     marginTop: 20,
   },
+
+  
 
 });
 

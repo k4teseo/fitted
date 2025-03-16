@@ -179,12 +179,12 @@ const styles = StyleSheet.create({
     backgroundColor: "#262A2F",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 4,
     marginRight: 10,
     marginBottom: 10,
   },
   tagText: {
-    color: "#B4CFEA",
+    color: "#6D757E",
     fontSize: 14,
   },
 });
