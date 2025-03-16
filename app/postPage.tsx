@@ -19,7 +19,8 @@ type PostData = {
   username: string;
   caption: string;
   postImage: string;
-  tags?: string[]; // or more complex structure if you store multiple tags
+  selectedbrands: string[];
+  selectedoccasions: string[];
 };
 
 export default function PostPage() {
@@ -36,7 +37,7 @@ export default function PostPage() {
     // Example: If your table is named "images" and you store tags in "tags" column
     const { data, error } = await supabase
       .from("images")
-      .select("*")
+      .select("id, username, caption, image_path, selectedbrands, selectedoccasions")
       .eq("id", id)
       .single();
 
@@ -52,7 +53,8 @@ export default function PostPage() {
           supabase.storage
             .from("images")
             .getPublicUrl(data.image_path)?.data?.publicUrl || "",
-        tags: data.tags || [], // if you have a tags array in your table
+        selectedbrands: data.selectedbrands ?? [],
+        selectedoccasions: data.selectedoccasions ?? [],
       };
       setPost(postData);
     }
@@ -87,6 +89,9 @@ export default function PostPage() {
     );
   }
 
+  // Combine both arrays for a single list of tag “pills”
+  const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
+
   // Renders a single tag "pill"
   const renderTag = ({ item }: { item: string }) => {
     return (
@@ -114,9 +119,9 @@ export default function PostPage() {
         <Text style={styles.postTitle}>{post.caption}</Text>
 
         {/* Tags (if any) */}
-        {post.tags && post.tags.length > 0 && (
+        {combinedTags.length > 0 && (
           <FlatList
-            data={post.tags}
+            data={combinedTags}
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.tagsContainer}

@@ -75,7 +75,7 @@ export default function AddOccasion() {
   const handleConfirmSelection = () => {
     router.push({
       pathname: "/upload",
-      params: { selectedBrands: JSON.stringify(selectedOccasions) },
+      params: { selectedOccasions: JSON.stringify(selectedOccasions) },
     });
   };
 

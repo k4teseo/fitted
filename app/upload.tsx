@@ -14,18 +14,20 @@ export default function UploadPage() {
         selectedBrands?: string;
         selectedOccasions?: string;
     };
+    const router = useRouter();
+
     const imageUri = params.imageUri;
 
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
+
+    // Tag arrays
     const [selectedBrands, setSelectedBrands] = useState<string[]>(
         params.selectedBrands ? JSON.parse(params.selectedBrands as string) : []
       );
     const [selectedOccasions, setSelectedOccasions] = useState<string[]>(
         params.selectedOccasions ? JSON.parse(params.selectedOccasions as string) : []
     );
-
-    const router = useRouter();
 
     if (!imageUri) {
         return (
@@ -46,16 +48,26 @@ export default function UploadPage() {
       );
     }
 
-    // Function to handle image upload
+      /**
+     * Handle final "Post" action:
+     * 1) Upload the image to Supabase Storage (if needed).
+     * 2) Insert a row into the `images` table with:
+     *    - image_path
+     *    - caption (postTitle)
+     *    - username (name)
+     *    - tags: combined array of selectedBrands + selectedOccasions
+     */
     const handlePost = async () => {
         if (!imageUri || !name) return;
     
         try {
+          // 1) Convert the image URI into a blob/arrayBuffer for upload
             const response = await fetch(imageUri);
             const blob = await response.blob();
             const arrayBuffer = await new Response(blob).arrayBuffer();
             const fileName = `public/${Date.now()}.jpg`;
     
+          // 2) Upload the image to Supabase Storage
             const { error: uploadError } = await supabase.storage
                 .from("images")
                 .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
@@ -64,21 +76,25 @@ export default function UploadPage() {
                 console.error("Error uploading image:", uploadError);
                 return;
             }
+
+          // Combine brand + occasion tags into one array
+            const allTags = [...selectedBrands, ...selectedOccasions];
     
+          // 3) Insert a record into `images` table, including the tags array
             const { error: insertError } = await supabase
                 .from("images")
                 .insert([{
                     image_path: fileName,
                     caption: postTitle,
                     username: name,
-                    selectedBrands: selectedBrands,  
-                    selectedOccasions: selectedOccasions         
+                    selectedbrands: selectedBrands,      // e.g. ['Nike', 'Adidas']
+                    selectedoccasions: selectedOccasions,   // e.g. ['Coffee Date', 'Beach Day']     
                 }]);
     
             if (insertError) {
                 console.error("Error saving image with tags:", insertError);
             } else {
-                console.log("Post uploaded successfully with tags:", postTitle, selectedOccasions, selectedBrands);
+                console.log("Post uploaded successfully with tags:", postTitle, allTags);
                 router.replace("/feedPage");
             }
         } catch (error) {
@@ -137,12 +153,16 @@ export default function UploadPage() {
                 </View>
 
                 {/* Tagging UI below */}
-                <Tagging selectedBrands={selectedBrands} selectedOccasions={selectedOccasions} />
+                <Tagging 
+                  selectedBrands={selectedBrands} 
+                  selectedOccasions={selectedOccasions} 
+                  onTagsSelected={handleTagsSelected}
+                  />
               </ScrollView>
-                              </KeyboardAvoidingView>
-                            </TouchableWithoutFeedback>
-                          );
-                        }
+            </KeyboardAvoidingView>
+           </TouchableWithoutFeedback>
+        );
+    }
 
 const styles = StyleSheet.create({
     container: {
