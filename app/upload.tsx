@@ -1,4 +1,3 @@
-// app/upload.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { 
@@ -8,9 +7,9 @@ import {
 import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
-import { UploadProvider, useUploadContext } from "./uploadContext"; 
+import { useUploadContext } from "./uploadContext";  // No need to import UploadProvider
 
-function UploadPageContent() {
+export default function UploadPage() {
     const params = useLocalSearchParams() as { imageUri?: string };
     const router = useRouter();
     const imageUri = params.imageUri;
@@ -116,16 +115,8 @@ function UploadPageContent() {
                   <Tagging />
               </ScrollView>
             </KeyboardAvoidingView>
-           </TouchableWithoutFeedback>
-        );
-}
-
-export default function UploadPage() {
-  return (
-    <UploadProvider>
-      <UploadPageContent />
-    </UploadProvider>
-  );
+        </TouchableWithoutFeedback>
+    );
 }
 
 
