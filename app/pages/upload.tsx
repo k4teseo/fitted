@@ -5,25 +5,35 @@ import {
     TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, TouchableOpacity,
 } from 'react-native';
 import { supabase } from '@/lib/supabase';
+import { MaterialIcons } from "@expo/vector-icons";
+import Tagging from './tagging';
+import { useUploadContext } from "./uploadContext";  // No need to import UploadProvider
 
 export default function UploadPage() {
     const params = useLocalSearchParams() as { imageUri?: string };
+    const router = useRouter();
     const imageUri = params.imageUri;
 
     const [name, setName] = useState('');
-    const [caption, setCaption] = useState('');
-
-    const router = useRouter();
+    const [postTitle, setPostTitle] = useState('');
+    const { selectedBrands, selectedOccasions } = useUploadContext(); // Use Context
 
     if (!imageUri) {
         return (
-            <View style={styles.container}>
-                <Text style={styles.title}>No image found</Text>
+          <View style={styles.container}>
+            <View style={styles.topBar}>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+              </TouchableOpacity>
             </View>
+            <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+              No image found
+            </Text>
+          </View>
         );
     }
 
-    const uploadImage = async () => {
+    const handlePost = async () => {
         if (!imageUri || !name) return;
 
         try {
@@ -32,24 +42,33 @@ export default function UploadPage() {
             const arrayBuffer = await new Response(blob).arrayBuffer();
             const fileName = `public/${Date.now()}.jpg`;
 
-            const { error } = await supabase.storage.from('images').upload(fileName, arrayBuffer, { contentType: 'image/jpeg', upsert: false });
+            const { error: uploadError } = await supabase.storage
+                .from("images")
+                .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
 
-            if (error) {
-                console.error('Error uploading image:', error);
+            if (uploadError) {
+                console.error("Error uploading image:", uploadError);
+                return;
+            }
+
+            const { error: insertError } = await supabase
+                .from("images")
+                .insert([{
+                    image_path: fileName,
+                    caption: postTitle,
+                    username: name,
+                    selectedbrands: selectedBrands,      
+                    selectedoccasions: selectedOccasions,     
+                }]);
+
+            if (insertError) {
+                console.error("Error saving image with tags:", insertError);
             } else {
-                const { error: insertError } = await supabase
-                    .from('images')
-                    .insert([{ image_path: fileName, caption, username: name }]);
-
-                if (insertError) {
-                    console.error('Error saving image metadata:', insertError);
-                } else {
-                    console.log('Image uploaded successfully:', name, caption);
-                    router.replace("/pages/feedPage");
-                }
+                console.log("Post uploaded successfully with tags:", postTitle);
+                router.replace("/feedPage");
             }
         } catch (error) {
-            console.error('Error during upload:', error);
+            console.error("Error during upload:", error);
         }
     };
 
@@ -58,87 +77,104 @@ export default function UploadPage() {
             <KeyboardAvoidingView 
                 style={styles.container} 
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} // Adjusts for different platforms
             >
-                <TouchableOpacity 
-                    style={styles.backButton} 
-                    onPress={() => {
-                        router.back();
-                    }}
-                >
-                    <Text style={styles.backButtonText}>←</Text>
-                </TouchableOpacity>
+                <View style={styles.topBar}>
+                  <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.postButton} onPress={handlePost}>
+                    <Text style={styles.postButtonText}>Post</Text>
+                  </TouchableOpacity>
+                </View>
+
                 <ScrollView 
+                    style={{ flex: 1 }}
                     contentContainerStyle={styles.scrollViewContainer} 
                     keyboardShouldPersistTaps="handled"
                 >
-                    <Text style={styles.title}>Upload Image</Text>
+                  <View style={styles.contentContainer}>
+                    <TextInput
+                      style={styles.postTitleInput}
+                      placeholder="Write Post Title..."
+                      placeholderTextColor="#7E8487"
+                      value={postTitle}
+                      onChangeText={setPostTitle}
+                    />
+
                     <Image source={{ uri: imageUri }} style={styles.image} />
-                    
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Enter your name"
-                        value={name}
-                        placeholderTextColor="#F5EEE3"
-                        onChangeText={setName}
-                    />
 
                     <TextInput
-                        style={styles.captionInput}
-                        placeholder="Enter caption"
-                        value={caption}
-                        placeholderTextColor="#F5EEE3"
-                        multiline={true}
-                        scrollEnabled={true}
-                        onChangeText={setCaption}
+                      style={styles.nameInput}
+                      placeholder="Input your name here..."
+                      placeholderTextColor="#7E8487"
+                      value={name}
+                      onChangeText={setName}
                     />
+                  </View>
 
-                    <TouchableOpacity style={styles.button} onPress={uploadImage}>
-                        <Text style={styles.buttonText}>Upload</Text>
-                    </TouchableOpacity>
-                </ScrollView>
+                  <Tagging />
+              </ScrollView>
             </KeyboardAvoidingView>
         </TouchableWithoutFeedback>
     );
 }
 
+
 const styles = StyleSheet.create({
     container: {
         flex: 1, 
-        backgroundColor: '#15181B', // Dark background (same as feedStyles container)
+        backgroundColor: '#15181B', 
         width: '100%',
         height: '100%'
       },
+      topBar: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        paddingHorizontal: 20,
+        paddingTop: 30,    // Adjust for device notch
+        paddingBottom: 5,
+        backgroundColor: "transparent",
+      },
+      backButton: {
+        padding: 4,
+        borderRadius: 8,
+      },
       scrollViewContainer: {
         flexGrow: 1, 
-        justifyContent: 'center', // Centers content vertically
-        alignItems: 'center', // Centers content horizontally
+        paddingTop: 20,
+        paddingBottom: 50,
         paddingVertical: 30, // Prevents cut-off at top/bottom
         width: '100%',
       },
-      title: {
-        fontSize: 26,
+      // NEW container that specifically centers the image & name input
+      contentContainer: {
+        alignItems: "center",  // Center horizontally
+        marginBottom: 20,      // Some spacing at bottom
+      },
+      postTitleInput: {
+        width: '80%',
+        padding: 10,
+        fontSize: 18,
         fontWeight: 'bold',
         textAlign: 'center',
         marginBottom: 20,
-        color: '#F5EEE3', // White text (same as captions in feedStyles)
+        color: '#F5EEE3',
       },
+      
       image: {
-        width: '60%',
+        width: 210,
         height: 300,
         borderRadius: 10,
         marginBottom: 20,
         backgroundColor: '#9AA8B6', // Matches card background color in feedStyles
       },
-      input: {
-        padding: 12,
+      nameInput: {
+        padding: 5,
         marginBottom: 12,
-        borderWidth: 1,
-        borderColor: '#595F66', // Same as userInfo background in feedStyles
-        borderRadius: 8,
-        fontSize: 16,
+        fontSize: 12,
         width: '80%', // Ensures consistent width
-        backgroundColor: '#2D3338', // Same as feedHeader background in feedStyles
+        backgroundColor: 'transparent', 
         color: `#F5EEE3`,
       },
       captionInput: {
@@ -154,31 +190,16 @@ const styles = StyleSheet.create({
         backgroundColor: '#2D3338', // Same as feedHeader background in feedStyles
         color: `#F5EEE3`,
       },
-      button: {
-        backgroundColor: '#4A6FA5', // Blue background (same as bottomNav in feedStyles)
-        paddingVertical: 12,
+      postButton: {
+        backgroundColor: '#4DA6FD', // Blue background (same as bottomNav in feedStyles)
+        paddingVertical: 6,
         borderRadius: 8,
-        alignItems: 'center',
-        width: '80%',
-        marginTop: 20,
+        paddingHorizontal: 14,
+        marginTop: 0,
       },
-      buttonText: {
+      postButtonText: {
         color: '#F5EEE3', // White text (same as captions in feedStyles)
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: "600",
       },
-      backButton: {
-        position: 'absolute',
-        top: 20, // Adjust for notch safety
-        left: 5,
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
-        zIndex: 10,
-    },
-    backButtonText: {
-        fontSize: 30,
-        color: '#F5EEE3', // Same as other text colors
-        fontWeight: 'bold',
-    },
 });

@@ -70,17 +70,27 @@ export default function App() {
         <View style={styles.imageContainer}>
           <Image source={{ uri }} style={styles.imagePreview} />
         </View>
+  
         <View style={styles.shutterContainer}>
-          <Pressable onPress={() => setUri(null)}>
-            <MaterialIcons name="cached" size={32} color="white" />
+          {/* Left Icon: Retake */}
+          <Pressable onPress={() => setUri(null)} style={styles.iconButton}>
+            <MaterialIcons name="cached" size={50} color="#F5EEE3" />
           </Pressable>
-          <Pressable onPress={() => router.push(`./upload?imageUri=${encodeURIComponent(uri!)}`)}>
-            <MaterialIcons name="check-circle" size={32} color="white" />
+  
+          {/* Right Icon: Check with Beige Circle */}
+          <Pressable
+            onPress={() =>
+              router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`)
+            }
+            style={styles.checkButton}
+          >
+            <MaterialIcons name="check" size={32} color="#0F1112" />
           </Pressable>
         </View>
       </View>
     );
-  };  
+  };
+   
 
   const renderCamera = () => {
     return (
@@ -114,7 +124,7 @@ export default function App() {
               >
                 <View
                   style={[
-                    styles.shutterBtn,
+                    styles.shutterBtnInner,
                     {
                       opacity: pressed ? 0.5 : 1,
                     },
@@ -151,25 +161,33 @@ const styles = StyleSheet.create({
   },
   shutterContainer: {
     position: "absolute",
-    bottom: 44,
+    bottom: 50,
     left: 0,
     right: 0,
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "space-evenly",
     alignItems: "center",
-    paddingHorizontal: 5, 
-  },
+    // Optionally reduce or remove horizontal padding
+    paddingHorizontal: 0,
+  },  
   shutterBtn: {
-    width: 80, 
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "white",
+    width: 70, 
+    height: 70,
+    borderRadius: 35,
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 5,
-    borderColor: "gray",
+    borderColor: "#A6C7E8",
     flexShrink: 0, // Prevents unwanted resizing
   },  
+  // Inner circle of the shutter button
+  shutterBtnInner: {
+    width: 55,
+    height: 55,
+    borderRadius: 30,
+    backgroundColor: "#A6C7E8",
+  },
   imageContainer: {
     width: "90%",
     aspectRatio: 3 / 4, // Adjust ratio as needed
@@ -180,6 +198,19 @@ const styles = StyleSheet.create({
   imagePreview: {
     width: "100%",
     height: "100%",
+  },
+  iconButton: {
+    // For the retake icon
+    padding: 0,
+  },
+  checkButton: {
+    // Beige circle behind check icon
+    backgroundColor: "#F5EEE3",
+    width: 50,
+    height: 50,
+    borderRadius: 30,
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButton: {
     position: "absolute",
