@@ -45,7 +45,7 @@ export default function UploadPage() {
                     console.error('Error saving image metadata:', insertError);
                 } else {
                     console.log('Image uploaded successfully:', name, caption);
-                    router.replace("/feedPage");
+                    router.replace("/pages/feedPage");
                 }
             }
         } catch (error) {

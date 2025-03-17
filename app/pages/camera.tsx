@@ -74,7 +74,7 @@ export default function App() {
           <Pressable onPress={() => setUri(null)}>
             <MaterialIcons name="cached" size={32} color="white" />
           </Pressable>
-          <Pressable onPress={() => router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`)}>
+          <Pressable onPress={() => router.push(`./upload?imageUri=${encodeURIComponent(uri!)}`)}>
             <MaterialIcons name="check-circle" size={32} color="white" />
           </Pressable>
         </View>
