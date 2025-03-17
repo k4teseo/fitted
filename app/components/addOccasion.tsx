@@ -11,7 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { useUploadContext } from "./context/uploadContext"; // Import context
+import { useUploadContext } from "../context/uploadContext"; // Import context
 
 export default function AddOccasion() {
   const router = useRouter();
