@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, TextInput, FlatList, ActivityIndicat
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { useUploadContext } from "./uploadContext"; 
+import { useUploadContext } from "../context/uploadContext"; 
 
 export default function AddBrand() {
   const router = useRouter();

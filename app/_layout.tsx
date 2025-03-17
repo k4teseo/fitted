@@ -1,5 +1,5 @@
 import { Stack } from "expo-router";
-import { UploadProvider } from "./uploadContext"; // Import the UploadProvider
+import { UploadProvider } from "./context/uploadContext"; // Import the UploadProvider
 
 export default function RootLayout() {
   return (

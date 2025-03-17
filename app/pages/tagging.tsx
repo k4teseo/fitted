@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList, Switch, Linking } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useUploadContext } from "./uploadContext"; 
+import { useUploadContext } from "../context/uploadContext"; 
 import { supabase } from "@/lib/supabase"; 
 
 export default function Tagging() {
@@ -72,7 +72,7 @@ export default function Tagging() {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={styles.sectionTitle}>Add Occasion<Text style={styles.asterisk}>*</Text></Text>
-        <Pressable style={styles.chevronButton} onPress={() => router.push("/addOccasion")}>
+        <Pressable style={styles.chevronButton} onPress={() => router.push("../components/addOccasion")}>
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
@@ -88,7 +88,7 @@ export default function Tagging() {
 
       <View style={styles.headerRow}>
         <Text style={styles.sectionTitle}>Add Brand</Text>
-        <Pressable style={styles.chevronButton} onPress={() => router.push("/addBrand")}>
+        <Pressable style={styles.chevronButton} onPress={() => router.push("../components/addBrand")}>
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
