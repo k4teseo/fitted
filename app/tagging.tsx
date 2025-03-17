@@ -1,5 +1,4 @@
-// app/tagging.tsx
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -11,69 +10,49 @@ import {
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useUploadContext } from "./uploadContext"; 
 
 /** Example data */
 const OCCASIONS = ["Everyday Wear", "Coffee Date", "Job Interview"];
 const BRANDS = ["Abercrombie & Fitch", "Lululemon", "Uniqlo"];
 
-type TaggingProps = {
-  selectedBrands: string[];
-  selectedOccasions: string[];
-  onTagsSelected?: (occasions: string[], brands: string[]) => void;
-};
-
-export default function Tagging({ selectedBrands = [], selectedOccasions = [], onTagsSelected }: TaggingProps) {
-  const [localSelectedOccasions, setLocalSelectedOccasions] = useState<string[]>(selectedOccasions);
-  const [localSelectedBrands, setLocalSelectedBrands] = useState<string[]>(selectedBrands);
+export default function Tagging() {
+  const { selectedBrands, setSelectedBrands, selectedOccasions, setSelectedOccasions } = useUploadContext();
   const [openAIEnabled, setOpenAIEnabled] = useState(false);
-
   const router = useRouter();
 
-  // Toggle an occasion tag on/off
+  // Toggle an occasion tag on/off 
   const toggleOccasion = (occasion: string) => {
-    setLocalSelectedOccasions((prev) =>
-      prev.includes(occasion)
-        ? prev.filter((item) => item !== occasion)
-        : [...prev, occasion]
+    setSelectedOccasions((prev) =>
+      prev.includes(occasion) ? prev.filter((item) => item !== occasion) : [...prev, occasion]
     );
   };
 
-  // Toggle a brand tag on/off
+  // Toggle a brand tag on/off 
   const toggleBrand = (brand: string) => {
-    setLocalSelectedBrands((prev) =>
-      prev.includes(brand)
-        ? prev.filter((item) => item !== brand)
-        : [...prev, brand]
+    setSelectedBrands((prev) =>
+      prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand]
     );
   };
-
-  // Whenever selections change, call onTagsSelected
-  useEffect(() => {
-    if (onTagsSelected) {
-      onTagsSelected(localSelectedOccasions, localSelectedBrands);
-    }
-  }, [localSelectedOccasions, localSelectedBrands]);
 
   // Renders a single tag "pill"
-  const renderTag = (tag: string, selected: boolean, onPress: () => void) => {
-    return (
-      <Pressable
-        onPress={onPress}
-        style={[
-          styles.tagButton,
-          selected && styles.tagButtonSelected,
-        ]}
+  const renderTag = (tag: string, selected: boolean, onPress: () => void) => (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.tagButton,
+        selected && styles.tagButtonSelected,
+      ]}
+    >
+      <Text
+        style={[styles.tagText, selected && styles.tagTextSelected]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
       >
-        <Text
-          style={[styles.tagText, selected && styles.tagTextSelected]}
-          numberOfLines={1}
-          ellipsizeMode="tail"
-        >
-          {tag}
-        </Text>
-      </Pressable>
-    );
-  };
+        {tag}
+      </Text>
+    </Pressable>
+  );
 
   return (
     <View style={styles.container}>
@@ -98,7 +77,7 @@ export default function Tagging({ selectedBrands = [], selectedOccasions = [], o
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
         renderItem={({ item }) =>
-          renderTag(item, localSelectedOccasions.includes(item), () =>
+          renderTag(item, selectedOccasions.includes(item), () =>
             toggleOccasion(item)
           )
         }
@@ -123,7 +102,7 @@ export default function Tagging({ selectedBrands = [], selectedOccasions = [], o
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
         renderItem={({ item }) =>
-          renderTag(item, localSelectedBrands.includes(item), () =>
+          renderTag(item, selectedBrands.includes(item), () =>
             toggleBrand(item)
           )
         }
@@ -198,7 +177,6 @@ const styles = StyleSheet.create({
     color: "#0F1112",
     fontWeight: "500",
   },
-  // "Add Tags from OpenAI" section
   aiSubtitle: {
     color: "#6D757E",
     fontSize: 10,

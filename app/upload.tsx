@@ -1,3 +1,4 @@
+// app/upload.tsx
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { 
@@ -7,120 +8,81 @@ import {
 import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
+import { UploadProvider, useUploadContext } from "./uploadContext"; 
 
-export default function UploadPage() {
-    const params = useLocalSearchParams() as { 
-        imageUri?: string;
-        selectedBrands?: string;
-        selectedOccasions?: string;
-    };
+function UploadPageContent() {
+    const params = useLocalSearchParams() as { imageUri?: string };
     const router = useRouter();
-
     const imageUri = params.imageUri;
 
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
-
-    // Tag arrays
-    const [selectedBrands, setSelectedBrands] = useState<string[]>(
-        params.selectedBrands ? JSON.parse(params.selectedBrands as string) : []
-      );
-    const [selectedOccasions, setSelectedOccasions] = useState<string[]>(
-        params.selectedOccasions ? JSON.parse(params.selectedOccasions as string) : []
-    );
+    const { selectedBrands, selectedOccasions } = useUploadContext(); // Use Context
 
     if (!imageUri) {
         return (
           <View style={styles.container}>
-          <View style={styles.topBar}>
-            <TouchableOpacity 
-              style={styles.backButton} 
-              onPress={() => router.back()}
-            >
-              <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
-            </TouchableOpacity>
-            <View />
+            <View style={styles.topBar}>
+              <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+              </TouchableOpacity>
+            </View>
+            <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+              No image found
+            </Text>
           </View>
-          <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
-            No image found
-          </Text>
-        </View>
-      );
+        );
     }
 
-      /**
-     * Handle final "Post" action:
-     * 1) Upload the image to Supabase Storage (if needed).
-     * 2) Insert a row into the `images` table with:
-     *    - image_path
-     *    - caption (postTitle)
-     *    - username (name)
-     *    - tags: combined array of selectedBrands + selectedOccasions
-     */
     const handlePost = async () => {
         if (!imageUri || !name) return;
-    
+
         try {
-          // 1) Convert the image URI into a blob/arrayBuffer for upload
             const response = await fetch(imageUri);
             const blob = await response.blob();
             const arrayBuffer = await new Response(blob).arrayBuffer();
             const fileName = `public/${Date.now()}.jpg`;
-    
-          // 2) Upload the image to Supabase Storage
+
             const { error: uploadError } = await supabase.storage
                 .from("images")
                 .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
-    
+
             if (uploadError) {
                 console.error("Error uploading image:", uploadError);
                 return;
             }
 
-          // Combine brand + occasion tags into one array
-            const allTags = [...selectedBrands, ...selectedOccasions];
-    
-          // 3) Insert a record into `images` table, including the tags array
             const { error: insertError } = await supabase
                 .from("images")
                 .insert([{
                     image_path: fileName,
                     caption: postTitle,
                     username: name,
-                    selectedbrands: selectedBrands,      // e.g. ['Nike', 'Adidas']
-                    selectedoccasions: selectedOccasions,   // e.g. ['Coffee Date', 'Beach Day']     
+                    selectedbrands: selectedBrands,      
+                    selectedoccasions: selectedOccasions,     
                 }]);
-    
+
             if (insertError) {
                 console.error("Error saving image with tags:", insertError);
             } else {
-                console.log("Post uploaded successfully with tags:", postTitle, allTags);
+                console.log("Post uploaded successfully with tags:", postTitle);
                 router.replace("/feedPage");
             }
         } catch (error) {
             console.error("Error during upload:", error);
         }
-    };    
-
-    const handleTagsSelected = (occasions: string[], brands: string[]) => {
-        setSelectedOccasions(occasions);
-        setSelectedBrands(brands);
     };
-    
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <KeyboardAvoidingView 
                 style={styles.container} 
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0} // Adjusts for different platforms
             >
-                {/* Top Bar */}
                 <View style={styles.topBar}>
                   <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                     <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
                   </TouchableOpacity>
-
-                  {/* Post Button on Right */}
                   <TouchableOpacity style={styles.postButton} onPress={handlePost}>
                     <Text style={styles.postButtonText}>Post</Text>
                   </TouchableOpacity>
@@ -131,38 +93,41 @@ export default function UploadPage() {
                     contentContainerStyle={styles.scrollViewContainer} 
                     keyboardShouldPersistTaps="handled"
                 >
-                {/* Centered container for Title, Image, Name Input */}
-                <View style={styles.contentContainer}>
-                  <TextInput
-                    style={styles.postTitleInput}
-                    placeholder="Write Post Title..."
-                    placeholderTextColor="#7E8487"
-                    value={postTitle}
-                    onChangeText={setPostTitle}
-                  />
+                  <View style={styles.contentContainer}>
+                    <TextInput
+                      style={styles.postTitleInput}
+                      placeholder="Write Post Title..."
+                      placeholderTextColor="#7E8487"
+                      value={postTitle}
+                      onChangeText={setPostTitle}
+                    />
 
-                  <Image source={{ uri: imageUri }} style={styles.image} />
+                    <Image source={{ uri: imageUri }} style={styles.image} />
 
-                  <TextInput
-                    style={styles.nameInput}
-                    placeholder="Input your name here..."
-                    placeholderTextColor="#7E8487"
-                    value={name}
-                    onChangeText={setName}
-                  />
-                </View>
+                    <TextInput
+                      style={styles.nameInput}
+                      placeholder="Input your name here..."
+                      placeholderTextColor="#7E8487"
+                      value={name}
+                      onChangeText={setName}
+                    />
+                  </View>
 
-                {/* Tagging UI below */}
-                <Tagging 
-                  selectedBrands={selectedBrands} 
-                  selectedOccasions={selectedOccasions} 
-                  onTagsSelected={handleTagsSelected}
-                  />
+                  <Tagging />
               </ScrollView>
             </KeyboardAvoidingView>
            </TouchableWithoutFeedback>
         );
-    }
+}
+
+export default function UploadPage() {
+  return (
+    <UploadProvider>
+      <UploadPageContent />
+    </UploadProvider>
+  );
+}
+
 
 const styles = StyleSheet.create({
     container: {
