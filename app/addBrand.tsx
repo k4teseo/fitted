@@ -86,23 +86,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 40, // for iOS notch
     paddingBottom: 30,
     backgroundColor: "#15181B",
-    width: "100%",  // Ensure full width
-    position: "relative",
+    width: "100%",
   },
   backButton: {
-    position: "absolute",
-    left: 20,
-    padding: 10,
+    padding: 0,
+    marginRight: 0,
   },
   topTitle: {
-    flex: 1, // Take up full space
     color: "#F5EEE3",
     fontSize: 22,
     fontWeight: "400",
-    textAlign: "center",  // Center the text
+    textAlign: "center",
+    flex: 1,
   },
   // Search Bar
   searchContainer: {
@@ -141,13 +139,29 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   selectedBrand: {
-    backgroundColor: "#7F8A95",
+    backgroundColor: "#7F8A95", // Highlight selected occasion
   },
   selectedBrandText: {
-    color: "#15181B",
+    color: "#15181B", // Change text color for selected occasion
     fontWeight: "bold",
   },
   loader: {
     marginTop: 20,
+  },
+  selectedContainer: {
+    padding: 20,
+    backgroundColor: "#15181B",
+    marginTop: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#B4CFEA",
+  },
+  selectedTitle: {
+    color: "#F5EEE3",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  selectedBrands: {
+    color: "#B4CFEA",
+    fontSize: 14,
   },
 });

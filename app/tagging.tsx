@@ -55,6 +55,19 @@ export default function Tagging() {
     </Pressable>
   );
 
+  // Sort brands and occasions to have selected tags first
+  const sortedBrands = availableBrands.sort((a, b) => {
+    const isASelected = selectedBrands.includes(a);
+    const isBSelected = selectedBrands.includes(b);
+    return (isBSelected ? 1 : 0) - (isASelected ? 1 : 0); // Selected ones come first
+  });
+
+  const sortedOccasions = availableOccasions.sort((a, b) => {
+    const isASelected = selectedOccasions.includes(a);
+    const isBSelected = selectedOccasions.includes(b);
+    return (isBSelected ? 1 : 0) - (isASelected ? 1 : 0); // Selected ones come first
+  });
+
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
@@ -65,7 +78,7 @@ export default function Tagging() {
       </View>
 
       <FlatList
-        data={availableOccasions}
+        data={sortedOccasions}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tagsContainer}
@@ -81,7 +94,7 @@ export default function Tagging() {
       </View>
 
       <FlatList
-        data={availableBrands}
+        data={sortedBrands}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tagsContainer}
