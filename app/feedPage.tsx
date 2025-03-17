@@ -1,4 +1,3 @@
-// app/FeedPage.tsx
 import React, { useState } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -19,28 +18,58 @@ type FeedItemData = {
   caption: string;
   username: string;
   postImage: string;
+  selectedbrands: string[];
+  selectedoccasions: string[];
 };
 
 // A small component for each feed item
 const FeedItem = ({ item }: { item: FeedItemData }) => {
   const router = useRouter();
+  const combinedTags = [...(item.selectedbrands ?? []), ...(item.selectedoccasions ?? [])];
+
+  // Limit to a maximum of 3 tags
+  const maxTags = 3;
+  const visibleTags = combinedTags.slice(0, maxTags);
 
   return (
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        // Navigate to postPage with the post's id in the query
         router.push(`/postPage?id=${item.id}`);
       }}
+      activeOpacity={0.9} // Reduce interference with scroll
     >
       {/* Image Container */}
       <View style={feedStyles.imageContainer}>
         <Image source={{ uri: item.postImage }} style={feedStyles.postImage} />
       </View>
 
-      {/* User Info Bar at the Bottom of the Card */}
+      {/* Info at the Bottom of the Card */}
       <View style={feedStyles.userInfo}>
+        {/* Caption */}
         <Text style={feedStyles.caption}>{item.caption}</Text>
+
+        {/* Ensure Tag Pills are Scrollable */}
+        {visibleTags.length > 0 && (
+          <View style={{ flexDirection: "row", marginTop: 5 }}>
+            <FlatList
+              data={visibleTags}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              nestedScrollEnabled={true} // Ensure it scrolls inside another scrollable view
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ flexGrow: 1 }} // Ensure it takes full width
+              keyExtractor={(tag, index) => `${tag}-${index}`}
+              renderItem={({ item: tag }) => (
+                <View style={feedStyles.tagPill}>
+                  <Text style={feedStyles.tagText}>{tag}</Text>
+                </View>
+              )}
+            />
+          </View>
+        )}
+
+        {/* Username */}
         <Text style={feedStyles.username}>{item.username}</Text>
       </View>
     </TouchableOpacity>
@@ -60,19 +89,23 @@ export default function FeedPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("images")
-      .select("id, caption, username, image_path")
+      .select("id, caption, username, image_path, selectedbrands, selectedoccasions")
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching images:", error);
     } else {
-      const formattedData = data.map((item) => ({
-        id: item.id,
-        caption: item.caption,
-        username: item.username,
-        postImage: supabase.storage.from("images").getPublicUrl(item.image_path)?.data?.publicUrl || "", // Ensure URL is valid
+      const formattedData = data.map((row: any) => ({
+        id: row.id,
+        caption: row.caption,
+        username: row.username,
+        postImage:
+          supabase.storage
+            .from("images")
+            .getPublicUrl(row.image_path)?.data?.publicUrl || "",
+        selectedbrands: row.selectedbrands ?? [],
+        selectedoccasions: row.selectedoccasions ?? [],
       }));
-
       setFeedData(formattedData);
     }
     setLoading(false);

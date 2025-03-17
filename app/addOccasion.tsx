@@ -1,4 +1,3 @@
-// app/addOccasion.tsx
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -11,14 +10,15 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { supabase } from "@/lib/supabase"
+import { supabase } from "@/lib/supabase";
+import { useUploadContext } from "./uploadContext"; // Import context
 
 export default function AddOccasion() {
   const router = useRouter();
+  const { selectedOccasions, setSelectedOccasions } = useUploadContext(); // Get context values
   const [searchTerm, setSearchTerm] = useState("");
   const [occasions, setOccasions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchOccasions = async () => {
@@ -72,13 +72,6 @@ export default function AddOccasion() {
     );
   };
 
-  const handleConfirmSelection = () => {
-    router.push({
-      pathname: "/upload",
-      params: { selectedBrands: JSON.stringify(selectedOccasions) },
-    });
-  };
-
   return (
     <View style={styles.container}>
       {/* Top Bar */}
@@ -113,18 +106,14 @@ export default function AddOccasion() {
       {loading ? (
         <ActivityIndicator size="large" color="#B4CFEA" style={styles.loader} />
       ) : (
-      <FlatList
-        data={filteredOccasions}
-        keyExtractor={(item) => item}
-        renderItem={renderOccasionItem}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
+        <FlatList
+          data={filteredOccasions}
+          keyExtractor={(item) => item}
+          renderItem={renderOccasionItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        />
       )}
-
-      <Pressable style={styles.confirmButton} onPress={handleConfirmSelection}>
-        <Text style={styles.confirmText}>Confirm</Text>
-      </Pressable>
     </View>
   );
 }
@@ -213,18 +202,5 @@ const styles = StyleSheet.create({
   selectedOccasions: {
     color: "#B4CFEA",
     fontSize: 14,
-  },
-  confirmButton: {
-    backgroundColor: "#7F8A95",
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    marginTop: 20,
-  },
-  confirmText: {
-    color: "#15181B",
-    fontWeight: "bold",
-    fontSize: 16,
   },
 });

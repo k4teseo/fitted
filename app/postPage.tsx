@@ -19,7 +19,8 @@ type PostData = {
   username: string;
   caption: string;
   postImage: string;
-  tags?: string[]; // or more complex structure if you store multiple tags
+  selectedbrands: string[];
+  selectedoccasions: string[];
 };
 
 export default function PostPage() {
@@ -36,7 +37,7 @@ export default function PostPage() {
     // Example: If your table is named "images" and you store tags in "tags" column
     const { data, error } = await supabase
       .from("images")
-      .select("*")
+      .select("id, username, caption, image_path, selectedbrands, selectedoccasions")
       .eq("id", id)
       .single();
 
@@ -52,7 +53,8 @@ export default function PostPage() {
           supabase.storage
             .from("images")
             .getPublicUrl(data.image_path)?.data?.publicUrl || "",
-        tags: data.tags || [], // if you have a tags array in your table
+        selectedbrands: data.selectedbrands ?? [],
+        selectedoccasions: data.selectedoccasions ?? [],
       };
       setPost(postData);
     }
@@ -87,6 +89,9 @@ export default function PostPage() {
     );
   }
 
+  // Combine both arrays for a single list of tag “pills”
+  const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
+
   // Renders a single tag "pill"
   const renderTag = ({ item }: { item: string }) => {
     return (
@@ -113,16 +118,15 @@ export default function PostPage() {
         {/* Post Title (User’s caption) */}
         <Text style={styles.postTitle}>{post.caption}</Text>
 
-        {/* Tags (if any) */}
-        {post.tags && post.tags.length > 0 && (
-          <FlatList
-            data={post.tags}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tagsContainer}
-            keyExtractor={(item) => item}
-            renderItem={renderTag}
-          />
+        {/* Tag Section */}
+        {combinedTags.length > 0 && (
+          <View style={styles.tagsContainer}>
+            {combinedTags.map((tag, index) => (
+              <View key={index} style={styles.tagPill}>
+                <Text style={styles.tagText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
         )}
       </ScrollView>
     </SafeAreaView>
@@ -165,21 +169,24 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#A5C6E8",
-    marginBottom: 12,
+    marginBottom: 14,
   },
+  // Tag layout: multi-line wrap
   tagsContainer: {
     flexDirection: "row",
+    flexWrap: "wrap", // allows multiple lines
+    marginBottom: 20,
   },
   tagPill: {
     backgroundColor: "#262A2F",
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 12,
+    borderRadius: 4,
     marginRight: 10,
-    marginBottom: 10,
+    marginBottom: 12,
   },
   tagText: {
-    color: "#B4CFEA",
+    color: "#6D757E",
     fontSize: 14,
   },
 });
