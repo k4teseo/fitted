@@ -80,7 +80,7 @@ export default function App() {
           {/* Right Icon: Check with Beige Circle */}
           <Pressable
             onPress={() =>
-              router.push(`/upload?imageUri=${encodeURIComponent(uri!)}`)
+              router.push(`./upload?imageUri=${encodeURIComponent(uri!)}`)
             }
             style={styles.checkButton}
           >

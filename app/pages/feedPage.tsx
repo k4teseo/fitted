@@ -8,8 +8,8 @@ import {
   Image,
   TouchableOpacity,
 } from "react-native";
-import feedStyles from "./feedStyles";
-import { FittedLogo, FeedPageIcon, PlusIcon } from "./Icons"; // Icons
+import feedStyles from "../feedStyles";
+import { FittedLogo, FeedPageIcon, PlusIcon } from "../Icons"; // Icons
 import { supabase } from "@/lib/supabase"; // Import Supabase client
 
 // Type for the feed item (optional)
@@ -159,7 +159,7 @@ export default function FeedPage() {
           style={feedStyles.navItem}
           onPress={() => {
             setActiveTab("add");
-            router.push("/camera");
+            router.push("/pages/camera");
           }}
         >
           {activeTab === "add" ? (

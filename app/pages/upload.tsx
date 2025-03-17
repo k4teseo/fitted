@@ -7,7 +7,7 @@ import {
 import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
-import { useUploadContext } from "./uploadContext";  // No need to import UploadProvider
+import { useUploadContext } from "../context/uploadContext";  // No need to import UploadProvider
 
 export default function UploadPage() {
     const params = useLocalSearchParams() as { imageUri?: string };
@@ -65,7 +65,7 @@ export default function UploadPage() {
                 console.error("Error saving image with tags:", insertError);
             } else {
                 console.log("Post uploaded successfully with tags:", postTitle);
-                router.replace("/feedPage");
+                router.replace("./feedPage");
             }
         } catch (error) {
             console.error("Error during upload:", error);
