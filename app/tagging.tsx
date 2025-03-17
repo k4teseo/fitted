@@ -1,54 +1,55 @@
-import React, { useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-  Switch,
-  Linking,
-} from "react-native";
+import React, { useState, useEffect } from "react";
+import { View, Text, StyleSheet, Pressable, FlatList, Switch, Linking } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useUploadContext } from "./uploadContext"; 
-
-/** Example data */
-const OCCASIONS = ["Everyday Wear", "Coffee Date", "Job Interview"];
-const BRANDS = ["Abercrombie & Fitch", "Lululemon", "Uniqlo"];
+import { supabase } from "@/lib/supabase"; 
 
 export default function Tagging() {
   const { selectedBrands, setSelectedBrands, selectedOccasions, setSelectedOccasions } = useUploadContext();
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [availableOccasions, setAvailableOccasions] = useState<string[]>([]);
   const [openAIEnabled, setOpenAIEnabled] = useState(false);
   const router = useRouter();
 
-  // Toggle an occasion tag on/off 
+  useEffect(() => {
+    const fetchTags = async () => {
+      const { data: brandsData, error: brandsError } = await supabase
+        .from("tags")
+        .select("name")
+        .eq("tag_type", "brand");
+
+      const { data: occasionsData, error: occasionsError } = await supabase
+        .from("tags")
+        .select("name")
+        .eq("tag_type", "occasion");
+
+      if (brandsError || occasionsError) {
+        console.error("Error fetching tags:", brandsError || occasionsError);
+      } else {
+        setAvailableBrands(brandsData.map((item) => item.name));
+        setAvailableOccasions(occasionsData.map((item) => item.name));
+      }
+    };
+
+    fetchTags();
+  }, []);
+
   const toggleOccasion = (occasion: string) => {
     setSelectedOccasions((prev) =>
       prev.includes(occasion) ? prev.filter((item) => item !== occasion) : [...prev, occasion]
     );
   };
 
-  // Toggle a brand tag on/off 
   const toggleBrand = (brand: string) => {
     setSelectedBrands((prev) =>
       prev.includes(brand) ? prev.filter((item) => item !== brand) : [...prev, brand]
     );
   };
 
-  // Renders a single tag "pill"
   const renderTag = (tag: string, selected: boolean, onPress: () => void) => (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.tagButton,
-        selected && styles.tagButtonSelected,
-      ]}
-    >
-      <Text
-        style={[styles.tagText, selected && styles.tagTextSelected]}
-        numberOfLines={1}
-        ellipsizeMode="tail"
-      >
+    <Pressable onPress={onPress} style={[styles.tagButton, selected && styles.tagButtonSelected]}>
+      <Text style={[styles.tagText, selected && styles.tagTextSelected]} numberOfLines={1} ellipsizeMode="tail">
         {tag}
       </Text>
     </Pressable>
@@ -56,71 +57,43 @@ export default function Tagging() {
 
   return (
     <View style={styles.container}>
-      {/* Row: "Add Occasion" + Chevron */}
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>
-          Add Occasion<Text style={styles.asterisk}>*</Text>
-        </Text>
-        <Pressable
-          style={styles.chevronButton}
-          onPress={() => router.push("/addOccasion")}
-        >
+        <Text style={styles.sectionTitle}>Add Occasion<Text style={styles.asterisk}>*</Text></Text>
+        <Pressable style={styles.chevronButton} onPress={() => router.push("/addOccasion")}>
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
 
-      {/* Horizontal list of occasions */}
       <FlatList
-        data={OCCASIONS}
+        data={availableOccasions}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
-        renderItem={({ item }) =>
-          renderTag(item, selectedOccasions.includes(item), () =>
-            toggleOccasion(item)
-          )
-        }
+        renderItem={({ item }) => renderTag(item, selectedOccasions.includes(item), () => toggleOccasion(item))}
       />
 
-      {/* Row: "Add Brand" + Chevron */}
       <View style={styles.headerRow}>
         <Text style={styles.sectionTitle}>Add Brand</Text>
-        <Pressable
-          style={styles.chevronButton}
-          onPress={() => router.push("/addBrand")}
-        >
+        <Pressable style={styles.chevronButton} onPress={() => router.push("/addBrand")}>
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
 
-      {/* Horizontal list of brands */}
       <FlatList
-        data={BRANDS}
+        data={availableBrands}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.tagsContainer}
         keyExtractor={(item) => item}
-        renderItem={({ item }) =>
-          renderTag(item, selectedBrands.includes(item), () =>
-            toggleBrand(item)
-          )
-        }
+        renderItem={({ item }) => renderTag(item, selectedBrands.includes(item), () => toggleBrand(item))}
       />
 
-      {/* Add tags from OpenAI section */}
       <View style={[styles.headerRow, { marginBottom: 0 }]}>
         <Text style={styles.sectionTitle}>Add Tags from OpenAI</Text>
-        <Switch
-          trackColor={{ false: "#767577", true: "#4DA6FD" }}
-          thumbColor={openAIEnabled ? "#F5EEE3" : "#f4f3f4"}
-          onValueChange={setOpenAIEnabled}
-          value={openAIEnabled}
-        />
+        <Switch trackColor={{ false: "#767577", true: "#4DA6FD" }} thumbColor={openAIEnabled ? "#F5EEE3" : "#f4f3f4"} onValueChange={setOpenAIEnabled} value={openAIEnabled} />
       </View>
-      <Text style={styles.aiSubtitle}>
-        AI feature that will analyze your post and create tags
-      </Text>
+      <Text style={styles.aiSubtitle}>AI feature that will analyze your post and create tags</Text>
       <Pressable onPress={() => Linking.openURL("https://example.com")}>
         <Text style={styles.learnMore}>Learn more</Text>
       </Pressable>

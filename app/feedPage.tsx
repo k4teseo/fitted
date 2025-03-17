@@ -1,4 +1,3 @@
-// app/FeedPage.tsx
 import React, { useState } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -19,28 +18,26 @@ type FeedItemData = {
   caption: string;
   username: string;
   postImage: string;
-  selectedbrands: string[];    
+  selectedbrands: string[];
   selectedoccasions: string[];
 };
 
 // A small component for each feed item
 const FeedItem = ({ item }: { item: FeedItemData }) => {
   const router = useRouter();
-
-  // Combine brand + occasion tags
   const combinedTags = [...(item.selectedbrands ?? []), ...(item.selectedoccasions ?? [])];
 
-  // Limit the number of tags you want to show
-  const MAX_TAGS = 2;
-  const displayedTags = combinedTags.slice(0, MAX_TAGS); // first 2 tags
-  
+  // Limit to a maximum of 3 tags
+  const maxTags = 3;
+  const visibleTags = combinedTags.slice(0, maxTags);
+
   return (
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        // Navigate to postPage with the post's id in the query
         router.push(`/postPage?id=${item.id}`);
       }}
+      activeOpacity={0.9} // Reduce interference with scroll
     >
       {/* Image Container */}
       <View style={feedStyles.imageContainer}>
@@ -52,14 +49,23 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
         {/* Caption */}
         <Text style={feedStyles.caption}>{item.caption}</Text>
 
-        {/* Tag Pills */}
-        {displayedTags.length > 0 && (
-          <View style={feedStyles.tagContainer}>
-            {displayedTags.map((tag, index) => (
-              <View key={index} style={feedStyles.tagPill}>
-                <Text style={feedStyles.tagText}>{tag}</Text>
-              </View>
-            ))}
+        {/* Ensure Tag Pills are Scrollable */}
+        {visibleTags.length > 0 && (
+          <View style={{ flexDirection: "row", marginTop: 5 }}>
+            <FlatList
+              data={visibleTags}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              nestedScrollEnabled={true} // Ensure it scrolls inside another scrollable view
+              keyboardShouldPersistTaps="handled"
+              contentContainerStyle={{ flexGrow: 1 }} // Ensure it takes full width
+              keyExtractor={(tag, index) => `${tag}-${index}`}
+              renderItem={({ item: tag }) => (
+                <View style={feedStyles.tagPill}>
+                  <Text style={feedStyles.tagText}>{tag}</Text>
+                </View>
+              )}
+            />
           </View>
         )}
 
@@ -69,6 +75,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     </TouchableOpacity>
   );
 };
+
 // The main feed page component
 export default function FeedPage() {
   // Track the active tab: 'home' or 'add'
