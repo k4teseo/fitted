@@ -38,9 +38,14 @@ Built with **React Native, TypeScript, and Expo**, Fitted provides a seamless us
 ```sh
 git clone https://github.com/yourusername/fitted.git
 cd fitted
+```
 
 ### **2. Install Dependencies**
+```sh
 npm install
+```
 
 ### **3. Start the Development Server**
+```sh
 npx expo start
+```
