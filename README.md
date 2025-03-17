@@ -45,12 +45,24 @@ cd fitted
 npm install
 ```
 
-### **3. Start the Development Server**
+### **3. Install Expo CLI (If Not Installed)**
+```sh
+npm install -g expo-cli
+```
+
+### **4. Set Up Environment Variables**
+```sh
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+```
+
+
+### **5. Start the Development Server**
 ```sh
 npx expo start
 ```
 
-### **4. If the App is Not Building**
+### **6. If the App is Not Building**
 ```sh
 npx expo start -c
 ```
