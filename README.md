@@ -49,3 +49,8 @@ npm install
 ```sh
 npx expo start
 ```
+
+### **4. If the App is Not Building**
+```sh
+npx expo start -c
+```
