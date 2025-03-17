@@ -1,6 +1,6 @@
 # Fitted 👗  
 
-Fitted is a fashion-focused social media platform where users can post daily pictures of their outfits, tag each item with a brand, and share their style with friends.  
+Fitted is a fashion-focused social media platform designed for effortless style sharing. Users can post daily outfit photos, tag clothing items by brand, and connect with friends in a fun, casual space. With an emphasis on authentic self-expression and one-on-one interactions, Fitted makes it easy to explore personal style, get inspired, and celebrate fashion in a way that feels natural and engaging. 
 
 Built with **React Native, TypeScript, and Expo**, Fitted provides a seamless user experience, leveraging **Supabase** as its backend for authentication, storage, and database management.  
 
