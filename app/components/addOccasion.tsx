@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   TextInput,
   FlatList,
   ActivityIndicator,
+  Animated,
+  GestureResponderEvent,
 } from "react-native";
 import { getOrCreateUserId } from "@/lib/auth";
 import { useRouter } from "expo-router";
@@ -24,6 +26,9 @@ export default function AddOccasion() {
   const [userOccasions, setUserOccasions] = useState<string[]>([]);
 
   const [loading, setLoading] = useState(true);
+
+  // For animating the "Add" icon
+  const scaleValue = useRef(new Animated.Value(1)).current;
 
   // Fetch global tags from the "tags" table (for tag_type "occasion")
   useEffect(() => {
@@ -53,7 +58,8 @@ export default function AddOccasion() {
         const { data, error } = await supabase
           .from("user_tags")
           .select("name")
-          .eq("user_id", userId);
+          .eq("user_id", userId)
+          .eq("tag_type", "occasion");
 
         if (error) {
           console.error("Error fetching user occasions:", error);
@@ -85,27 +91,76 @@ export default function AddOccasion() {
       (occ) => occ.toLowerCase() === searchTerm.toLowerCase()
     );
 
+  // Helper: reorder so that:
+  // 1. Selected tags come first.
+  // 2. Among not selected tags, custom (user-added) tags come before global tags.
+  function reorderOccasions(
+    occasions: string[],
+    selected: string[],
+    userTags: string[]
+  ) {
+    return occasions.slice().sort((a, b) => {
+      const aSelected = selected.includes(a);
+      const bSelected = selected.includes(b);
+      // Selected tags always come first
+      if (aSelected && !bSelected) return -1;
+      if (!aSelected && bSelected) return 1;
+      // Both are either selected or not selected
+      if (!aSelected && !bSelected) {
+        const aIsCustom = userTags.includes(a);
+        const bIsCustom = userTags.includes(b);
+        if (aIsCustom && !bIsCustom) return -1;
+        if (!aIsCustom && bIsCustom) return 1;
+      }
+      return 0;
+    });
+  }
+
+  // Final list to display: reorder the filtered occasions
+  const finalOccasions = reorderOccasions(
+    filteredOccasions,
+    selectedOccasions,
+    userOccasions
+  );
+
+  // Select/unselect an occasion
   const handleSelectOccasion = (occasion: string) => {
-    setSelectedOccasions((prevSelected) => {
-      if (prevSelected.includes(occasion)) {
-        // Remove from selected if already selected
-        return prevSelected.filter((item) => item !== occasion);
+    setSelectedOccasions((prev) => {
+      if (prev.includes(occasion)) {
+        return prev.filter((item) => item !== occasion);
       } else {
-        // Add to selected if not already selected
-        return [...prevSelected, occasion];
+        return [...prev, occasion];
       }
     });
   };
 
-  // If user taps "Add + <searchTerm>", we add it locally and also mark it selected
+  // Animate the "Add" icon on press
+  const animateAddIcon = () => {
+    // Scale down slightly, then back up
+    Animated.sequence([
+      Animated.spring(scaleValue, {
+        toValue: 0.8,
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        friction: 3,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  // Add a new custom occasion
   const handleAddOccasion = async () => {
     try {
+      animateAddIcon(); // run the scale animation
+
       const userId = await getOrCreateUserId();
   
       // Insert the new custom tag into the user_tags table in Supabase
       const { error } = await supabase
         .from("user_tags")
-        .insert({ user_id: userId, name: searchTerm })
+        .insert({ user_id: userId, name: searchTerm, tag_type: "occasion" })
         .single();
   
       if (error) {
@@ -122,19 +177,64 @@ export default function AddOccasion() {
     }
   };
   
+  // Delete a user-added custom occasion (filtering by tag_type "occasion")
+  const handleDeleteOccasion = async (
+    occasion: string,
+    e: GestureResponderEvent
+  ) => {
+    e.stopPropagation();
+    try {
+      const userId = await getOrCreateUserId();
+      const { error } = await supabase
+        .from("user_tags")
+        .delete()
+        .eq("user_id", userId)
+        .eq("name", occasion)
+        .eq("tag_type", "occasion");
+
+      if (error) {
+        console.log("Error deleting custom occasion:", error);
+        return;
+      }
+      setUserOccasions((prev) => prev.filter((item) => item !== occasion));
+      setSelectedOccasions((prev) => prev.filter((item) => item !== occasion));
+    } catch (err) {
+      console.log("Error in handleDeleteOccasion:", err);
+    }
+  };
+
 
   // Render each occasion as a pressable item
   const renderOccasionItem = ({ item }: { item: string }) => {
     const isSelected = selectedOccasions.includes(item); // Check if the item is selected
+    const isUserTag = userOccasions.includes(item); // show "X" only for user-added
 
     return (
       <Pressable
-        style={[styles.occasionItem, isSelected && styles.selectedOccasion]} // Apply style if selected
+        style={[
+          styles.occasionPill,
+          isSelected && styles.selectedOccasion,
+        ]}
         onPress={() => handleSelectOccasion(item)}
       >
-        <Text style={[styles.occasionText, isSelected && styles.selectedOccasionText]}>
+        <Text
+          style={[
+            styles.occasionText,
+            isSelected && styles.selectedOccasionText,
+          ]}
+        >
           {item}
         </Text>
+
+        {/* Show "X" only for user tags */}
+        {isUserTag && (
+          <Pressable
+            style={styles.xCircle}
+            onPress={(e) => handleDeleteOccasion(item, e)}
+          >
+            <MaterialIcons name="close" size={14} color="#9AA8B6" />
+          </Pressable>
+        )}
       </Pressable>
     );
   };
@@ -175,13 +275,21 @@ export default function AddOccasion() {
         <>
           {isNewOccasion && (
             <Pressable style={styles.addRow} onPress={handleAddOccasion}>
-              <MaterialIcons name="add" size={20} color="#F5EEE3" style={{ marginRight: 8 }} />
+              {/* Animated "Add" Icon */}
+              <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+                <MaterialIcons
+                  name="add"
+                  size={20}
+                  color="#F5EEE3"
+                  style={{ marginRight: 8 }}
+                />
+              </Animated.View>
               <Text style={styles.addRowText}>Add “{searchTerm}”</Text>
             </Pressable>
           )}
 
           <FlatList
-            data={filteredOccasions}
+            data={finalOccasions}
             keyExtractor={(item) => item}
             renderItem={renderOccasionItem}
             contentContainerStyle={styles.listContent}
@@ -201,10 +309,12 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
     paddingHorizontal: 20,
     paddingTop: 40, // for iOS notch
     paddingBottom: 30,
     backgroundColor: "#15181B",
+    width: "100%",
   },
   backButton: {
     padding: 0,
@@ -215,6 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: "400",
     textAlign: "center",
+    flex: 1,
   },
   // Search Bar
   searchContainer: {
@@ -238,19 +349,19 @@ const styles = StyleSheet.create({
   clearIcon: {
     marginLeft: 6,
   },
-  // "Add new" row
+  /* "Add" row for new custom tag */
   addRow: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: 50,
-    marginBottom: 16,
+    marginBottom: 10,
     backgroundColor: "#262A2F",
     borderRadius: 8,
-    padding: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
   addRowText: {
-    marginLeft: 8,
-    color: "#B4CFEA",
+    color: "#F5EEE3",
     fontSize: 14,
   },
   // Occasion List
@@ -259,12 +370,21 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     paddingVertical: 5,
   },
-  occasionItem: {
+  /* Container for each row: the main tag button + optional "X" */
+  rowContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  occasionPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     backgroundColor: "#262A2F",
+    borderRadius: 8,
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 8,
-    marginBottom: 16,
+    marginBottom: 15,
   },
   occasionText: {
     color: "#B4CFEA",
@@ -279,6 +399,9 @@ const styles = StyleSheet.create({
   },
   loader: {
     marginTop: 20,
+  },
+  deleteButton: {
+    padding: 8,
   },
   selectedContainer: {
     padding: 20,
@@ -295,5 +418,15 @@ const styles = StyleSheet.create({
   selectedOccasions: {
     color: "#B4CFEA",
     fontSize: 14,
+  },
+  // Small circle or area for the X
+  xCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 8,
   },
 });
