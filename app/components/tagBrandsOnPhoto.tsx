@@ -81,7 +81,6 @@ export default function TagBrandsOnPhoto() {
   // On Done, upload tags if imageId exists (and do not clear tags here).
   const handleDone = async () => {
     if (!imageId) {
-      console.log("No imageId provided; returning to upload page.");
       router.replace({
         pathname: "/pages/upload",
         params: {
@@ -149,7 +148,7 @@ export default function TagBrandsOnPhoto() {
       <View style={styles.tagsListContainer}>
         <Text style={styles.tagsListHeader}>Tags</Text>
         {brandTags.length === 0 ? (
-          <Text style={{ color: "#aaa", marginTop: 5 }}>No tags yet. Tap the photo to add!</Text>
+          <Text style={{ color: "#aaa", marginTop: 10 }}>Tap photo to add brands.</Text>
         ) : (
           <FlatList
             data={brandTags}
@@ -174,19 +173,41 @@ export default function TagBrandsOnPhoto() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#15181B" },
-  loader: { marginTop: 10 },
-  imageContainer: { flex: 1, position: "relative" },
-  pressable: { flex: 1 },
-  image: { width: "100%", height: "100%" },
-  missingText: { color: "#fff", textAlign: "center", marginTop: 20 },
+  container: { 
+    flex: 1, 
+    backgroundColor: "#15181B" 
+},
+  loader: { 
+    marginTop: 10 
+},
+  imageContainer: { 
+    flex: 1, 
+    position: "relative" 
+},
+  pressable: { 
+    flex: 1 
+},
+  image: { 
+    width: "100%", 
+    height: "100%" 
+},
+  missingText: { 
+    color: "#fff", 
+    textAlign: "center", 
+    marginTop: 20 
+},
   tagPill: {
     position: "absolute",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: 4,
-    borderRadius: 6,
+    backgroundColor: "#202325",
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
   },
-  tagText: { color: "#fff", fontSize: 12 },
+  tagText: { 
+    color: "#9AA8B6", 
+    fontSize: 10,
+    fontWeight: 500, 
+},
   tagsListContainer: {
     backgroundColor: "#1C1F22",
     paddingHorizontal: 16,

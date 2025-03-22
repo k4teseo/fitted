@@ -372,15 +372,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   brandText: {
-    color: "#B4CFEA",
+    color: "#9AA8B6",
     fontSize: 14,
     flexShrink: 1,
   },
   selectedBrand: {
-    backgroundColor: "#7F8A95",
+    backgroundColor: "#B4CFEA",
   },
   selectedBrandText: {
-    color: "#15181B",
+    color: "#262A2F",
     fontWeight: "bold",
   },
   loader: {

@@ -251,13 +251,13 @@ const styles = StyleSheet.create({
   // A small “pill” for brand tags on the photo
   brandTagPill: {
     position: "absolute",
-    backgroundColor: "rgba(0,0,0,0.7)",
+    backgroundColor: "#202325",
     paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    paddingVertical: 6,
+    borderRadius: 4,
   },
   brandTagText: {
-    color: "#fff",
+    color: "#9AA8B6",
     fontSize: 12,
   },
   postTitle: {

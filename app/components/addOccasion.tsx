@@ -387,14 +387,14 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   occasionText: {
-    color: "#B4CFEA",
+    color: "#9AA8B6",
     fontSize: 14,
   },
   selectedOccasion: {
-    backgroundColor: "#7F8A95", // Highlight selected occasion
+    backgroundColor: "#A5C6E8", // Highlight selected occasion
   },
   selectedOccasionText: {
-    color: "#15181B", // Change text color for selected occasion
+    color: "#262A2F", // Change text color for selected occasion
     fontWeight: "bold",
   },
   loader: {
