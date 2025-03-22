@@ -1,5 +1,5 @@
 // app/postPage.tsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   View,
   Text,
@@ -8,12 +8,13 @@ import {
   SafeAreaView,
   ScrollView,
   Pressable,
-  FlatList,
+  ActivityIndicator,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 
+// Adjust this type as needed for your own table schema
 type PostData = {
   id: string;
   username: string;
@@ -23,18 +24,33 @@ type PostData = {
   selectedoccasions: string[];
 };
 
+type BrandTag = {
+  id: string;             // or number, depending on your DB
+  brand_name: string;
+  x_position: number;
+  y_position: number;
+};
+
 export default function PostPage() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+
+  // Main post data
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Fetch the post from supabase by ID
+  // For brand tags that were added during upload
+  const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
+  const [showTags, setShowTags] = useState(false);
+
+  // We need the layout of the Image container to position tags properly
+  const [photoLayout, setPhotoLayout] = useState({ width: 0, height: 0 });
+
+  // 1) Fetch the main post from "images"
   const fetchPost = async () => {
     if (!id) return;
     setLoading(true);
 
-    // Example: If your table is named "images" and you store tags in "tags" column
     const { data, error } = await supabase
       .from("images")
       .select("id, username, caption, image_path, selectedbrands, selectedoccasions")
@@ -43,8 +59,11 @@ export default function PostPage() {
 
     if (error) {
       console.error("Error fetching post:", error);
-    } else if (data) {
-      // Convert your supabase data to PostData
+      setLoading(false);
+      return;
+    }
+
+    if (data) {
       const postData: PostData = {
         id: data.id,
         username: data.username,
@@ -61,10 +80,28 @@ export default function PostPage() {
     setLoading(false);
   };
 
+  // 2) Fetch brand tags from "image_brand_tags"
+  const fetchBrandTags = async () => {
+    if (!id) return;
+
+    const { data, error } = await supabase
+      .from("image_brand_tags")
+      .select("*")
+      .eq("image_id", id);
+
+    if (error) {
+      console.error("Error fetching brand tags:", error);
+    } else if (data) {
+      setBrandTags(data as BrandTag[]);
+    }
+  };
+
   useEffect(() => {
     fetchPost();
+    fetchBrandTags();
   }, [id]);
 
+  // Basic loading / error checks
   if (!id) {
     return (
       <View style={styles.container}>
@@ -76,7 +113,8 @@ export default function PostPage() {
   if (loading) {
     return (
       <View style={styles.container}>
-        <Text style={{ color: "#fff" }}>Loading post...</Text>
+        <ActivityIndicator size="large" color="#B4CFEA" />
+        <Text style={{ color: "#fff", marginTop: 10 }}>Loading post...</Text>
       </View>
     );
   }
@@ -89,16 +127,12 @@ export default function PostPage() {
     );
   }
 
-  // Combine both arrays for a single list of tag “pills”
+  // Combine arrays for tag “pills” (if you still want them at the bottom, separate from brandTags)
   const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
 
-  // Renders a single tag "pill"
-  const renderTag = ({ item }: { item: string }) => {
-    return (
-      <View style={styles.tagPill}>
-        <Text style={styles.tagText}>{item}</Text>
-      </View>
-    );
+  // Toggle showing brand tags on the photo
+  const toggleTags = () => {
+    setShowTags((prev) => !prev);
   };
 
   return (
@@ -112,13 +146,49 @@ export default function PostPage() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Post Image */}
-        <Image source={{ uri: post.postImage }} style={styles.postImage} />
+        {/* Image Container with brand tags overlay */}
+        <View
+          style={styles.imageContainer}
+          onLayout={(e) => {
+            const { width, height } = e.nativeEvent.layout;
+            setPhotoLayout({ width, height });
+          }}
+        >
+          <Image
+            source={{ uri: post.postImage }}
+            style={styles.postImage}
+            resizeMode="cover"
+          />
+
+          {/* Tag icon in bottom-right corner */}
+          <Pressable style={styles.tagIconContainer} onPress={toggleTags}>
+            <MaterialIcons name="tag" size={24} color="#F5EEE3" />
+          </Pressable>
+
+          {/* Conditionally render brand tags */}
+          {showTags &&
+            brandTags.map((tag) => {
+              // Multiply x_position/y_position by container width/height to place the pill
+              const leftPos = tag.x_position * photoLayout.width;
+              const topPos = tag.y_position * photoLayout.height;
+              return (
+                <View
+                  key={tag.id}
+                  style={[
+                    styles.brandTagPill,
+                    { left: leftPos, top: topPos },
+                  ]}
+                >
+                  <Text style={styles.brandTagText}>{tag.brand_name}</Text>
+                </View>
+              );
+            })}
+        </View>
 
         {/* Post Title (User’s caption) */}
         <Text style={styles.postTitle}>{post.caption}</Text>
 
-        {/* Tag Section */}
+        {/* Tag “pills” at the bottom (for brand + occasions from your arrays) */}
         {combinedTags.length > 0 && (
           <View style={styles.tagsContainer}>
             {combinedTags.map((tag, index) => (
@@ -142,7 +212,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 15,
-    paddingTop: 30, // for iOS notch
+    paddingTop: 30,
     paddingBottom: 30,
     backgroundColor: "#2D3338",
   },
@@ -157,24 +227,48 @@ const styles = StyleSheet.create({
   scrollContainer: {
     padding: 20,
   },
+  // Container that wraps the image + the brand tags overlay + the tag icon
+  imageContainer: {
+    position: "relative",
+    width: "100%",
+    height: 500, // or any fixed aspect ratio
+    marginBottom: 20,
+    backgroundColor: "#333",
+  },
   postImage: {
     width: "100%",
-    height: 502,
-    marginBottom: 20,
-    resizeMode: "cover",
-    backgroundColor: "#9AA8B6",
-    borderRadius: 0,
-  },  
+    height: "100%",
+  },
+  // The button in the bottom-right corner for toggling tags
+  tagIconContainer: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderRadius: 20,
+    padding: 8,
+  },
+  // A small “pill” for brand tags on the photo
+  brandTagPill: {
+    position: "absolute",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  brandTagText: {
+    color: "#fff",
+    fontSize: 12,
+  },
   postTitle: {
     fontSize: 28,
     fontWeight: "700",
     color: "#A5C6E8",
     marginBottom: 14,
   },
-  // Tag layout: multi-line wrap
   tagsContainer: {
     flexDirection: "row",
-    flexWrap: "wrap", // allows multiple lines
+    flexWrap: "wrap",
     marginBottom: 20,
   },
   tagPill: {

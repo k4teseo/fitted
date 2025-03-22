@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -6,22 +6,15 @@ import {
   Pressable,
   StyleSheet,
   ActivityIndicator,
-  GestureResponderEvent,
   FlatList,
+  GestureResponderEvent,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-
-type BrandTag = {
-  id: string;
-  brand: string;
-  x: number; // Relative horizontal coordinate (0..1)
-  y: number; // Relative vertical coordinate (0..1)
-};
+import { useUploadContext, BrandTag } from "../context/uploadContext";
 
 export default function TagBrandsOnPhoto() {
-  // Read imageUri (and optionally imageId) from route params.
   const { imageUri, imageId, brandName, x, y } = useLocalSearchParams<{
     imageUri?: string;
     imageId?: string;
@@ -30,66 +23,70 @@ export default function TagBrandsOnPhoto() {
     y?: string;
   }>();
   const router = useRouter();
+  const { brandTags, setBrandTags, selectedBrands, setSelectedBrands } = useUploadContext();
 
-  // photoUrl is initialized from imageUri.
-  const [photoUrl, setPhotoUrl] = useState<string | null>(imageUri || null);
-  const [photoLayout, setPhotoLayout] = useState({ width: 0, height: 0 });
-  const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [photoLayout, setPhotoLayout] = React.useState({ width: 0, height: 0 });
+  const [loading, setLoading] = React.useState(false);
 
-  // Set photoUrl on mount if imageUri is provided.
-  useEffect(() => {
-    if (imageUri) {
-      setPhotoUrl(imageUri);
-    }
-  }, [imageUri]);
+  // Use a ref to track last processed tag params and avoid duplicates.
+  const lastTagParams = useRef<{ brandName?: string; x?: string; y?: string }>({});
 
-  // If brandName, x, and y are provided, add a new brand tag.
+  // When route params change, append a new tag if not already processed.
   useEffect(() => {
     if (brandName && x && y) {
+      if (
+        lastTagParams.current.brandName === brandName &&
+        lastTagParams.current.x === x &&
+        lastTagParams.current.y === y
+      ) {
+        return;
+      }
+      lastTagParams.current = { brandName, x, y };
       const newTag: BrandTag = {
         id: Date.now().toString(),
-        brand: brandName,
+        brand: decodeURIComponent(brandName),
         x: parseFloat(x),
         y: parseFloat(y),
       };
       setBrandTags((prev) => [...prev, newTag]);
-      // Optionally, clear the parameters (if your router supports it)
-      // router.setParams({ brandName: undefined, x: undefined, y: undefined });
     }
-  }, [brandName, x, y]);
+  }, [brandName, x, y, setBrandTags]);
 
-  // When the user taps on the photo, calculate relative coordinates and navigate to AddBrand.
+  // On photo tap, navigate to AddBrand with calculated relative coordinates.
   const handlePhotoPress = (evt: GestureResponderEvent) => {
     if (!photoLayout.width || !photoLayout.height) return;
     const { locationX, locationY } = evt.nativeEvent;
     const xRel = locationX / photoLayout.width;
     const yRel = locationY / photoLayout.height;
 
-    // Navigate to the AddBrand screen with the tap coordinates and current imageUri.
     router.push({
       pathname: "/components/addBrand",
       params: {
         x: xRel.toString(),
         y: yRel.toString(),
-        imageUri, // Pass the current imageUri
+        imageUri,
       },
     });
   };
 
-  // Remove a tag from local state.
+  // Remove a tag and deselect the brand
   const handleRemoveTag = (tagId: string) => {
+    const tagToRemove = brandTags.find((tag) => tag.id === tagId);
+    if (tagToRemove) {
+      setSelectedBrands((prev) => prev.filter((brand) => brand !== tagToRemove.brand));
+    }
     setBrandTags((prev) => prev.filter((tag) => tag.id !== tagId));
   };
 
+  // On Done, upload tags if imageId exists (and do not clear tags here).
   const handleDone = async () => {
     if (!imageId) {
       console.log("No imageId provided; returning to upload page.");
       router.replace({
         pathname: "/pages/upload",
-        params: { 
+        params: {
           imageUri,
-          brandTags: JSON.stringify(brandTags) // Pass the brand tags as a JSON string
+          brandTags: JSON.stringify(brandTags),
         },
       });
       return;
@@ -109,9 +106,9 @@ export default function TagBrandsOnPhoto() {
     setLoading(false);
     router.replace({
       pathname: "/pages/upload",
-      params: { 
+      params: {
         imageUri,
-        brandTags: JSON.stringify(brandTags) // Pass the brand tags as a JSON string
+        brandTags: JSON.stringify(brandTags),
       },
     });
   };
@@ -127,8 +124,8 @@ export default function TagBrandsOnPhoto() {
         }}
       >
         <Pressable onPress={handlePhotoPress} style={styles.pressable}>
-          {photoUrl ? (
-            <Image source={{ uri: photoUrl }} style={styles.image} resizeMode="contain" />
+          {imageUri ? (
+            <Image source={{ uri: imageUri }} style={styles.image} resizeMode="contain" />
           ) : (
             <Text style={styles.missingText}>No photo found.</Text>
           )}
@@ -149,7 +146,6 @@ export default function TagBrandsOnPhoto() {
         </Pressable>
       </View>
 
-      {/* A list of brand tags below the photo */}
       <View style={styles.tagsListContainer}>
         <Text style={styles.tagsListHeader}>Tags</Text>
         {brandTags.length === 0 ? (

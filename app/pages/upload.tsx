@@ -19,13 +19,16 @@ import Tagging from "./tagging";
 import { useUploadContext } from "../context/uploadContext";
 
 export default function UploadPage() {
+  // Read the imageUri from route parameters
   const params = useLocalSearchParams() as { imageUri?: string };
   const router = useRouter();
   const imageUri = params.imageUri;
 
+  // Read persistent states from the upload context
+  const { selectedBrands, selectedOccasions, brandTags } = useUploadContext();
+
   const [name, setName] = useState("");
   const [postTitle, setPostTitle] = useState("");
-  const { selectedBrands, selectedOccasions } = useUploadContext();
 
   if (!imageUri) {
     return (
@@ -43,11 +46,13 @@ export default function UploadPage() {
   const handlePost = async () => {
     if (!imageUri || !name) return;
     try {
+      // Fetch the image blob from the provided URI
       const response = await fetch(imageUri);
       const blob = await response.blob();
       const arrayBuffer = await new Response(blob).arrayBuffer();
       const fileName = `public/${Date.now()}.jpg`;
 
+      // Upload image to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from("images")
         .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
@@ -57,22 +62,44 @@ export default function UploadPage() {
         return;
       }
 
-      const { error: insertError } = await supabase.from("images").insert([
-        {
-          image_path: fileName,
-          caption: postTitle,
-          username: name,
-          selectedbrands: selectedBrands,
-          selectedoccasions: selectedOccasions,
-        },
-      ]);
+      // Insert image metadata into the "images" table
+      const { data: imageData, error: insertError } = await supabase
+        .from("images")
+        .insert([
+          {
+            image_path: fileName,
+            caption: postTitle,
+            username: name,
+            selectedbrands: selectedBrands,
+            selectedoccasions: selectedOccasions,
+          },
+        ])
+        .select()
+        .single();
 
       if (insertError) {
         console.error("Error saving image with tags:", insertError);
-      } else {
-        console.log("Post uploaded successfully with tags:", postTitle);
-        router.replace("/pages/feedPage");
+        return;
       }
+
+      // Save each brand tag from the context to the "image_brand_tags" table
+      if (brandTags.length > 0) {
+        for (const tag of brandTags) {
+          const { error: tagError } = await supabase.from("image_brand_tags").insert({
+            image_id: imageData.id,
+            brand_name: tag.brand,
+            x_position: tag.x,
+            y_position: tag.y,
+          });
+
+          if (tagError) {
+            console.error("Error saving brand tag:", tagError);
+          }
+        }
+      }
+
+      console.log("Post uploaded successfully with tags:", postTitle);
+      router.replace("/pages/feedPage");
     } catch (error) {
       console.error("Error during upload:", error);
     }
@@ -90,7 +117,11 @@ export default function UploadPage() {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.scrollViewContainer} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollViewContainer}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.contentContainer}>
             <TextInput
               style={styles.postTitleInput}
@@ -108,7 +139,7 @@ export default function UploadPage() {
               onChangeText={setName}
             />
           </View>
-          {/* Pass imageUri to Tagging */}
+          {/* Tagging component to manage occasions and brands */}
           <Tagging imageUri={imageUri} />
         </ScrollView>
       </KeyboardAvoidingView>
