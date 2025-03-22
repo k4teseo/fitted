@@ -8,6 +8,7 @@ import {
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import { getOrCreateUserId } from "@/lib/auth";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
@@ -17,32 +18,72 @@ export default function AddOccasion() {
   const router = useRouter();
   const { selectedOccasions, setSelectedOccasions } = useUploadContext(); // Get context values
   const [searchTerm, setSearchTerm] = useState("");
-  const [occasions, setOccasions] = useState<string[]>([]);
+  const [globalOccasions, setGlobalOccasions] = useState<string[]>([]);
+
+  // Keep track of user-added local occasions
+  const [userOccasions, setUserOccasions] = useState<string[]>([]);
+
   const [loading, setLoading] = useState(true);
 
+  // Fetch global tags from the "tags" table (for tag_type "occasion")
   useEffect(() => {
-    const fetchOccasions = async () => {
+    const fetchGlobalOccasions = async () => {
       const { data, error } = await supabase
         .from("tags")
         .select("name")
         .eq("tag_type", "occasion");
 
       if (error) {
-        console.error("Error fetching occasions:", error);
+        console.error("Error fetching global occasions:", error);
       } else {
-        setOccasions(data.map((item) => item.name)); // Extracting names
+        setGlobalOccasions(data.map((item) => item.name)); // Extracting names
       }
 
       setLoading(false);
     };
 
-    fetchOccasions();
+    fetchGlobalOccasions();
   }, []);
 
+  // Fetch user-specific custom tags from the "user_tags" table
+  useEffect(() => {
+    const fetchUserOccasions = async () => {
+      try {
+        const userId = await getOrCreateUserId();
+        const { data, error } = await supabase
+          .from("user_tags")
+          .select("name")
+          .eq("user_id", userId);
+
+        if (error) {
+          console.error("Error fetching user occasions:", error);
+        } else if (data) {
+          setUserOccasions(data.map((item) => item.name));
+        }
+      } catch (err) {
+        console.error("Error fetching user occasions:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserOccasions();
+  }, []);
+
+  // Merge supabase occasions + userAddedOccasions
+  const combinedOccasions = [...globalOccasions, ...userOccasions];
+
   // Filter occasions based on search input
-  const filteredOccasions = occasions.filter((occasion) =>
+  const filteredOccasions = combinedOccasions.filter((occasion) =>
     occasion.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Check if typed term is brand new (i.e. not already in combinedOccasions)
+  const isNewOccasion =
+    searchTerm.length > 0 &&
+    !combinedOccasions.some(
+      (occ) => occ.toLowerCase() === searchTerm.toLowerCase()
+    );
 
   const handleSelectOccasion = (occasion: string) => {
     setSelectedOccasions((prevSelected) => {
@@ -55,6 +96,32 @@ export default function AddOccasion() {
       }
     });
   };
+
+  // If user taps "Add + <searchTerm>", we add it locally and also mark it selected
+  const handleAddOccasion = async () => {
+    try {
+      const userId = await getOrCreateUserId();
+  
+      // Insert the new custom tag into the user_tags table in Supabase
+      const { error } = await supabase
+        .from("user_tags")
+        .insert({ user_id: userId, name: searchTerm })
+        .single();
+  
+      if (error) {
+        console.log("Error adding custom occasion:", error);
+        return;
+      }
+  
+      // If successful, update your local state and select the new tag
+      setUserOccasions((prev) => [...prev, searchTerm]);
+      setSelectedOccasions((prev) => [...prev, searchTerm]);
+      setSearchTerm("");
+    } catch (err) {
+      console.log("Error in handleAddOccasion:", err);
+    }
+  };
+  
 
   // Render each occasion as a pressable item
   const renderOccasionItem = ({ item }: { item: string }) => {
@@ -76,17 +143,12 @@ export default function AddOccasion() {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        {/* Left: Back Arrow */}
         <Pressable style={styles.backButton} onPress={() => router.back()}>
           <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
         </Pressable>
-
-        {/* Middle: Centered Title */}
         <View style={{ flex: 1 }}>
           <Text style={styles.topTitle}>Add Occasion</Text>
         </View>
-
-        {/* Right: Empty placeholder (for alignment) */}
         <View style={{ width: 24 }} />
       </View>
 
@@ -100,19 +162,32 @@ export default function AddOccasion() {
           value={searchTerm}
           onChangeText={setSearchTerm}
         />
+        {searchTerm.length > 0 && (
+          <Pressable onPress={() => setSearchTerm("")}>
+            <MaterialIcons name="close" size={20} color="#383C40" style={styles.clearIcon} />
+          </Pressable>
+        )}
       </View>
 
-      {/* Occasion List */}
       {loading ? (
         <ActivityIndicator size="large" color="#B4CFEA" style={styles.loader} />
       ) : (
-        <FlatList
-          data={filteredOccasions}
-          keyExtractor={(item) => item}
-          renderItem={renderOccasionItem}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          {isNewOccasion && (
+            <Pressable style={styles.addRow} onPress={handleAddOccasion}>
+              <MaterialIcons name="add" size={20} color="#F5EEE3" style={{ marginRight: 8 }} />
+              <Text style={styles.addRowText}>Add “{searchTerm}”</Text>
+            </Pressable>
+          )}
+
+          <FlatList
+            data={filteredOccasions}
+            keyExtractor={(item) => item}
+            renderItem={renderOccasionItem}
+            contentContainerStyle={styles.listContent}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
       )}
     </View>
   );
@@ -159,6 +234,24 @@ const styles = StyleSheet.create({
     color: "#383C40",
     fontSize: 14,
     height: 40,
+  },
+  clearIcon: {
+    marginLeft: 6,
+  },
+  // "Add new" row
+  addRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: 50,
+    marginBottom: 16,
+    backgroundColor: "#262A2F",
+    borderRadius: 8,
+    padding: 10,
+  },
+  addRowText: {
+    marginLeft: 8,
+    color: "#B4CFEA",
+    fontSize: 14,
   },
   // Occasion List
   listContent: {
