@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, Pressable, FlatList, Switch, Linking } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from 'expo-router';
 import { useUploadContext } from "../context/uploadContext"; 
 import { supabase } from "@/lib/supabase"; 
+import { getOrCreateUserId } from "@/lib/auth";
 
 export default function Tagging() {
   const { selectedBrands, setSelectedBrands, selectedOccasions, setSelectedOccasions } = useUploadContext();
@@ -12,28 +14,52 @@ export default function Tagging() {
   const [openAIEnabled, setOpenAIEnabled] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchTags = async () => {
-      const { data: brandsData, error: brandsError } = await supabase
-        .from("tags")
-        .select("name")
-        .eq("tag_type", "brand");
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchTags = async () => {
+        const { data: globalBrandsData, error: globalBrandsError } = await supabase
+          .from("tags")
+          .select("name")
+          .eq("tag_type", "brand");
 
-      const { data: occasionsData, error: occasionsError } = await supabase
-        .from("tags")
-        .select("name")
-        .eq("tag_type", "occasion");
+        const { data: globalOccasionsData, error: globalOccasionsError } = await supabase
+          .from("tags")
+          .select("name")
+          .eq("tag_type", "occasion");
 
-      if (brandsError || occasionsError) {
-        console.error("Error fetching tags:", brandsError || occasionsError);
-      } else {
-        setAvailableBrands(brandsData.map((item) => item.name));
-        setAvailableOccasions(occasionsData.map((item) => item.name));
+        // Fetch user-specific custom tags from the "user_tags" table (filtered by tag_type)
+        const userId = await getOrCreateUserId();
+        const { data: userBrandsData, error: userBrandsError } = await supabase
+          .from("user_tags")
+          .select("name")
+          .eq("user_id", userId)
+          .eq("tag_type", "brand");
+        const { data: userOccasionsData, error: userOccasionsError } = await supabase
+          .from("user_tags")
+          .select("name")
+          .eq("user_id", userId)
+          .eq("tag_type", "occasion");
+
+        if (globalBrandsError || globalOccasionsError || userBrandsError || userOccasionsError) {
+          console.error("Error fetching tags:", globalBrandsError || globalOccasionsError || userBrandsError || userOccasionsError);
+        } else {
+          // Merge global and user-specific tags for each type
+          const brands = [
+            ...(globalBrandsData ? globalBrandsData.map((item) => item.name) : []),
+            ...(userBrandsData ? userBrandsData.map((item) => item.name) : []),
+          ];
+          const occasions = [
+            ...(globalOccasionsData ? globalOccasionsData.map((item) => item.name) : []),
+            ...(userOccasionsData ? userOccasionsData.map((item) => item.name) : []),
+          ];
+          setAvailableBrands(brands);
+          setAvailableOccasions(occasions);
+        }
       }
-    };
 
-    fetchTags();
-  }, []);
+      fetchTags();
+    }, [])
+  );
 
   const toggleOccasion = (occasion: string) => {
     setSelectedOccasions((prev) =>
