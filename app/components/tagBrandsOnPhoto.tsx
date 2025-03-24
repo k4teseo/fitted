@@ -30,6 +30,10 @@ export default function TagBrandsOnPhoto() {
 
   // Use a ref to track last processed tag params and avoid duplicates.
   const lastTagParams = useRef<{ brandName?: string; x?: string; y?: string }>({});
+ 
+  useEffect(() => {
+    router.setParams({title: "Add Brands"})
+  }, [router]);
 
   // When route params change, append a new tag if not already processed.
   useEffect(() => {
@@ -52,6 +56,7 @@ export default function TagBrandsOnPhoto() {
     }
   }, [brandName, x, y, setBrandTags]);
 
+ 
   // On photo tap, navigate to AddBrand with calculated relative coordinates.
   const handlePhotoPress = (evt: GestureResponderEvent) => {
     if (!photoLayout.width || !photoLayout.height) return;
@@ -115,6 +120,14 @@ export default function TagBrandsOnPhoto() {
   return (
     <View style={styles.container}>
       {loading && <ActivityIndicator size="large" color="#B4CFEA" style={styles.loader} />}
+       {/* Top Bar */}
+            <View style={styles.topBar}>
+              <Pressable style={styles.backButton} onPress={() => router.back()}>
+                <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+              </Pressable>
+              <Text style={styles.topTitle}>Add Brand</Text>
+              <View style={{ width: 24 }} />
+            </View>
       <View
         style={styles.imageContainer}
         onLayout={(e) => {
@@ -148,7 +161,7 @@ export default function TagBrandsOnPhoto() {
       <View style={styles.tagsListContainer}>
         <Text style={styles.tagsListHeader}>Tags</Text>
         {brandTags.length === 0 ? (
-          <Text style={{ color: "#aaa", marginTop: 10 }}>Tap photo to add brands.</Text>
+          <Text style={ styles.footerText }>Tap photo to add brands.</Text>
         ) : (
           <FlatList
             data={brandTags}
@@ -177,19 +190,40 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: "#15181B" 
 },
+topBar: {
+  flexDirection: "row",
+  alignItems: "center",
+  justifyContent: "center",
+  paddingHorizontal: 20,
+  paddingTop: 40,
+  paddingBottom: 30,
+  backgroundColor: "#15181B",
+  width: "100%",
+},
+backButton: {
+  padding: 0,
+  marginRight: 0,
+},
+topTitle: {
+  color: "#F5EEE3",
+  fontSize: 22,
+  fontWeight: "400",
+  textAlign: "center",
+  flex: 1,
+},
   loader: { 
     marginTop: 10 
 },
   imageContainer: { 
     flex: 1, 
-    position: "relative" 
+    position: "relative", 
 },
   pressable: { 
     flex: 1 
 },
   image: { 
     width: "100%", 
-    height: "100%" 
+    height: "100%",
 },
   missingText: { 
     color: "#fff", 
@@ -212,8 +246,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#1C1F22",
     paddingHorizontal: 16,
     paddingVertical: 10,
+    
   },
-  tagsListHeader: { color: "#F5EEE3", fontSize: 16, marginBottom: 6, fontWeight: "600" },
+  tagsListHeader: { color: "#F5EEE3", fontSize: 16, marginBottom: 6, fontWeight: "600", textAlign: "center" },
   tagsListItem: {
     flexDirection: "row",
     alignItems: "center",
@@ -228,4 +263,6 @@ const styles = StyleSheet.create({
   tagsListItemRemove: { padding: 4 },
   doneButton: { backgroundColor: "#4DA6FD", padding: 12, alignItems: "center" },
   doneText: { color: "#fff", fontSize: 16 },
+
+  footerText: { color: "#F5EEE3", fontSize: 14, textAlign: "center" },
 });
