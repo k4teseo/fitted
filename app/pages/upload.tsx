@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
 import { useUploadContext } from "../context/uploadContext";  // No need to import UploadProvider
+import { analyzeOutfit } from "../components/openaiVision"
 
 export default function UploadPage() {
     const params = useLocalSearchParams() as { imageUri?: string };
@@ -37,6 +38,8 @@ export default function UploadPage() {
         if (!imageUri || !name) return;
 
         try {
+            const metadata = await analyzeOutfit(imageUri).catch(() => []);
+            console.log("Extracted metadata:", metadata); // Debugging
             const response = await fetch(imageUri);
             const blob = await response.blob();
             const arrayBuffer = await new Response(blob).arrayBuffer();
@@ -59,6 +62,7 @@ export default function UploadPage() {
                     username: name,
                     selectedbrands: selectedBrands,      
                     selectedoccasions: selectedOccasions,     
+                    metadata: Array.isArray(metadata) ? metadata : [],
                 }]);
 
             if (insertError) {
