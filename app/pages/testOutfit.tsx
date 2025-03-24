@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Button, Text, Image } from "react-native";
-import { analyzeOutfit } from "../components/openaiVision"; // Import your function
+import { analyzeOutfit } from "../components/openaiVision";
 
 const TestOutfit = () => {
   const [result, setResult] = useState<string[]>([]);
