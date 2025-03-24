@@ -1,15 +1,21 @@
 import { ChatOpenAI } from "@langchain/openai"; 
 import { PromptTemplate } from "@langchain/core/prompts";
 import { HumanMessage } from "@langchain/core/messages";
+import Constants from "expo-constants";
 
 // Function to analyze outfit details
 export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
     try {
+        const apiKey = Constants.expoConfig?.extra?.OPENAI_API_KEY;
+        if (!apiKey) {
+            throw new Error("Missing OpenAI API Key");
+        }
+
         // Initialize OpenAI Vision Model
         const model = new ChatOpenAI({
-            modelName: "gpt-4-vision-preview",
+            modelName: "gpt-4o",
             temperature: 0.6,
-            openAIApiKey: process.env.OPENAI_API_KEY,
+            openAIApiKey: apiKey
         });
 
         // Define a prompt template
@@ -39,6 +45,8 @@ export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
             throw new Error("Unexpected response format from AI model.");
         }
     } catch (error) {
+        const apiKey = process.env.OPENAI_API_KEY;
+        console.log("Using OpenAI API Key:", apiKey);
         console.error("Error analyzing outfit:", error);
         return [];
     }
