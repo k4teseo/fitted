@@ -25,7 +25,10 @@ type FeedItemData = {
 // A small component for each feed item
 const FeedItem = ({ item }: { item: FeedItemData }) => {
   const router = useRouter();
-  const combinedTags = [...(item.selectedbrands ?? []), ...(item.selectedoccasions ?? [])];
+  const combinedTags = [
+    ...(item.selectedbrands ?? []),
+    ...(item.selectedoccasions ?? []),
+  ];
 
   // Limit to a maximum of 3 tags
   const maxTags = 3;
@@ -89,23 +92,28 @@ export default function FeedPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("images")
-      .select("id, caption, username, image_path, selectedbrands, selectedoccasions")
+      .select(
+        "id, caption, username, image_path, selectedbrands, selectedoccasions, created_at"
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching images:", error);
     } else {
-      const formattedData = data.map((row: any) => ({
-        id: row.id,
-        caption: row.caption,
-        username: row.username,
-        postImage:
-          supabase.storage
-            .from("images")
-            .getPublicUrl(row.image_path)?.data?.publicUrl || "",
-        selectedbrands: row.selectedbrands ?? [],
-        selectedoccasions: row.selectedoccasions ?? [],
-      }));
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const formattedData = data
+        .map((row: any) => ({
+          id: row.id,
+          caption: row.caption,
+          username: row.username,
+          postImage:
+            supabase.storage.from("images").getPublicUrl(row.image_path)?.data
+              ?.publicUrl || "",
+          selectedbrands: row.selectedbrands ?? [],
+          selectedoccasions: row.selectedoccasions ?? [],
+          createdAt: new Date(row.created_at),
+        }))
+        .filter((post) => post.createdAt > twentyFourHoursAgo);
       setFeedData(formattedData);
     }
     setLoading(false);
@@ -137,7 +145,7 @@ export default function FeedPage() {
           showsVerticalScrollIndicator={false}
         />
       )}
-      
+
       {/* Bottom Navigation Bar */}
       <View style={feedStyles.bottomNav}>
         {/* HOME TAB */}
