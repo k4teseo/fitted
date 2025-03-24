@@ -25,7 +25,10 @@ type FeedItemData = {
 // A small component for each feed item
 const FeedItem = ({ item }: { item: FeedItemData }) => {
   const router = useRouter();
-  const combinedTags = [...(item.selectedbrands ?? []), ...(item.selectedoccasions ?? [])];
+  const combinedTags = [
+    ...(item.selectedbrands ?? []),
+    ...(item.selectedoccasions ?? []),
+  ];
 
   // Limit to a maximum of 3 tags
   const maxTags = 3;
@@ -89,7 +92,9 @@ export default function FeedPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("images")
-      .select("id, caption, username, image_path, selectedbrands, selectedoccasions")
+      .select(
+        "id, caption, username, image_path, selectedbrands, selectedoccasions"
+      )
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -100,9 +105,8 @@ export default function FeedPage() {
         caption: row.caption,
         username: row.username,
         postImage:
-          supabase.storage
-            .from("images")
-            .getPublicUrl(row.image_path)?.data?.publicUrl || "",
+          supabase.storage.from("images").getPublicUrl(row.image_path)?.data
+            ?.publicUrl || "",
         selectedbrands: row.selectedbrands ?? [],
         selectedoccasions: row.selectedoccasions ?? [],
       }));
@@ -137,7 +141,7 @@ export default function FeedPage() {
           showsVerticalScrollIndicator={false}
         />
       )}
-      
+
       {/* Bottom Navigation Bar */}
       <View style={feedStyles.bottomNav}>
         {/* HOME TAB */}
@@ -169,6 +173,10 @@ export default function FeedPage() {
           ) : (
             <PlusIcon />
           )}
+        </TouchableOpacity>
+
+        <TouchableOpacity onPress={() => router.push("/pages/testOutfit")}>
+          <Text>Go to Test Outfit</Text>
         </TouchableOpacity>
 
         {/* PROFILE TAB - commented out
