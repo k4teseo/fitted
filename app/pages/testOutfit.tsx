@@ -1,11 +1,11 @@
 import React, { useState } from "react";
 import { View, Button, Text, Image } from "react-native";
-import { analyzeOutfit } from "./components/openaiVision"; // Import your function
+import { analyzeOutfit } from "../components/openaiVision"; // Import your function
 
 const TestOutfit = () => {
   const [result, setResult] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const testImageUri = "https://example.com/test-outfit.jpg"; // Replace with a real image URL
+  const testImageUri = require("../../assets/images/outfit.png");
 
   const handleTest = async () => {
     setLoading(true);
