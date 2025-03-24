@@ -11,7 +11,11 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
+      bundleIdentifier: 'com.katecs172.fitted',
       supportsTablet: true,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       enableHermes: true,
@@ -53,6 +57,9 @@ export default {
     extra: {
       databaseUrl: process.env.SUPABASE_URL, 
       databaseKey: process.env.SUPABASE_KEY, 
+      eas: {
+        projectId: "ffb68227-02da-4487-8af0-f37ee177d543"
+      }
     },
   },
 };
