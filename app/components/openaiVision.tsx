@@ -21,7 +21,7 @@ export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
         // Define a prompt template
         const prompt = PromptTemplate.fromTemplate(`
             Analyze the provided outfit image and extract key clothing details.
-            Return the output as an array of relevant outfit descriptions.
+            Return the response strictly as a JSON array with no Markdown, no code block formatting, and no explanations.
 
             Example Output:
             ["red hoodie", "Nike sneakers", "denim jeans"]
@@ -32,21 +32,31 @@ export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
             new HumanMessage({
                 content: [
                     { type: "text", text: await prompt.format({}) },
-                    { type: "image_url", image_url: imageUri }, // Pass image directly
+                    { type: "image_url", image_url: { url: imageUri } }, 
                 ],
             }),
         ]);
 
-        console.log("AI Response:", metadata.content);
+        console.log("AI Raw Response:", metadata);
+        console.log("metadata.content Type:", typeof metadata.content);
+        console.log("metadata.content Value:", metadata.content);
 
-        if (Array.isArray(metadata.content) && metadata.content.length > 0 && 'text' in metadata.content[0]) {
-            return JSON.parse(metadata.content[0].text);
-        } else {
-            throw new Error("Unexpected response format from AI model.");
+        // Directly parse metadata.content since it's already a stringified JSON array
+        if (typeof metadata.content === "string") {
+            try {
+                const parsedData = JSON.parse(metadata.content);
+                if (Array.isArray(parsedData)) {
+                    console.log("Parsed Outfit Data:", parsedData);
+                    return parsedData;
+                }
+            } catch (jsonError) {
+                console.error("Error parsing JSON:", jsonError);
+            }
         }
+
+        return []; 
+
     } catch (error) {
-        const apiKey = process.env.OPENAI_API_KEY;
-        console.log("Using OpenAI API Key:", apiKey);
         console.error("Error analyzing outfit:", error);
         return [];
     }
