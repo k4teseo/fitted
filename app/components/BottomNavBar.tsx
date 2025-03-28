@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { View, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
-import { FeedPageIcon, PlusIcon } from "../Icons";
+import { FeedPageIcon } from "@/assets/images/FeedPageIcon";
+import { PlusIcon } from "@/assets/images/PlusIcon";
 import { StyleSheet } from "react-native";
 
 export default function BottomNavBar() {
