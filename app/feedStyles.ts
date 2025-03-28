@@ -7,11 +7,7 @@ const feedStyles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#15181B', // Dark background
   },
-
-  //
-  // MIDDLE NAVIGATION
-  //
-
+  
   // List
   listContent: {
     padding: 80,
@@ -25,7 +21,7 @@ const feedStyles = StyleSheet.create({
     marginBottom: 30,
     overflow: 'hidden', // Ensures the image corners match card corners
     alignSelf: 'center',
-    width: 317, // Fixed width
+    width: 345, // Fixed width
   },
 
   // Image Container (with fixed height)
