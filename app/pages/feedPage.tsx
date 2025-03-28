@@ -11,6 +11,7 @@ import {
 import feedStyles from "../feedStyles";
 import { FittedLogo, FeedPageIcon, PlusIcon } from "../Icons"; // Icons
 import { supabase } from "@/lib/supabase"; // Import Supabase client
+import BottomNavBar from "../components/BottomNavBar";
 
 // Type for the feed item (optional)
 type FeedItemData = {
@@ -147,54 +148,7 @@ export default function FeedPage() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <View style={feedStyles.bottomNav}>
-        {/* HOME TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab("home")}
-        >
-          {activeTab === "home" ? (
-            <View style={feedStyles.beigeCircle}>
-              <FeedPageIcon />
-            </View>
-          ) : (
-            <FeedPageIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* ADD TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => {
-            setActiveTab("add");
-            router.push("/pages/camera");
-          }}
-        >
-          {activeTab === "add" ? (
-            <View style={feedStyles.beigeCircle}>
-              <PlusIcon />
-            </View>
-          ) : (
-            <PlusIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* PROFILE TAB - commented out
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text
-            style={[
-              feedStyles.navItemText,
-              activeTab === 'profile' && { color: '#F3EDE2' },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-        */}
-      </View>
+      <BottomNavBar />
     </SafeAreaView>
   );
 }
