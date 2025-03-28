@@ -1,29 +1,33 @@
-import { View, Text, TextInput, Button} from 'react-native';
-import { useState } from 'react';
-import feedStyles from "../feedStyles";
+import React from "react";
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function LoginPage() {
-    const [username, setUsername] = useState('');
-    const [password, setPassword] = useState('');
+const LoginPage = () => {
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>Log In</Text>
 
-    const handleLogin = () => {
-        console.log('Username:', username);
-        //Add authentication logic here
-    };
+      <TextInput style={styles.input} placeholder="Email" placeholderTextColor="#888" />
+      <TextInput style={styles.input} placeholder="Password" placeholderTextColor="#888" secureTextEntry />
 
-    return (
-        <View>
-            <Text>Log in to your account</Text>
+      <TouchableOpacity style={styles.button}>
+        <Text style={styles.buttonText}>Log In</Text>
+      </TouchableOpacity>
 
-            <Text>Username</Text>
-            <TextInput placeholder="Enter your username" value={username} onChangeText={setUsername}/>
+      <Text style={styles.redirectText}>
+        Don't have an account? <Text style={styles.link}>Sign up</Text>
+      </Text>
+    </View>
+  );
+};
 
-            <Text>Password</Text>
-            <TextInput placeholder="Enter your password" value={password} onChangeText={setPassword}/>
+const styles = StyleSheet.create({
+  container: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F5F5F5" },
+  title: { fontSize: 24, fontWeight: "bold", marginBottom: 20 },
+  input: { width: "80%", padding: 12, borderWidth: 1, borderRadius: 8, marginBottom: 12, backgroundColor: "#FFF", borderColor: "#DDD" },
+  button: { backgroundColor: "#4DA6FD", padding: 12, borderRadius: 8, marginTop: 10, width: "80%", alignItems: "center" },
+  buttonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
+  redirectText: { marginTop: 15, color: "#666" },
+  link: { color: "#4DA6FD", fontWeight: "bold" },
+});
 
-            <Button title="LOGIN" onPress={handleLogin} />
-            <Text>Forgot Password?</Text>
- 
-        </View>
-    );
-}
+export default LoginPage;
