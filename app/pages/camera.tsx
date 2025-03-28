@@ -212,8 +212,8 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 40, // Adjust based on status bar height
-    left: 10,
+    top: 55, // Adjust based on status bar height
+    left: 20,
     zIndex: 10, // Ensure it appears on top
     backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility
     borderRadius: 10,
