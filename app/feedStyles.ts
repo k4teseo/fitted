@@ -14,7 +14,7 @@ const feedStyles = StyleSheet.create({
 
   // List
   listContent: {
-    padding: 24,
+    padding: 85,
     paddingBottom: 80, // Ensure feed items aren't hidden behind bottom nav
   },
 

@@ -17,7 +17,6 @@ export default function App() {
   const [uri, setUri] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -213,7 +212,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 10, // Adjust based on status bar height
+    top: 40, // Adjust based on status bar height
     left: 10,
     zIndex: 10, // Ensure it appears on top
     backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility
