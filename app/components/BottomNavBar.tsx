@@ -9,14 +9,14 @@ export default function BottomNavBar() {
   const [activeTab, setActiveTab] = useState<"home" | "add">("home");
 
   return (
-    <View style={feedStyles.bottomNav}>
+    <View style={styles.bottomNav}>
       {/* HOME TAB */}
       <TouchableOpacity
-        style={feedStyles.navItem}
+        style={styles.navItem}
         onPress={() => setActiveTab("home")}
       >
         {activeTab === "home" ? (
-          <View style={feedStyles.beigeCircle}>
+          <View style={styles.beigeCircle}>
             <FeedPageIcon />
           </View>
         ) : (
@@ -26,14 +26,14 @@ export default function BottomNavBar() {
 
       {/* ADD TAB */}
       <TouchableOpacity
-        style={feedStyles.navItem}
+        style={styles.navItem}
         onPress={() => {
           setActiveTab("add");
-          router.push("/pages/camera");
+          router.push("/pages/Camera");
         }}
       >
         {activeTab === "add" ? (
-          <View style={feedStyles.beigeCircle}>
+          <View style={styles.beigeCircle}>
             <PlusIcon />
           </View>
         ) : (
@@ -60,7 +60,7 @@ export default function BottomNavBar() {
   );
 }
 
-const feedStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   bottomNav: {
     position: "absolute",
     bottom: 0,

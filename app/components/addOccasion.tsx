@@ -156,18 +156,18 @@ export default function AddOccasion() {
       animateAddIcon(); // run the scale animation
 
       const userId = await getOrCreateUserId();
-  
+
       // Insert the new custom tag into the user_tags table in Supabase
       const { error } = await supabase
         .from("user_tags")
         .insert({ user_id: userId, name: searchTerm, tag_type: "occasion" })
         .single();
-  
+
       if (error) {
         console.log("Error adding custom occasion:", error);
         return;
       }
-  
+
       // If successful, update your local state and select the new tag
       setUserOccasions((prev) => [...prev, searchTerm]);
       setSelectedOccasions((prev) => [...prev, searchTerm]);
@@ -176,7 +176,7 @@ export default function AddOccasion() {
       console.log("Error in handleAddOccasion:", err);
     }
   };
-  
+
   // Delete a user-added custom occasion (filtering by tag_type "occasion")
   const handleDeleteOccasion = async (
     occasion: string,
@@ -203,7 +203,6 @@ export default function AddOccasion() {
     }
   };
 
-
   // Render each occasion as a pressable item
   const renderOccasionItem = ({ item }: { item: string }) => {
     const isSelected = selectedOccasions.includes(item); // Check if the item is selected
@@ -211,10 +210,7 @@ export default function AddOccasion() {
 
     return (
       <Pressable
-        style={[
-          styles.occasionPill,
-          isSelected && styles.selectedOccasion,
-        ]}
+        style={[styles.occasionPill, isSelected && styles.selectedOccasion]}
         onPress={() => handleSelectOccasion(item)}
       >
         <Text
@@ -254,7 +250,12 @@ export default function AddOccasion() {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#383C40" style={styles.searchIcon} />
+        <MaterialIcons
+          name="search"
+          size={20}
+          color="#383C40"
+          style={styles.searchIcon}
+        />
         <TextInput
           style={styles.searchInput}
           placeholder="Search your Outfit's Occasion..."
@@ -264,7 +265,12 @@ export default function AddOccasion() {
         />
         {searchTerm.length > 0 && (
           <Pressable onPress={() => setSearchTerm("")}>
-            <MaterialIcons name="close" size={20} color="#383C40" style={styles.clearIcon} />
+            <MaterialIcons
+              name="close"
+              size={20}
+              color="#383C40"
+              style={styles.clearIcon}
+            />
           </Pressable>
         )}
       </View>
