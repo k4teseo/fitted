@@ -18,7 +18,6 @@ const styles = StyleSheet.create({
     paddingLeft: 30, // Add some left padding so the logo isn't flush against the screen edge
     alignItems: "flex-start", // Align logo to the left
     justifyContent: "flex-end", // Vertically center the logo
-
     position: "absolute",
     zIndex: 10,
   },
