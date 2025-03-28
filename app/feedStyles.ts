@@ -9,22 +9,6 @@ const feedStyles = StyleSheet.create({
   },
 
   //
-  // TOP NAVIGATION
-  //
-
-  // Header
-  feedHeader: {
-    backgroundColor: '#2D3338',
-    width: '100%',
-    height: 114,
-    paddingVertical: 20,
-    paddingLeft: 30,      // Add some left padding so the logo isn't flush against the screen edge
-    alignItems: 'flex-start',  // Align logo to the left
-    justifyContent: 'center',  // Vertically center the logo
-    borderBottomWidth: 1,
-  },
-
-  //
   // MIDDLE NAVIGATION
   //
 

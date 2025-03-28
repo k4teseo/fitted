@@ -9,8 +9,8 @@ import {
   TouchableOpacity,
 } from "react-native";
 import feedStyles from "../feedStyles";
-import { FittedLogo, FeedPageIcon, PlusIcon } from "../Icons"; // Icons
 import { supabase } from "@/lib/supabase"; // Import Supabase client
+import FeedHeader from "../components/FeedHeader";
 import BottomNavBar from "../components/BottomNavBar";
 
 // Type for the feed item (optional)
@@ -130,9 +130,7 @@ export default function FeedPage() {
   return (
     <SafeAreaView style={feedStyles.container}>
       {/* Top Bar with the Fitted Logo on the Left */}
-      <View style={feedStyles.feedHeader}>
-        <FittedLogo width={120} height={42} />
-      </View>
+      <FeedHeader />
 
       {/* Feed List */}
       {loading ? (

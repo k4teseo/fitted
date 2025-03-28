@@ -34,11 +34,16 @@ export default function UploadPage() {
     return (
       <View style={styles.container}>
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
           </TouchableOpacity>
         </View>
-        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>No image found</Text>
+        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+          No image found
+        </Text>
       </View>
     );
   }
@@ -55,7 +60,10 @@ export default function UploadPage() {
       // Upload image to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from("images")
-        .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
+        .upload(fileName, arrayBuffer, {
+          contentType: "image/jpeg",
+          upsert: false,
+        });
 
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
@@ -85,12 +93,14 @@ export default function UploadPage() {
       // Save each brand tag from the context to the "image_brand_tags" table
       if (brandTags.length > 0) {
         for (const tag of brandTags) {
-          const { error: tagError } = await supabase.from("image_brand_tags").insert({
-            image_id: imageData.id,
-            brand_name: tag.brand,
-            x_position: tag.x,
-            y_position: tag.y,
-          });
+          const { error: tagError } = await supabase
+            .from("image_brand_tags")
+            .insert({
+              image_id: imageData.id,
+              brand_name: tag.brand,
+              x_position: tag.x,
+              y_position: tag.y,
+            });
 
           if (tagError) {
             console.error("Error saving brand tag:", tagError);
@@ -107,9 +117,15 @@ export default function UploadPage() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <View style={styles.topBar}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.postButton} onPress={handlePost}>
@@ -148,7 +164,12 @@ export default function UploadPage() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#15181B", width: "100%", height: "100%" },
+  container: {
+    flex: 1,
+    backgroundColor: "#15181B",
+    width: "100%",
+    height: "100%",
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -166,7 +187,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   postButtonText: { color: "#F5EEE3", fontSize: 18, fontWeight: "600" },
-  scrollViewContainer: { flexGrow: 1, paddingTop: 20, paddingBottom: 50, paddingVertical: 30, width: "100%" },
+  scrollViewContainer: {
+    flexGrow: 1,
+    paddingTop: 20,
+    paddingBottom: 50,
+    paddingVertical: 30,
+    width: "100%",
+  },
   contentContainer: { alignItems: "center", marginBottom: 20 },
   postTitleInput: {
     width: "80%",
@@ -177,6 +204,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     color: "#F5EEE3",
   },
-  image: { width: 210, height: 300, borderRadius: 10, marginBottom: 20, backgroundColor: "#9AA8B6" },
-  nameInput: { padding: 5, marginBottom: 12, fontSize: 12, width: "80%", backgroundColor: "transparent", color: "#F5EEE3" },
+  image: {
+    width: 210,
+    height: 300,
+    borderRadius: 10,
+    marginBottom: 20,
+    backgroundColor: "#9AA8B6",
+  },
+  nameInput: {
+    padding: 5,
+    marginBottom: 12,
+    fontSize: 12,
+    width: "80%",
+    backgroundColor: "transparent",
+    color: "#F5EEE3",
+  },
 });
