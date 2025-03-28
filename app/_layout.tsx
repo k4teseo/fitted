@@ -4,7 +4,7 @@ import { UploadProvider } from "./context/uploadContext"; // Import the UploadPr
 export default function RootLayout() {
   return (
     <UploadProvider>
-      <Stack />
+      <Stack screenOptions={{ headerShown: false }} />
     </UploadProvider>
   );
 }
