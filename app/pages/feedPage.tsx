@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
 } from "react-native";
 import feedStyles from "../feedStyles";
-import { FittedLogo, FeedPageIcon, PlusIcon } from "../Icons"; // Icons
 import { supabase } from "@/lib/supabase"; // Import Supabase client
+import FeedHeader from "../components/FeedHeader";
+import BottomNavBar from "../components/BottomNavBar";
 
 // Type for the feed item (optional)
 type FeedItemData = {
@@ -38,7 +39,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`/pages/postPage?id=${item.id}`);
+        router.push(`/pages/PostPage?id=${item.id}`);
       }}
       activeOpacity={0.9} // Reduce interference with scroll
     >
@@ -85,7 +86,6 @@ export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<"home" | "add">("home");
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); // Initialize router
 
   // Fetch images from Supabase
   const fetchImages = async () => {
@@ -129,9 +129,7 @@ export default function FeedPage() {
   return (
     <SafeAreaView style={feedStyles.container}>
       {/* Top Bar with the Fitted Logo on the Left */}
-      <View style={feedStyles.feedHeader}>
-        <FittedLogo width={120} height={42} />
-      </View>
+      <FeedHeader />
 
       {/* Feed List */}
       {loading ? (
@@ -147,54 +145,7 @@ export default function FeedPage() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <View style={feedStyles.bottomNav}>
-        {/* HOME TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab("home")}
-        >
-          {activeTab === "home" ? (
-            <View style={feedStyles.beigeCircle}>
-              <FeedPageIcon />
-            </View>
-          ) : (
-            <FeedPageIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* ADD TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => {
-            setActiveTab("add");
-            router.push("/pages/camera");
-          }}
-        >
-          {activeTab === "add" ? (
-            <View style={feedStyles.beigeCircle}>
-              <PlusIcon />
-            </View>
-          ) : (
-            <PlusIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* PROFILE TAB - commented out
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text
-            style={[
-              feedStyles.navItemText,
-              activeTab === 'profile' && { color: '#F3EDE2' },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-        */}
-      </View>
+      <BottomNavBar />
     </SafeAreaView>
   );
 }

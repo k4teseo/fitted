@@ -12,7 +12,7 @@ export default {
     newArchEnabled: true,
     ios: {
       bundleIdentifier: 'com.katecs172.fitted',
-      supportsTablet: true,
+      supportsTablet: false,
       infoPlist: {
         ITSAppUsesNonExemptEncryption: false
       }

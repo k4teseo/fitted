@@ -1,16 +1,25 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, Pressable, FlatList, Switch, Linking } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  Pressable,
+  FlatList,
+  Switch,
+  Linking,
+} from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "expo-router";
-import { useUploadContext } from "../context/uploadContext"; 
-import { supabase } from "@/lib/supabase"; 
+import { useUploadContext } from "../context/uploadContext";
+import { supabase } from "@/lib/supabase";
 import { getOrCreateUserId } from "@/lib/auth";
 
 type TaggingProps = { imageUri: string };
 
 export default function Tagging({ imageUri }: TaggingProps) {
-  const { selectedBrands, selectedOccasions, setSelectedOccasions } = useUploadContext();
+  const { selectedBrands, selectedOccasions, setSelectedOccasions } =
+    useUploadContext();
   const [availableOccasions, setAvailableOccasions] = useState<string[]>([]);
   const [openAIEnabled, setOpenAIEnabled] = useState(false);
   const router = useRouter();
@@ -18,22 +27,25 @@ export default function Tagging({ imageUri }: TaggingProps) {
   useFocusEffect(
     React.useCallback(() => {
       const fetchTags = async () => {
-        const { data: globalOccasionsData, error: globalOccasionsError } = await supabase
-          .from("tags")
-          .select("name")
-          .eq("tag_type", "occasion");
+        const { data: globalOccasionsData, error: globalOccasionsError } =
+          await supabase.from("tags").select("name").eq("tag_type", "occasion");
 
         const userId = await getOrCreateUserId();
-        const { data: userOccasionsData, error: userOccasionsError } = await supabase
-          .from("user_tags")
-          .select("name")
-          .eq("user_id", userId)
-          .eq("tag_type", "occasion");
+        const { data: userOccasionsData, error: userOccasionsError } =
+          await supabase
+            .from("user_tags")
+            .select("name")
+            .eq("user_id", userId)
+            .eq("tag_type", "occasion");
 
         if (globalOccasionsError || userOccasionsError) {
-          console.error("Error fetching occasions:", globalOccasionsError || userOccasionsError);
+          console.error(
+            "Error fetching occasions:",
+            globalOccasionsError || userOccasionsError
+          );
         } else {
-          const globalOccs = globalOccasionsData?.map((item) => item.name) ?? [];
+          const globalOccs =
+            globalOccasionsData?.map((item) => item.name) ?? [];
           const userOccs = userOccasionsData?.map((item) => item.name) ?? [];
           setAvailableOccasions([...globalOccs, ...userOccs]);
         }
@@ -64,7 +76,11 @@ export default function Tagging({ imageUri }: TaggingProps) {
         onPress={() => toggleOccasion(occasion)}
         style={[styles.tagButton, isSelected && styles.tagButtonSelected]}
       >
-        <Text style={[styles.tagText, isSelected && styles.tagTextSelected]} numberOfLines={1} ellipsizeMode="tail">
+        <Text
+          style={[styles.tagText, isSelected && styles.tagTextSelected]}
+          numberOfLines={1}
+          ellipsizeMode="tail"
+        >
           {occasion}
         </Text>
       </Pressable>
@@ -75,8 +91,13 @@ export default function Tagging({ imageUri }: TaggingProps) {
     <View style={styles.container}>
       {/* Occasions */}
       <View style={styles.headerRow}>
-        <Text style={styles.sectionTitle}>Add Occasion<Text style={styles.asterisk}>*</Text></Text>
-        <Pressable style={styles.chevronButton} onPress={() => router.push("/components/addOccasion")}>
+        <Text style={styles.sectionTitle}>
+          Add Occasion<Text style={styles.asterisk}>*</Text>
+        </Text>
+        <Pressable
+          style={styles.chevronButton}
+          onPress={() => router.push("/components/addOccasion")}
+        >
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
@@ -93,7 +114,9 @@ export default function Tagging({ imageUri }: TaggingProps) {
       <View style={styles.headerRow}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           <Text style={styles.sectionTitle}>Add Brand</Text>
-          <Text style={styles.brandCountText}>{selectedBrands.length} brands</Text>
+          <Text style={styles.brandCountText}>
+            {selectedBrands.length} brands
+          </Text>
         </View>
         <Pressable
           style={styles.chevronButton}
@@ -118,7 +141,9 @@ export default function Tagging({ imageUri }: TaggingProps) {
           value={openAIEnabled}
         />
       </View>
-      <Text style={styles.aiSubtitle}>AI feature that will analyze your post and create tags</Text>
+      <Text style={styles.aiSubtitle}>
+        AI feature that will analyze your post and create tags
+      </Text>
       <Pressable onPress={() => Linking.openURL("https://example.com")}>
         <Text style={styles.learnMore}>Learn more</Text>
       </Pressable>
@@ -134,7 +159,12 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     marginBottom: 5,
   },
-  sectionTitle: { fontSize: 14, fontWeight: "500", color: "#F5EEE3", marginRight: 8 },
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#F5EEE3",
+    marginRight: 8,
+  },
   asterisk: { color: "#FF5F5F" },
   chevronButton: { padding: 0, marginBottom: 8 },
   tagsContainer: { flexDirection: "row", marginBottom: 30 },

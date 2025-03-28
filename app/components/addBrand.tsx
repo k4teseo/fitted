@@ -19,7 +19,11 @@ import { useUploadContext } from "../context/uploadContext";
 export default function AddBrand() {
   const router = useRouter();
   // Retrieve tap coordinates and imageUri from route parameters
-  const { x, y, imageUri } = useLocalSearchParams<{ x: string; y: string; imageUri: string }>();
+  const { x, y, imageUri } = useLocalSearchParams<{
+    x: string;
+    y: string;
+    imageUri: string;
+  }>();
   const { selectedBrands, setSelectedBrands } = useUploadContext();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -226,7 +230,9 @@ export default function AddBrand() {
         style={[styles.brandPill, isSelected && styles.selectedBrand]}
         onPress={() => handleSelectBrand(item)}
       >
-        <Text style={[styles.brandText, isSelected && styles.selectedBrandText]}>
+        <Text
+          style={[styles.brandText, isSelected && styles.selectedBrandText]}
+        >
           {item}
         </Text>
         {isUserBrand && (
@@ -254,7 +260,12 @@ export default function AddBrand() {
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
-        <MaterialIcons name="search" size={20} color="#383C40" style={styles.searchIcon} />
+        <MaterialIcons
+          name="search"
+          size={20}
+          color="#383C40"
+          style={styles.searchIcon}
+        />
         <TextInput
           style={styles.searchInput}
           placeholder="Search your Outfit's Brand..."
@@ -264,7 +275,12 @@ export default function AddBrand() {
         />
         {searchTerm.length > 0 && (
           <Pressable onPress={() => setSearchTerm("")}>
-            <MaterialIcons name="close" size={20} color="#383C40" style={styles.clearIcon} />
+            <MaterialIcons
+              name="close"
+              size={20}
+              color="#383C40"
+              style={styles.clearIcon}
+            />
           </Pressable>
         )}
       </View>
@@ -275,7 +291,9 @@ export default function AddBrand() {
         <>
           {isNewBrand && (
             <Pressable style={styles.addRow} onPress={handleAddBrand}>
-              <Animated.View style={{ transform: [{ scale: scaleValue }], marginRight: 8 }}>
+              <Animated.View
+                style={{ transform: [{ scale: scaleValue }], marginRight: 8 }}
+              >
                 <MaterialIcons name="add" size={20} color="#F5EEE3" />
               </Animated.View>
               <Text style={styles.addRowText}>Add “{searchTerm}”</Text>
