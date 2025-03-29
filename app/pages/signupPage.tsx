@@ -5,7 +5,6 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -14,63 +13,104 @@ import { FittedLogo } from "@/assets/images/FittedLogo";
 
 const SignUpPage = () => {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState<string>("");
+  const [isPhoneValid, setIsPhoneValid] = useState<boolean>(true);
 
-  const handleGoogleSignIn = () => {
+  const formatPhoneNumber = (input: string): string => {
+    // Remove all non-digit characters
+    const cleaned = input.replace(/\D/g, '');
+    
+    // Apply formatting based on length
+    if (cleaned.length <= 3) {
+      return `(${cleaned}`;
+    } else if (cleaned.length <= 6) {
+      return `(${cleaned.slice(0, 3)})${cleaned.slice(3)}`;
+    } else {
+      return `(${cleaned.slice(0, 3)})${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
+    }
+  };
+
+  const validatePhoneNumber = (number: string): boolean => {
+    const phoneRegex = /^\(\d{3}\)\d{3}-\d{4}$/;
+    return phoneRegex.test(number);
+  };
+
+  const handlePhoneChange = (text: string): void => {
+    const formatted = formatPhoneNumber(text);
+    setPhoneNumber(formatted);
+    setIsPhoneValid(validatePhoneNumber(formatted) || formatted.length === 0);
+  }
+
+  const handleGoogleSignIn = (): void => {
     console.log("Google sign in pressed");
   };
 
-  const handleAppleSignIn = () => {
+  const handleAppleSignIn = (): void => {
     console.log("Apple sign in pressed");
   };
 
-  const handleEmailSignUp = () => {
+  const handleEmailSignUp = (): void => {
     console.log("Email sign up pressed");
   };
 
-  const handleBack = () => {
+  const handleBack = (): void => {
     router.back();
   };
 
-  const handleNext = () => {
-    if (phoneNumber.length > 0) {
+  const handleNext = (): void => {
+    const isValid = validatePhoneNumber(phoneNumber);
+    setIsPhoneValid(isValid);
+  
+    if (isValid && phoneNumber.length > 0) {
       console.log("Next pressed with phone number:", phoneNumber);
-      // Add your navigation or form submission logic here
+      router.push({
+        pathname: "./verificationPage",
+        params: { phoneNumber },
+      });
     }
   };
 
   return (
     <View style={styles.background}>
-      {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <MaterialIcons name="navigate-before" size={30} color="white" />
       </TouchableOpacity>
 
       <View style={styles.container}>
-        {/* Fitted Logo - Left Aligned */}
         <View style={styles.logoContainer}>
           <FittedLogo width={238} height={74} />
         </View>
 
-        {/* Left Aligned Text */}
         <Text style={styles.subheader}>Enter your Phone Number</Text>
         <Text style={styles.description}>
           Sign up and get started with your phone number.
         </Text>
 
         <View style={styles.inputContainer}>
-          <View style={styles.inputBorder}>
-            <Text style={styles.inputLabel}>Phone Number</Text>
+            <View style={[
+            styles.inputBorder,
+            !isPhoneValid && styles.inputError
+            ]}>
+            <Text style={[
+                styles.inputLabel,
+                !isPhoneValid && styles.inputLabelError
+            ]}>
+                Phone Number
+            </Text>
             <TextInput
-              style={styles.input}
-              placeholder="(___) ___-____"
-              placeholderTextColor="#383C40"
-              keyboardType="phone-pad"
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
+                style={styles.input}
+                placeholder="(123)456-7890"
+                placeholderTextColor="#383C40"
+                keyboardType="phone-pad"
+                value={phoneNumber}
+                onChangeText={handlePhoneChange}
+                maxLength={14} 
             />
-          </View>
-        </View>
+            </View>
+            {!isPhoneValid && (
+            <Text style={styles.errorText}>Please enter a valid phone number</Text>
+            )}
+      </View>
 
         <TouchableOpacity
           style={[
@@ -88,7 +128,6 @@ const SignUpPage = () => {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Apple Sign In Button */}
         <TouchableOpacity
           style={styles.appleButton}
           onPress={handleAppleSignIn}
@@ -97,7 +136,6 @@ const SignUpPage = () => {
           <Text style={styles.appleButtonText}>Continue with Apple</Text>
         </TouchableOpacity>
 
-        {/* Google Sign In Button */}
         <TouchableOpacity
           style={styles.googleButton}
           onPress={handleGoogleSignIn}
@@ -168,6 +206,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "flex-start",
     marginTop: 32,
+    marginLeft: -10,
     marginBottom: 56,
   },
   subheader: {
@@ -195,6 +234,9 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 20,
   },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
   inputLabel: {
     position: "absolute",
     top: -10,
@@ -205,10 +247,19 @@ const styles = StyleSheet.create({
     color: "#7F8D9A",
     fontWeight: "400",
   },
+  inputLabelError: {
+    color: '#FF3B30',
+  },
   input: {
     color: "#FFFFFF",
     fontSize: 16,
     paddingTop: 4,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 16,
   },
   nextButton: {
     backgroundColor: "#6D757E",
