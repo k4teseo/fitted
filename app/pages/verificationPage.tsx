@@ -48,9 +48,9 @@ const VerificationPage = () => {
     router.replace("./signupPage");
   };
 
-  const handleContinue = () => {
-    router.replace("./feedPage");
-  };
+const handleContinue = () => {
+  router.replace("./passwordPage");
+};
 
   const handleChangeText = (text: string, index: number) => {
     setIsError(false);
@@ -110,7 +110,7 @@ const VerificationPage = () => {
             style={styles.continueButton} 
             onPress={handleContinue}
           >
-            <Text style={styles.continueButtonText}>Continue to App</Text>
+            <Text style={styles.continueButtonText}>Next</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 30,
+    top: 60,
     left: 20,
     zIndex: 1,
   },
