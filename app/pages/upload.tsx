@@ -7,8 +7,9 @@ import {
 import { supabase } from '@/lib/supabase';
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
-import { useUploadContext } from "../context/uploadContext";  // No need to import UploadProvider
-import { analyzeOutfit } from "../components/openaiVision"
+import { useUploadContext } from "../context/uploadContext";  
+import { analyzeOutfit } from "../components/openaiVision";
+import LoadingScreen from "../components/loading";
 
 export default function UploadPage() {
     const params = useLocalSearchParams() as { imageUri?: string };
@@ -18,6 +19,10 @@ export default function UploadPage() {
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
     const { selectedBrands, selectedOccasions } = useUploadContext(); // Use Context
+
+    const [loading, setLoading] = useState(false);
+
+    if (loading) return <LoadingScreen />;
 
     if (!imageUri) {
         return (
@@ -36,6 +41,8 @@ export default function UploadPage() {
 
     const handlePost = async () => {
         if (!imageUri || !name) return;
+
+        setLoading(true);
 
         try {
             const response = await fetch(imageUri);
@@ -83,6 +90,7 @@ export default function UploadPage() {
         } catch (error) {
             console.error("Error during upload:", error);
         }
+        setLoading(false);
     };
 
     return (
