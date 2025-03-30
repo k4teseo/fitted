@@ -18,7 +18,7 @@ export default function UploadPage() {
 
     const [name, setName] = useState('');
     const [postTitle, setPostTitle] = useState('');
-    const { selectedBrands, selectedOccasions } = useUploadContext(); // Use Context
+    const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions } = useUploadContext(); // Use Context
 
     const [loading, setLoading] = useState(false);
 
@@ -84,6 +84,10 @@ export default function UploadPage() {
             if (insertError) {
                 console.error("Error saving image with tags:", insertError);
             } else {
+
+                setSelectedBrands([]);
+                setSelectedOccasions([]);
+
                 console.log("Post uploaded successfully with tags:", postTitle);
                 router.replace("./feedPage");
             }
