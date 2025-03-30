@@ -38,8 +38,6 @@ export default function UploadPage() {
         if (!imageUri || !name) return;
 
         try {
-            const metadata = await analyzeOutfit(imageUri).catch(() => []);
-            console.log("Extracted metadata:", metadata); // Debugging
             const response = await fetch(imageUri);
             const blob = await response.blob();
             const arrayBuffer = await new Response(blob).arrayBuffer();
@@ -53,6 +51,17 @@ export default function UploadPage() {
                 console.error("Error uploading image:", uploadError);
                 return;
             }
+
+            const { data: publicUrlData } = supabase.storage.from("images").getPublicUrl(fileName);
+            const publicImageUrl = publicUrlData?.publicUrl;
+
+            if (!publicImageUrl) {
+              console.error("Failed to retrieve public image URL.");
+              return;
+            }
+            
+            const metadata = await analyzeOutfit(publicImageUrl).catch(() => []);
+            console.log("Extracted metadata:", metadata);
 
             const { error: insertError } = await supabase
                 .from("images")

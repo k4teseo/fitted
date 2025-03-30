@@ -175,10 +175,6 @@ export default function FeedPage() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => router.push("/pages/testOutfit")}>
-          <Text>Go to Test Outfit</Text>
-        </TouchableOpacity>
-
         {/* PROFILE TAB - commented out
         <TouchableOpacity
           style={feedStyles.navItem}
