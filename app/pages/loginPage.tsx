@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator
 } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -15,6 +16,24 @@ const LoginPage = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [emailError, setEmailError] = useState(false);
+  const [passwordError, setPasswordError] = useState(false);
+  const [inputType, setInputType] = useState<"email" | "phone">("email");
+
+  // Mock authentication function - replace with actual auth logic
+  const authenticateUser = async (email: string, password: string) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Mock validation - replace with real authentication
+    if (email === "user@example.com" && password === "password123") {
+      return true;
+    }
+    return false;
+  };
 
   const handleGoogleSignIn = () => {
     console.log("Google sign in pressed");
@@ -24,47 +43,95 @@ const LoginPage = () => {
     console.log("Apple sign in pressed");
   };
 
-  const handleLogin = () => {
-    if (email.length > 0 && password.length > 0) {
-      console.log("Login pressed with:", email, password);
-      // Add your authentication logic here
+  const handleLogin = async () => {
+    // Validate that both fields are filled
+    if (email.length === 0 || password.length === 0) {
+      setError("Please fill in all fields");
+      setEmailError(email.length === 0);
+      setPasswordError(password.length === 0);
+      return;
     }
+
+    setLoading(true);
+    setError("");
+    setEmailError(false);
+    setPasswordError(false);
+
+    try {
+      const isAuthenticated = await authenticateUser(email, password);
+      
+      if (isAuthenticated) {
+        router.replace("./feedPage"); // Navigate to home on success
+      } else {
+        setError("Invalid email or password");
+        setEmailError(true);
+        setPasswordError(true);
+      }
+    } catch (err) {
+      setError("An error occurred. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   const handleBack = () => {
     router.back();
   };
 
+  // Handle changes to the email/phone input field
+  const handleInputChange = (text: string) => {
+    setEmail(text);
+    setEmailError(false);
+    setError("");
+    
+    // Detect whether user is entering email or phone number
+    if (/[\d\+\-\(\)]/.test(text)) {
+      setInputType("phone");
+    } else if (text.includes("@")) {
+      setInputType("email");
+    }
+  };
+
   return (
     <View style={styles.background}>
-      {/* Back Button */}
+      {/* Back button at top left */}
       <TouchableOpacity style={styles.backButton} onPress={handleBack}>
         <MaterialIcons name="navigate-before" size={30} color="white" />
       </TouchableOpacity>
 
       <View style={styles.container}>
-        {/* Fitted Logo - Left Aligned */}
+        {/* Logo at top */}
         <View style={styles.logoContainer}>
           <FittedLogo width={238} height={74} />
         </View>
 
-        {/* Left Aligned Text */}
+        {/* Header text */}
         <Text style={styles.subheader}>Login to your account</Text>
         <Text style={styles.description}>
           Welcome back! Please enter your details.
         </Text>
 
-        {/* Email Input */}
+        {/* Email or phone number Input */}
         <View style={styles.inputContainer}>
-          <View style={styles.inputBorder}>
-            <Text style={styles.inputLabel}>Email or Phone Number</Text>
+          <View style={[
+            styles.inputBorder,
+            emailError && styles.inputError
+          ]}>
+            <Text style={[
+              styles.inputLabel,
+              emailError && styles.inputLabelError
+            ]}>Email or Phone Number</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email or phone"
               placeholderTextColor="#383C40"
-              keyboardType="email-address"
+              keyboardType={inputType === "email" ? "email-address" : "phone-pad"}
               value={email}
-              onChangeText={setEmail}
+              onChangeText={handleInputChange}
               autoCapitalize="none"
             />
           </View>
@@ -72,17 +139,44 @@ const LoginPage = () => {
 
         {/* Password Input */}
         <View style={styles.inputContainer}>
-          <View style={styles.inputBorder}>
-            <Text style={styles.inputLabel}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Enter your password"
-              placeholderTextColor="#383C40"
-              secureTextEntry
-              value={password}
-              onChangeText={setPassword}
-            />
+          <View style={[
+            styles.inputBorder,
+            passwordError && styles.inputError
+          ]}>
+            <Text style={[
+              styles.inputLabel,
+              passwordError && styles.inputLabelError
+            ]}>Password</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Enter your password"
+                placeholderTextColor="#383C40"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={(text) => {
+                  setPassword(text);
+                  setPasswordError(false);
+                  setError("");
+                }}
+              />
+              {/* Show/hide password toggle */}
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={togglePasswordVisibility}
+              >
+                <MaterialIcons 
+                  name={showPassword ? "visibility" : "visibility-off"} 
+                  size={24} 
+                  color="#84919D" 
+                />
+              </TouchableOpacity>
+            </View>
           </View>
+          {/* Error message display */}
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
         </View>
 
         {/* Login Button */}
@@ -90,10 +184,16 @@ const LoginPage = () => {
           style={[
             styles.nextButton,
             email.length > 0 && password.length > 0 && styles.nextButtonActive,
+            loading && styles.disabledButton
           ]}
           onPress={handleLogin}
+          disabled={loading}
         >
-          <Text style={styles.nextButtonText}>Login</Text>
+          {loading ? (
+            <ActivityIndicator color="#F5EEE3" />
+          ) : (
+            <Text style={styles.nextButtonText}>Login</Text>
+          )}
         </TouchableOpacity>
 
         <View style={styles.dividerContainer}>
@@ -102,7 +202,6 @@ const LoginPage = () => {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Apple Sign In Button */}
         <TouchableOpacity
           style={styles.appleButton}
           onPress={handleAppleSignIn}
@@ -111,7 +210,6 @@ const LoginPage = () => {
           <Text style={styles.appleButtonText}>Continue with Apple</Text>
         </TouchableOpacity>
 
-        {/* Google Sign In Button */}
         <TouchableOpacity
           style={styles.googleButton}
           onPress={handleGoogleSignIn}
@@ -143,7 +241,6 @@ const LoginPage = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Sign Up Link */}
         <Text style={styles.footerText}>
           Don't have an account?{" "}
           <Link href="./signupPage" style={styles.footerLink}>
@@ -155,7 +252,6 @@ const LoginPage = () => {
   );
 };
 
-// Reuse the same styles from SignUpPage
 const styles = StyleSheet.create({
   background: {
     flex: 1,
@@ -205,6 +301,9 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingTop: 20,
   },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
   inputLabel: {
     position: "absolute",
     top: -10,
@@ -215,10 +314,32 @@ const styles = StyleSheet.create({
     color: "#7F8D9A",
     fontWeight: "400",
   },
+  inputLabelError: {
+    color: '#FF3B30',
+  },
   input: {
     color: "#FFFFFF",
     fontSize: 16,
     paddingTop: 4,
+  },
+  passwordInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  passwordInput: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    flex: 1,
+    paddingTop: 4,
+  },
+  eyeIcon: {
+    marginLeft: 10,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
   },
   nextButton: {
     backgroundColor: "#6D757E",
@@ -229,6 +350,9 @@ const styles = StyleSheet.create({
   },
   nextButtonActive: {
     backgroundColor: "#4DA6FD",
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   nextButtonText: {
     color: "#F5EEE3",

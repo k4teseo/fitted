@@ -11,7 +11,9 @@ const VerificationPage = () => {
   const [isError, setIsError] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const inputs = useRef<TextInput[]>(Array(6).fill(null));
-  const phoneNumber = params.phoneNumber as string || "(123) 456-7890";
+  const phoneNumber = params.phoneNumber as string || "";
+  const email = params.email as string || "";
+  const verificationMethod = phoneNumber ? "phone" : "email";
 
   useEffect(() => {
     if (!isVerified) {
@@ -48,9 +50,9 @@ const VerificationPage = () => {
     router.replace("./signupPage");
   };
 
-const handleContinue = () => {
-  router.replace("./passwordPage");
-};
+  const handleContinue = () => {
+    router.replace("./passwordPage");
+  };
 
   const handleChangeText = (text: string, index: number) => {
     setIsError(false);
@@ -84,6 +86,22 @@ const handleContinue = () => {
     }
   };
 
+  const getVerificationMessage = () => {
+    if (verificationMethod === "phone") {
+      return `A verification code has been sent via text to +1 ${phoneNumber}`;
+    } else {
+      return `A verification code has been sent via email to ${email}`;
+    }
+  };
+
+  const getSuccessMessage = () => {
+    if (verificationMethod === "phone") {
+      return `Your phone number +1 ${phoneNumber} has been successfully verified.`;
+    } else {
+      return `Your email address ${email} has been successfully verified.`;
+    }
+  };
+
   if (isVerified) {
     return (
       <View style={styles.background}>
@@ -102,7 +120,7 @@ const handleContinue = () => {
             </View>
             <Text style={styles.successTitle}>Congratulations!</Text>
             <Text style={styles.successText}>
-              Your phone number +1 {phoneNumber} has been successfully verified.
+              {getSuccessMessage()}
             </Text>
           </View>
 
@@ -130,11 +148,10 @@ const handleContinue = () => {
 
         <Text style={styles.subheader}>Enter the 6-digit code</Text>
         <Text style={styles.description}>
-          A verification code has been sent via text to +1 {phoneNumber}
+          {getVerificationMessage()}
         </Text>
 
         <View style={styles.codeContainer}>
-          <Text style={styles.codeLabel}>Enter your verification code</Text>
           <View style={styles.codeInputContainer}>
             {Array(6).fill(0).map((_, index) => (
               <TextInput
@@ -162,8 +179,7 @@ const handleContinue = () => {
         <TouchableOpacity 
           style={[
             styles.nextButton, 
-            digits.every(d => d) && styles.nextButtonActive,
-            isError && styles.nextButtonError
+            digits.every(d => d) && styles.nextButtonActive
           ]} 
           onPress={handleVerify}
           disabled={!digits.every(d => d)}
@@ -172,7 +188,9 @@ const handleContinue = () => {
         </TouchableOpacity>
 
         <TouchableOpacity onPress={handleResend}>
-          <Text style={styles.resendText}>Not seeing code? Try Again</Text>
+          <Text style={styles.resendText}>
+            Not seeing code? <Text style={styles.resendLink}>Try Again</Text>
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -200,6 +218,7 @@ const styles = StyleSheet.create({
   logoContainer: {
     alignItems: "flex-start",
     marginTop: 32,
+    marginLeft: -10,
     marginBottom: 56,
   },
   subheader: {
@@ -219,11 +238,6 @@ const styles = StyleSheet.create({
   codeContainer: {
     marginBottom: 24,
     position: "relative",
-  },
-  codeLabel: {
-    color: "#7F8D9A",
-    fontSize: 12,
-    marginBottom: 16,
   },
   codeInputContainer: {
     flexDirection: "row",
@@ -256,19 +270,21 @@ const styles = StyleSheet.create({
   nextButtonActive: {
     backgroundColor: "#4DA6FD",
   },
-  nextButtonError: {
-    backgroundColor: "#FF3B30",
-  },
   nextButtonText: {
     color: "#F5EEE3",
     fontSize: 16,
     fontWeight: "600",
   },
   resendText: {
-    color: "#4DA6FD",
-    fontSize: 14,
+    color: "#F5EEE3",
     textAlign: "center",
+    fontSize: 13,
     marginBottom: 40,
+    opacity: 0.8,
+  },
+  resendLink: {
+    color: "#4DA6FD",
+    fontWeight: "700",
   },
   errorText: {
     color: '#FF3B30',
@@ -276,7 +292,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     textAlign: 'center',
   },
-  // Success screen styles
   successContainer: {
     alignItems: "center",
     marginTop: 40,

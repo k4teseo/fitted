@@ -15,9 +15,10 @@ const OnboardingProfileSetup = () => {
   const [isValidDate, setIsValidDate] = useState(true);
 
   const currentYear = new Date().getFullYear();
+  const isFormValid = name.length > 0 && username.length > 0 && dob.length === 10 && isValidDate;
 
   const handleSetupProfile = () => {
-    if (isValidDate) {
+    if (isFormValid) {
       router.replace("./feedPage");
     }
   };
@@ -27,18 +28,15 @@ const OnboardingProfileSetup = () => {
   };
 
   const validateDate = (month: number, day: number, year: number) => {
-    // Basic validation
     if (month < 1 || month > 12) return false;
     if (day < 1 || day > 31) return false;
     if (year > currentYear) return false;
 
-    // Validate days in month
     const daysInMonth = new Date(year, month, 0).getDate();
     return day <= daysInMonth;
   };
 
   const formatDate = (input: string) => {
-    // Remove all non-digit characters
     const cleaned = input.replace(/\D/g, '');
     
     let month = '';
@@ -47,7 +45,6 @@ const OnboardingProfileSetup = () => {
 
     if (cleaned.length > 0) {
       month = cleaned.slice(0, 2);
-      // Validate month
       if (month.length === 2) {
         const monthNum = parseInt(month, 10);
         if (monthNum < 1 || monthNum > 12) {
@@ -60,7 +57,6 @@ const OnboardingProfileSetup = () => {
 
     if (cleaned.length > 2) {
       day = cleaned.slice(2, 4);
-      // Validate day
       if (day.length === 2) {
         const dayNum = parseInt(day, 10);
         if (dayNum < 1 || dayNum > 31) {
@@ -73,13 +69,11 @@ const OnboardingProfileSetup = () => {
 
     if (cleaned.length > 4) {
       year = cleaned.slice(4, 8);
-      // Validate year
       if (year.length === 4) {
         const yearNum = parseInt(year, 10);
         if (yearNum > currentYear) {
           setIsValidDate(false);
         } else {
-          // Final validation with all parts
           const monthNum = parseInt(month, 10);
           const dayNum = parseInt(day, 10);
           setIsValidDate(validateDate(monthNum, dayNum, yearNum));
@@ -87,7 +81,6 @@ const OnboardingProfileSetup = () => {
       }
     }
 
-    // Apply formatting based on length
     if (cleaned.length <= 2) {
       return cleaned;
     } else if (cleaned.length <= 4) {
@@ -122,7 +115,7 @@ const OnboardingProfileSetup = () => {
     <View style={styles.background}>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
-          <Text style={styles.header}>Welcome to Fitted!</Text>
+          <Text style={styles.header}>Welcome to Fitted.</Text>
           <Text style={styles.subheader}>Fill in your profile.</Text>
         </View>
 
@@ -197,18 +190,17 @@ const OnboardingProfileSetup = () => {
               placeholderTextColor="#383C40"
             />
           </View>
+          <Text style={styles.noteText}>You can change this later in settings.</Text>
         </View>
-
-        <Text style={styles.noteText}>You can change this later in settings.</Text>
 
         <View style={styles.buttonGroup}>
           <TouchableOpacity 
             style={[
               styles.setupButton,
-              !isValidDate && styles.disabledButton
+              !isFormValid && styles.disabledButton
             ]} 
             onPress={handleSetupProfile}
-            disabled={!isValidDate}
+            disabled={!isFormValid}
           >
             <Text style={styles.actionButtonText}>Set Up Profile</Text>
           </TouchableOpacity>
@@ -241,21 +233,22 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   header: {
-    fontSize: 25,
-    fontWeight: "400",
+    fontSize: 28,
+    fontWeight: "700",
     color: "#B9CADB",
     marginBottom: 8,
     textAlign: "left",
   },
   subheader: {
-    fontSize: 12,
+    fontSize: 18,
     color: "#84919D",
-    fontWeight: "400",
+    fontWeight: "500",
     textAlign: "left",
   },
   uploadContainer: {
     alignItems: "center",
     marginBottom: 24,
+    marginTop: 10,
   },
   uploadCircle: {
     width: 100,
@@ -269,11 +262,11 @@ const styles = StyleSheet.create({
   },
   uploadText: {
     color: "#4DA6FD",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "600",
   },
   inputContainer: {
-    marginBottom: 24,
+    marginBottom: 24, 
     position: "relative",
   },
   inputBorder: {
@@ -325,11 +318,11 @@ const styles = StyleSheet.create({
   noteText: {
     color: "#626A73",
     fontSize: 12,
-    marginTop: 8,
-    marginBottom: 32,
+    marginTop: 8, // Added marginTop to bring it closer to the input
+    marginLeft: 16,
   },
   buttonGroup: {
-    marginTop: 24,
+    marginTop: 20,
   },
   setupButton: {
     backgroundColor: "#4DA6FD",
@@ -340,12 +333,12 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     backgroundColor: "#6D757E",
-    opacity: 0.7,
   },
   feedButton: {
-    backgroundColor: "#6D757E",
     padding: 13,
     borderRadius: 8,
+    borderWidth: 2,
+    borderColor: "#4DA6FD",
     alignItems: "center",
   },
   actionButtonText: {
