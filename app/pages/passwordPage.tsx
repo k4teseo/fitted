@@ -48,6 +48,7 @@ const PasswordPage = () => {
     if (!session)
       Alert.alert("Please check your inbox for email verification!");
     setLoading(false);
+    router.push("./onboardingProfileSetup");
   }
 
   const handleBack = () => {

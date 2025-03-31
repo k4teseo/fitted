@@ -39,7 +39,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`/pages/PostPage?id=${item.id}`);
+        router.push(`/pages/postPage?id=${item.id}`);
       }}
       activeOpacity={0.9} // Reduce interference with scroll
     >
@@ -83,7 +83,9 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
 // The main feed page component
 export default function FeedPage() {
   // Track the active tab: 'home' or 'add'
-  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
+    "home"
+  );
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
 
