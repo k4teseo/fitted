@@ -71,8 +71,7 @@ const OnboardingInput: React.FC<OnboardingInputProps> = ({
     errorText: {
       color: "#FF6B6B",
       fontSize: 12,
-      marginTop: 4,
-      marginLeft: 16,
+      marginTop: 5,
     },
     inputError: {
       borderColor: "#FF3B30",

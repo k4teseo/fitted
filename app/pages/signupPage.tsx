@@ -1,11 +1,5 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
@@ -75,7 +69,7 @@ const SignUpPage = () => {
           handleChange={handleEmailChange}
           keyboardType="email-address"
           isValid={isEmailValid}
-          errorMessage="Please enter a valid email address"
+          errorMessage="Please enter a valid email address."
         />
 
         <OnboardingButton
