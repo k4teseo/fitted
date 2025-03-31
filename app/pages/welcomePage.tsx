@@ -10,7 +10,7 @@ import {
 import { FittedLogo } from "@/assets/images/FittedLogo";
 import { useRouter } from "expo-router";
 import OnboardingButton from "../components/OnboardingButton";
-import images from "@/assets/images/onboardingImages";
+import images from "@/assets/images/OnboardingImages";
 
 export default function WelcomePage() {
   const { width, height } = useWindowDimensions();

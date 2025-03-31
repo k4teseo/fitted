@@ -1,5 +1,10 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, useWindowDimensions } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  useWindowDimensions,
+  Text,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { FeedPageIcon } from "@/assets/images/FeedPageIcon";
 import { PlusIcon } from "@/assets/images/PlusIcon";
@@ -71,21 +76,15 @@ export default function BottomNavBar() {
         )}
       </TouchableOpacity>
 
-      {/* PROFILE TAB - commented out
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text
-            style={[
-              feedStyles.navItemText,
-              activeTab === 'profile' && { color: '#F3EDE2' },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-        */}
+      {/* PROFILE TAB - commented out */}
+      <TouchableOpacity
+        onPress={() => {
+          setActiveTab("add");
+          router.push("/components/account");
+        }}
+      >
+        <Text>Profile</Text>
+      </TouchableOpacity>
     </View>
   );
 }

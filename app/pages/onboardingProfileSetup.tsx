@@ -1,9 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  TextInput,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FittedLogo } from "@/assets/images/FittedLogo";
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const OnboardingProfileSetup = () => {
   const router = useRouter();
@@ -15,7 +21,8 @@ const OnboardingProfileSetup = () => {
   const [isValidDate, setIsValidDate] = useState(true);
 
   const currentYear = new Date().getFullYear();
-  const isFormValid = name.length > 0 && username.length > 0 && dob.length === 10 && isValidDate;
+  const isFormValid =
+    name.length > 0 && username.length > 0 && dob.length === 10 && isValidDate;
 
   const handleSetupProfile = () => {
     if (isFormValid) {
@@ -24,7 +31,7 @@ const OnboardingProfileSetup = () => {
   };
 
   const handleGoToFeed = () => {
-    router.replace("./feedPage"); 
+    router.replace("./feedPage");
   };
 
   const validateDate = (month: number, day: number, year: number) => {
@@ -37,11 +44,11 @@ const OnboardingProfileSetup = () => {
   };
 
   const formatDate = (input: string) => {
-    const cleaned = input.replace(/\D/g, '');
-    
-    let month = '';
-    let day = '';
-    let year = '';
+    const cleaned = input.replace(/\D/g, "");
+
+    let month = "";
+    let day = "";
+    let year = "";
 
     if (cleaned.length > 0) {
       month = cleaned.slice(0, 2);
@@ -95,6 +102,10 @@ const OnboardingProfileSetup = () => {
     setDob(formatted);
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   const handleCalendarPress = () => {
     setShowDatePicker(true);
   };
@@ -103,8 +114,8 @@ const OnboardingProfileSetup = () => {
     setShowDatePicker(false);
     if (selectedDate) {
       setDate(selectedDate);
-      const day = selectedDate.getDate().toString().padStart(2, '0');
-      const month = (selectedDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = selectedDate.getDate().toString().padStart(2, "0");
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, "0");
       const year = selectedDate.getFullYear();
       setDob(`${month}/${day}/${year}`);
       setIsValidDate(true);
@@ -113,6 +124,9 @@ const OnboardingProfileSetup = () => {
 
   return (
     <View style={styles.background}>
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <MaterialIcons name="navigate-before" size={30} color="white" />
+      </TouchableOpacity>
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Welcome to Fitted.</Text>
@@ -140,15 +154,21 @@ const OnboardingProfileSetup = () => {
         </View>
 
         <View style={styles.inputContainer}>
-          <View style={[
-            styles.inputBorder, 
-            styles.dobInputContainer,
-            !isValidDate && styles.inputError
-          ]}>
-            <Text style={[
-              styles.inputLabel,
-              !isValidDate && styles.inputLabelError
-            ]}>Date of Birth</Text>
+          <View
+            style={[
+              styles.inputBorder,
+              styles.dobInputContainer,
+              !isValidDate && styles.inputError,
+            ]}
+          >
+            <Text
+              style={[
+                styles.inputLabel,
+                !isValidDate && styles.inputLabelError,
+              ]}
+            >
+              Date of Birth
+            </Text>
             <View style={styles.dobInputWrapper}>
               <TextInput
                 style={[styles.input, styles.dobInput]}
@@ -160,7 +180,11 @@ const OnboardingProfileSetup = () => {
                 maxLength={10}
               />
               <TouchableOpacity onPress={handleCalendarPress}>
-                <MaterialIcons name="calendar-today" size={24} color="#4DA6FD" />
+                <MaterialIcons
+                  name="calendar-today"
+                  size={24}
+                  color="#4DA6FD"
+                />
               </TouchableOpacity>
             </View>
           </View>
@@ -190,25 +214,21 @@ const OnboardingProfileSetup = () => {
               placeholderTextColor="#383C40"
             />
           </View>
-          <Text style={styles.noteText}>You can change this later in settings.</Text>
+          <Text style={styles.noteText}>
+            You can change this later in settings.
+          </Text>
         </View>
 
         <View style={styles.buttonGroup}>
-          <TouchableOpacity 
-            style={[
-              styles.setupButton,
-              !isFormValid && styles.disabledButton
-            ]} 
+          <TouchableOpacity
+            style={[styles.setupButton, !isFormValid && styles.disabledButton]}
             onPress={handleSetupProfile}
             disabled={!isFormValid}
           >
             <Text style={styles.actionButtonText}>Set Up Profile</Text>
           </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.feedButton} 
-            onPress={handleGoToFeed}
-          >
+
+          <TouchableOpacity style={styles.feedButton} onPress={handleGoToFeed}>
             <Text style={styles.actionButtonText}>Go To Feed</Text>
           </TouchableOpacity>
         </View>
@@ -250,6 +270,12 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     marginTop: 10,
   },
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    zIndex: 1,
+  },
   uploadCircle: {
     width: 100,
     height: 100,
@@ -266,7 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   inputContainer: {
-    marginBottom: 24, 
+    marginBottom: 24,
     position: "relative",
   },
   inputBorder: {
@@ -277,7 +303,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   inputError: {
-    borderColor: '#FF3B30',
+    borderColor: "#FF3B30",
   },
   inputLabel: {
     position: "absolute",
@@ -290,15 +316,15 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   inputLabelError: {
-    color: '#FF3B30',
+    color: "#FF3B30",
   },
   dobInputContainer: {
     paddingRight: 16,
   },
   dobInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   dobInput: {
     flex: 1,
@@ -310,7 +336,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   errorText: {
-    color: '#FF3B30',
+    color: "#FF3B30",
     fontSize: 12,
     marginTop: 4,
     marginLeft: 16,
