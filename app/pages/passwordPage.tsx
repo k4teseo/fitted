@@ -7,7 +7,7 @@ import {
   Alert,
   AppState,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FittedLogo } from "@/assets/images/FittedLogo";
 import { supabase } from "@/lib/supabase";
@@ -24,7 +24,7 @@ AppState.addEventListener("change", (state) => {
 
 const PasswordPage = () => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  const { email } = useLocalSearchParams();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordValid, setPasswordValid] = useState({
