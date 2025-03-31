@@ -1,18 +1,11 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  AppState,
-} from "react-native";
+import { View, Text, StyleSheet, Alert, AppState } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { MaterialIcons } from "@expo/vector-icons";
 import { FittedLogo } from "@/assets/images/FittedLogo";
 import { supabase } from "@/lib/supabase";
 import OnboardingButton from "../components/OnboardingButton";
 import OnboardingInput from "../components/OnboardingInput";
+import BackButton from "../components/BackButton";
 
 AppState.addEventListener("change", (state) => {
   if (state === "active") {
@@ -51,10 +44,6 @@ const PasswordPage = () => {
     router.push("./onboardingProfileSetup");
   }
 
-  const handleBack = () => {
-    router.back();
-  };
-
   const handlePasswordChange = (text: string) => {
     setPassword(text);
     setPasswordValid({
@@ -70,9 +59,7 @@ const PasswordPage = () => {
 
   return (
     <View style={styles.background}>
-      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-        <MaterialIcons name="navigate-before" size={30} color="white" />
-      </TouchableOpacity>
+      <BackButton />
 
       <View style={styles.container}>
         <View style={styles.logoContainer}>
@@ -150,12 +137,6 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 32,
     paddingTop: 100,
-  },
-  backButton: {
-    position: "absolute",
-    top: 60,
-    left: 20,
-    zIndex: 1,
   },
   logoContainer: {
     alignItems: "flex-start",

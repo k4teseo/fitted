@@ -184,7 +184,6 @@ const styles = StyleSheet.create({
   nextButtonActive: {
     backgroundColor: "#4DA6FD",
   },
-
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",

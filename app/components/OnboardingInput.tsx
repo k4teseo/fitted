@@ -42,7 +42,6 @@ const OnboardingInput: React.FC<OnboardingInputProps> = ({
       color: "#FFFFFF",
       fontSize: 16,
       paddingTop: 4,
-      flex: 1,
     },
     inputContainer: {
       marginBottom: 24,
