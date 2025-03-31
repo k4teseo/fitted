@@ -13,37 +13,12 @@ import { FittedLogo } from "@/assets/images/FittedLogo";
 
 const SignUpPage = () => {
   const router = useRouter();
-  const [phoneNumber, setPhoneNumber] = useState<string>("");
   const [email, setEmail] = useState<string>("");
-  const [isPhoneValid, setIsPhoneValid] = useState<boolean>(true);
   const [isEmailValid, setIsEmailValid] = useState<boolean>(true);
-  const [showEmailInput, setShowEmailInput] = useState<boolean>(false);
-
-  const formatPhoneNumber = (input: string): string => {
-    const cleaned = input.replace(/\D/g, '');
-    if (cleaned.length <= 3) {
-      return `(${cleaned}`;
-    } else if (cleaned.length <= 6) {
-      return `(${cleaned.slice(0, 3)})${cleaned.slice(3)}`;
-    } else {
-      return `(${cleaned.slice(0, 3)})${cleaned.slice(3, 6)}-${cleaned.slice(6, 10)}`;
-    }
-  };
-
-  const validatePhoneNumber = (number: string): boolean => {
-    const phoneRegex = /^\(\d{3}\)\d{3}-\d{4}$/;
-    return phoneRegex.test(number);
-  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
-  };
-
-  const handlePhoneChange = (text: string): void => {
-    const formatted = formatPhoneNumber(text);
-    setPhoneNumber(formatted);
-    setIsPhoneValid(validatePhoneNumber(formatted) || formatted.length === 0);
   };
 
   const handleEmailChange = (text: string): void => {
@@ -59,35 +34,19 @@ const SignUpPage = () => {
     console.log("Apple sign in pressed");
   };
 
-  const toggleInputMethod = (): void => {
-    setShowEmailInput(!showEmailInput);
-  };
-
   const handleBack = (): void => {
     router.back();
   };
 
   const handleNext = (): void => {
-    if (showEmailInput) {
-      const isValid = validateEmail(email);
-      setIsEmailValid(isValid);
-      if (isValid && email.length > 0) {
-        console.log("Next pressed with email:", email);
-        router.push({
-            pathname: "./verificationPage",
-            params: { email },
-          });
-      }
-    } else {
-      const isValid = validatePhoneNumber(phoneNumber);
-      setIsPhoneValid(isValid);
-      if (isValid && phoneNumber.length > 0) {
-        console.log("Next pressed with phone number:", phoneNumber);
-        router.push({
-          pathname: "./verificationPage",
-          params: { phoneNumber },
-        });
-      }
+    const isValid = validateEmail(email);
+    setIsEmailValid(isValid);
+    if (isValid && email.length > 0) {
+      console.log("Next pressed with email:", email);
+      router.push({
+        pathname: "./verificationPage",
+        params: { email },
+      });
     }
   };
 
@@ -102,71 +61,45 @@ const SignUpPage = () => {
           <FittedLogo width={238} height={74} />
         </View>
 
-        <Text style={styles.subheader}>
-          {showEmailInput ? "Enter your Email Address" : "Enter your Phone Number"}
-        </Text>
+        <Text style={styles.subheader}>Enter your Email Address</Text>
         <Text style={styles.description}>
-          {showEmailInput 
-            ? "Sign up and get started with your email address." 
-            : "Sign up and get started with your phone number."}
+          Sign up and get started with your email address.
         </Text>
 
         <View style={styles.inputContainer}>
-          {showEmailInput ? (
-            <View style={[
-              styles.inputBorder,
-              !isEmailValid && styles.inputError
-            ]}>
-              <Text style={[
+          <View
+            style={[styles.inputBorder, !isEmailValid && styles.inputError]}
+          >
+            <Text
+              style={[
                 styles.inputLabel,
-                !isEmailValid && styles.inputLabelError
-              ]}>
-                Email Address
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="example@gmail.com"
-                placeholderTextColor="#383C40"
-                keyboardType="email-address"
-                value={email}
-                onChangeText={handleEmailChange}
-                autoCapitalize="none"
-              />
-            </View>
-          ) : (
-            <View style={[
-              styles.inputBorder,
-              !isPhoneValid && styles.inputError
-            ]}>
-              <Text style={[
-                styles.inputLabel,
-                !isPhoneValid && styles.inputLabelError
-              ]}>
-                Phone Number
-              </Text>
-              <TextInput
-                style={styles.input}
-                placeholder="(123)456-7890"
-                placeholderTextColor="#383C40"
-                keyboardType="phone-pad"
-                value={phoneNumber}
-                onChangeText={handlePhoneChange}
-                maxLength={14}
-              />
-            </View>
-          )}
-          {!isPhoneValid && !showEmailInput && (
-            <Text style={styles.errorText}>Please enter a valid phone number</Text>
-          )}
-          {!isEmailValid && showEmailInput && (
-            <Text style={styles.errorText}>Please enter a valid email address</Text>
+                !isEmailValid && styles.inputLabelError,
+              ]}
+            >
+              Email Address
+            </Text>
+            <TextInput
+              style={styles.input}
+              placeholder="example@gmail.com"
+              placeholderTextColor="#383C40"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={handleEmailChange}
+              autoCapitalize="none"
+            />
+          </View>
+
+          {!isEmailValid && (
+            <Text style={styles.errorText}>
+              Please enter a valid email address
+            </Text>
           )}
         </View>
 
         <TouchableOpacity
           style={[
             styles.nextButton,
-            (showEmailInput ? email.length > 0 : phoneNumber.length > 0) && styles.nextButtonActive,
+            email.length > 0 && styles.nextButtonActive,
           ]}
           onPress={handleNext}
         >
@@ -216,15 +149,6 @@ const SignUpPage = () => {
             </View>
             <Text style={styles.googleButtonText}>Continue with Google</Text>
           </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.emailButton}
-          onPress={toggleInputMethod}
-        >
-          <Text style={styles.emailButtonText}>
-            {showEmailInput ? "Use Phone Instead" : "Use Email Instead"}
-          </Text>
         </TouchableOpacity>
 
         <Text style={styles.footerText}>
@@ -288,7 +212,7 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   inputError: {
-    borderColor: '#FF3B30',
+    borderColor: "#FF3B30",
   },
   inputLabel: {
     position: "absolute",
@@ -301,7 +225,7 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   inputLabelError: {
-    color: '#FF3B30',
+    color: "#FF3B30",
   },
   input: {
     color: "#FFFFFF",
@@ -309,7 +233,7 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   errorText: {
-    color: '#FF3B30',
+    color: "#FF3B30",
     fontSize: 12,
     marginTop: 4,
     marginLeft: 16,
