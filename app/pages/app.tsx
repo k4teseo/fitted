@@ -5,6 +5,8 @@ import Account from "../components/account";
 import { View } from "react-native";
 import { Session } from "@supabase/supabase-js";
 
+// Don't use this file, for authentication go to passwordPage.tsx.
+
 export default function App() {
   const [session, setSession] = useState<Session | null>(null);
 
