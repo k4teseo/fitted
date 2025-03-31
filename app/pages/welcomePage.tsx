@@ -42,10 +42,12 @@ export default function WelcomePage() {
     },
     content: {
       position: "absolute",
-      bottom: height * 0.15,
-      alignItems: "center",
+      bottom: height * 0.18,
       justifyContent: "center",
+      alignItems: "flex-start",
+      width: "80%",
     },
+
     subtitle: {
       color: "#F5EEE3",
       fontSize: 18,
@@ -73,7 +75,7 @@ export default function WelcomePage() {
         <View style={styles.overlay} />
 
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          <FittedLogo width={316} height={99} />
+          <FittedLogo width={285} height={99} />
 
           <Text style={styles.subtitle}>Keep It Casual, Share the Style.</Text>
 

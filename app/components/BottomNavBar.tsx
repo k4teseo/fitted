@@ -59,7 +59,7 @@ export default function BottomNavBar() {
         style={styles.navItem}
         onPress={() => {
           setActiveTab("add");
-          router.push("/pages/Camera");
+          router.push("/pages/camera");
         }}
       >
         {activeTab === "add" ? (

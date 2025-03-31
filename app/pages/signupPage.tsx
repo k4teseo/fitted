@@ -10,6 +10,7 @@ import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import { FittedLogo } from "@/assets/images/FittedLogo";
+import OnboardingButton from "../components/OnboardingButton";
 
 const SignUpPage = () => {
   const router = useRouter();
@@ -96,15 +97,14 @@ const SignUpPage = () => {
           )}
         </View>
 
-        <TouchableOpacity
+        <OnboardingButton
+          title="Next"
+          onPress={handleNext}
           style={[
             styles.nextButton,
             email.length > 0 && styles.nextButtonActive,
           ]}
-          onPress={handleNext}
-        >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
+        />
 
         <View style={styles.dividerContainer}>
           <View style={styles.dividerLine} />
@@ -240,19 +240,14 @@ const styles = StyleSheet.create({
   },
   nextButton: {
     backgroundColor: "#6D757E",
-    padding: 13,
-    borderRadius: 8,
+    marginTop: 0,
     alignItems: "center",
     marginBottom: 16,
   },
   nextButtonActive: {
     backgroundColor: "#4DA6FD",
   },
-  nextButtonText: {
-    color: "#F5EEE3",
-    fontSize: 16,
-    fontWeight: "600",
-  },
+
   dividerContainer: {
     flexDirection: "row",
     alignItems: "center",
