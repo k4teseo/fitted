@@ -19,7 +19,7 @@ const BackButton = () => {
     backButton: {
       position: "absolute",
       top: height * 0.07,
-      left: width * 0.07,
+      left: width * 0.05,
       zIndex: 1,
     },
   });

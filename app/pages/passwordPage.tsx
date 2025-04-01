@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import OnboardingButton from "../components/OnboardingButton";
 import OnboardingInput from "../components/OnboardingInput";
 import BackButton from "../components/BackButton";
+import OnboardingText from "../components/OnboardingText";
 
 AppState.addEventListener("change", (state) => {
   if (state === "active") {
@@ -66,10 +67,10 @@ const PasswordPage = () => {
           <FittedLogo width={238} height={74} />
         </View>
 
-        <Text style={styles.subheader}>Create a Password</Text>
-        <Text style={styles.description}>
-          Please create a secure password to complete your account setup.
-        </Text>
+        <OnboardingText
+          title="Create a Password"
+          description="Please create a secure password to complete your account setup."
+        />
 
         <OnboardingInput
           title="Password"
@@ -143,20 +144,6 @@ const styles = StyleSheet.create({
     marginTop: 32,
     marginLeft: -10,
     marginBottom: 56,
-  },
-  subheader: {
-    fontSize: 25,
-    fontWeight: "400",
-    color: "#B9CADB",
-    marginBottom: 8,
-    textAlign: "left",
-  },
-  description: {
-    fontSize: 12,
-    color: "#84919D",
-    fontWeight: "400",
-    marginBottom: 32,
-    textAlign: "left",
   },
   validationContainer: {
     marginBottom: 32,
