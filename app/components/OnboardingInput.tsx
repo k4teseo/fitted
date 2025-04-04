@@ -38,76 +38,72 @@ const OnboardingInput: React.FC<OnboardingInputProps> = ({
   errorMessage,
 }) => {
   const styles = StyleSheet.create({
-    input: {
-      color: "#FFFFFF",
-      fontSize: 16,
-      paddingTop: 4,
-      flex: 1,
-    },
     inputContainer: {
       marginBottom: 24,
-      position: "relative",
+      width: "100%",
     },
     inputBorder: {
       borderWidth: 1,
       borderColor: isValid ? "#626A73" : "#FF6B6B",
-      borderRadius: 4,
-      padding: 16,
+      borderRadius: 8,
+      paddingHorizontal: 12,
+      height: 54, // Ensures enough space for text
+      backgroundColor: "#1E2225",
+      flexDirection: "row",
+      alignItems: "center", // Centers text and password icon
+    },
+    input: {
+      color: "#FFFFFF",
+      fontSize: 16,
+      lineHeight: 22, // Prevents text from being cut off
+      height: "100%", // Ensures full use of input space
+      flex: 1, // Allows text input to expand properly
+      paddingVertical: 0, // Removes extra padding that might clip text
     },
     inputLabel: {
       position: "absolute",
       top: -10,
-      left: 10,
+      left: 12,
       backgroundColor: "#0F1112",
       paddingHorizontal: 5,
       fontSize: 12,
       color: isValid ? "#7F8D9A" : "#FF6B6B",
       fontWeight: "400",
     },
-    passwordInputWrapper: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
+    passwordToggle: {
+      padding: 10, // Ensures clickable area for eye icon
     },
     errorText: {
       color: "#FF6B6B",
       fontSize: 12,
       marginTop: 5,
     },
-    inputError: {
-      borderColor: "#FF3B30",
-    },
-    inputLabelError: {
-      color: "#FF3B30",
-    },
-  });
+  });  
 
   return (
     <View style={styles.inputContainer}>
       <View style={styles.inputBorder}>
         <Text style={styles.inputLabel}>{title}</Text>
-        <View style={isPassword ? styles.passwordInputWrapper : undefined}>
-          <TextInput
-            style={[styles.input, style as TextStyle]}
-            placeholder={placeholder}
-            placeholderTextColor="#383C40"
-            value={value}
-            onChangeText={handleChange}
-            autoCapitalize="none"
-            keyboardType={keyboardType}
-            secureTextEntry={isPassword && !showPassword}
-            selectionColor="#4DA6FD"
-          />
-          {isPassword && togglePasswordVisibility && (
-            <TouchableOpacity onPress={togglePasswordVisibility}>
-              <MaterialIcons
-                name={showPassword ? "visibility" : "visibility-off"}
-                size={24}
-                color="#84919D"
-              />
-            </TouchableOpacity>
-          )}
-        </View>
+        <TextInput
+          style={styles.input}
+          placeholder={placeholder}
+          placeholderTextColor="#383C40"
+          value={value}
+          onChangeText={handleChange}
+          autoCapitalize="none"
+          keyboardType={keyboardType}
+          secureTextEntry={isPassword && !showPassword}
+          selectionColor="#4DA6FD"
+        />
+        {isPassword && togglePasswordVisibility && (
+          <TouchableOpacity style={styles.passwordToggle} onPress={togglePasswordVisibility}>
+            <MaterialIcons
+              name={showPassword ? "visibility" : "visibility-off"}
+              size={24}
+              color="#84919D"
+            />
+          </TouchableOpacity>
+        )}
       </View>
       {!isValid && errorMessage && (
         <Text style={styles.errorText}>{errorMessage}</Text>

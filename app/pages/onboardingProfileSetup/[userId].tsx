@@ -13,8 +13,7 @@ import { FittedLogo } from "@/assets/images/FittedLogo";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { useLocalSearchParams } from "expo-router";
 import { supabase } from "@/lib/supabase";
-import ProfilePictureUpload from "../components/profilePictureUpload";
-
+import ProfilePictureSelector from "../../components/ProfilePictureSelector";
 
 const OnboardingProfileSetup = () => {
   const router = useRouter();
@@ -43,17 +42,17 @@ const OnboardingProfileSetup = () => {
     try {
       // Check if username already exists
       const { data: existingUser, error: fetchError } = await supabase
-        .from("users")
+        .from("profiles")
         .select("id")
-        .eq("username", username)
-        .single();
+        .eq("username", username);
   
-      if (fetchError && fetchError.code !== "PGRST116") {
+      if (fetchError) {
         Alert.alert("Error", "Something went wrong while checking username.");
+        console.error(fetchError); // Log the error for debugging
         return;
       }
   
-      if (existingUser) {
+      if (existingUser && existingUser.length > 0) {
         Alert.alert("Error", "Username is already taken. Please choose another.");
         return;
       }
@@ -66,38 +65,60 @@ const OnboardingProfileSetup = () => {
   
       // Insert new user profile
       const { error } = await supabase
-        .from("users")
-        .insert([{ id: userId, name, username, dob, profile_picture: profilePictureUrl }]);
+        .from("profiles")
+        .upsert([{
+          id: userId,
+          name,
+          username,
+          dob,
+          pfp: profilePictureUrl || null, 
+        }]);
   
       if (error) {
         Alert.alert("Error", "Failed to create profile");
+        return;
       } else {
-        router.replace("./feedPage");
+        router.replace("../feedPage");
       }
     } catch (err) {
       console.error("Error creating profile:", err);
       Alert.alert("Error", "Something went wrong.");
     }
-  };
+  };  
 
   const uploadProfilePicture = async (imageUri: string, userId: string) => {
-    try {
-      const fileExt = imageUri.split('.').pop();
-      const fileName = `${userId}.${fileExt}`;
-      const filePath = `profile_pictures/${fileName}`;
+    if (!imageUri || !userId) return null;
   
+    try {
+      // Fetch the image blob from the URI
       const response = await fetch(imageUri);
       const blob = await response.blob();
+      const arrayBuffer = await new Response(blob).arrayBuffer();
   
-      const { data, error } = await supabase.storage
-        .from("profile_pictures")
-        .upload(filePath, blob, { contentType: `image/${fileExt}` });
+      // Construct file path and name
+      const fileName = `pfp/${userId}.jpg`;
   
-      if (error) throw error;
+      // Upload to Supabase storage
+      const { error: uploadError } = await supabase.storage
+        .from("pfp")
+        .upload(fileName, arrayBuffer, {
+          contentType: "image/jpeg",
+          upsert: true, 
+        });
   
-      return supabase.storage.from("profile_pictures").getPublicUrl(filePath).data.publicUrl;
+      if (uploadError) {
+        console.error("Error uploading profile picture:", uploadError);
+        return null;
+      }
+  
+      // Get the public URL
+      const { data: urlData } = supabase.storage
+        .from("pfp")
+        .getPublicUrl(fileName);
+  
+      return urlData?.publicUrl || null;
     } catch (error) {
-      console.error("Error uploading profile picture:", error);
+      console.error("Error in uploadProfilePicture:", error);
       return null;
     }
   };
@@ -207,7 +228,7 @@ const OnboardingProfileSetup = () => {
         </View>
 
         <View style={styles.uploadContainer}>
-          <ProfilePictureUpload 
+          <ProfilePictureSelector 
             onImageSelect={setProfilePictureUri} 
             imageUri={profilePictureUri} 
           />

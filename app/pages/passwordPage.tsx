@@ -50,24 +50,23 @@ const PasswordPage = () => {
     });
   
     if (error || !data?.user) {
-      console.error("Error details:", error); // More detailed logging for the error
+      console.error("Error details:", error);
       Alert.alert("Error", error?.message || "User creation failed");
       setLoading(false);
-      return;
+      return;  // Early exit on error
     }
   
     const userId = data.user.id;
     console.log("Created user with ID:", userId);
     console.log("Inserting into profiles with email:", email); 
     
-    // Insert into profiles table with email and full_name
     const { error: insertError } = await supabase
       .from("profiles")
       .upsert([
         {
           id: userId, 
           email: email,
-          full_name: "Default Name", // Or you can leave it blank or use a dynamic value
+          name: "Default Name", // Or you can leave it blank or use a dynamic value
         },
       ]);
   
@@ -75,13 +74,16 @@ const PasswordPage = () => {
       console.log("Insert error:", insertError);
       Alert.alert("Database Error", insertError.message);
       setLoading(false);
-      return;
+      return;  // Early exit on insert error
     }
   
-    Alert.alert("Success", "Check your inbox for email verification!");
-    router.push(`./onboardingProfileSetup/${userId}`);
+    // Success, continue with the navigation
     setLoading(false);
-    router.push("./onboardingProfileSetup");
+    Alert.alert("Success", "Your account has been created!");
+    router.push({
+      pathname: "/pages/onboardingProfileSetup/[userId]",
+      params: { userId },
+    });
   }
 
   const handleBack = () => {
@@ -153,7 +155,6 @@ const PasswordPage = () => {
             {passwordValid.specialChar ? "✓ " : "• "}One special character (e.g., !@#$)
           </Text>
         </View>
-
         <OnboardingButton
           title="Create Account"
           style={[
@@ -166,7 +167,7 @@ const PasswordPage = () => {
           ]}
           onPress={() => {
             if (!loading && passwordValid.length && passwordValid.number && passwordValid.specialChar) {
-              signUpWithEmail();
+              signUpWithEmail();  // No need to check the result
             }
           }}
         />

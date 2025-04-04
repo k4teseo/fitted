@@ -3,12 +3,12 @@ import { TouchableOpacity, Image, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
-interface ProfilePictureUploadProps {
+interface ProfilePictureSelectorProps {
   onImageSelect: (uri: string) => void;
   imageUri?: string | null;
 }
 
-const ProfilePictureUpload: React.FC<ProfilePictureUploadProps> = ({
+const ProfilePictureSelector: React.FC<ProfilePictureSelectorProps> = ({
   onImageSelect,
   imageUri,
 }) => {
@@ -61,4 +61,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ProfilePictureUpload
+export default ProfilePictureSelector
