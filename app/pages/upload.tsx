@@ -15,20 +15,96 @@ import {
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { MaterialIcons } from "@expo/vector-icons";
-import Tagging from "./tagging";
-import { useUploadContext } from "../context/uploadContext";
+import Tagging from './tagging';
+import { useUploadContext } from "../context/uploadContext";  
+import { analyzeOutfit } from "../components/openaiVision";
+import LoadingScreen from "../components/loading";
 
 export default function UploadPage() {
   // Read the imageUri from route parameters
   const params = useLocalSearchParams() as { imageUri?: string };
   const router = useRouter();
   const imageUri = params.imageUri;
+  const [name, setName] = useState('');
+  const [postTitle, setPostTitle] = useState('');
+  const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions } = useUploadContext(); // Use Context
+  
+  const [loading, setLoading] = useState(false);
 
-  // Read persistent states from the upload context
-  const { selectedBrands, selectedOccasions, brandTags } = useUploadContext();
+  if (loading) return <LoadingScreen />;
 
-  const [name, setName] = useState("");
-  const [postTitle, setPostTitle] = useState("");
+  if (!imageUri) {
+      return (
+        <View style={styles.container}>
+          <View style={styles.topBar}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+              <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+            </TouchableOpacity>
+          </View>
+          <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
+            No image found
+          </Text>
+        </View>
+      );
+  }
+
+  const handlePost = async () => {
+      if (!imageUri || !name) return;
+
+      setLoading(true);
+
+      try {
+          const response = await fetch(imageUri);
+          const blob = await response.blob();
+          const arrayBuffer = await new Response(blob).arrayBuffer();
+          const fileName = `public/${Date.now()}.jpg`;
+
+          const { error: uploadError } = await supabase.storage
+              .from("images")
+              .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
+
+          if (uploadError) {
+              console.error("Error uploading image:", uploadError);
+              return;
+          }
+
+          const { data: publicUrlData } = supabase.storage.from("images").getPublicUrl(fileName);
+          const publicImageUrl = publicUrlData?.publicUrl;
+
+          if (!publicImageUrl) {
+            console.error("Failed to retrieve public image URL.");
+            return;
+          }
+
+          const metadata = await analyzeOutfit(publicImageUrl).catch(() => []);
+          console.log("Extracted metadata:", metadata);
+
+          const { error: insertError } = await supabase
+              .from("images")
+              .insert([{
+                  image_path: fileName,
+                  caption: postTitle,
+                  username: name,
+                  selectedbrands: selectedBrands,      
+                  selectedoccasions: selectedOccasions,     
+                  metadata: Array.isArray(metadata) ? metadata : [],
+              }]);
+
+          if (insertError) {
+              console.error("Error saving image with tags:", insertError);
+          } else {
+
+              setSelectedBrands([]);
+              setSelectedOccasions([]);
+
+              console.log("Post uploaded successfully with tags:", postTitle);
+              router.replace("./feedPage");
+          }
+      } catch (error) {
+          console.error("Error during upload:", error);
+      }
+      setLoading(false);
+  };
 
   if (!imageUri) {
     return (
