@@ -17,9 +17,8 @@ export default function App() {
   const [uri, setUri] = useState<string | null>(null);
   const [facing, setFacing] = useState<CameraType>("back");
   const [flash, setFlash] = useState<FlashMode>("off");
-  const [uploadStatus, setUploadStatus] = useState<string | null>(null);
-  
-  const router = useRouter(); 
+
+  const router = useRouter();
 
   if (!permission) {
     return null;
@@ -43,18 +42,18 @@ export default function App() {
 
     if (facing === "front") {
       try {
-      const flippedPhoto = await manipulateAsync(photo?.uri!, [
-        {
-          flip: FlipType.Horizontal,
-        },
-      ]);
-      finalUri = flippedPhoto.uri;
-    } catch (error) {
-      console.error("Error flipping image:", error);
-  }
+        const flippedPhoto = await manipulateAsync(photo?.uri!, [
+          {
+            flip: FlipType.Horizontal,
+          },
+        ]);
+        finalUri = flippedPhoto.uri;
+      } catch (error) {
+        console.error("Error flipping image:", error);
+      }
+    }
+    setUri(finalUri);
   };
-  setUri(finalUri);
-};
 
   const toggleFacing = () => {
     setFacing((prev) => (prev === "back" ? "front" : "back"));
@@ -70,13 +69,13 @@ export default function App() {
         <View style={styles.imageContainer}>
           <Image source={{ uri }} style={styles.imagePreview} />
         </View>
-  
+
         <View style={styles.shutterContainer}>
           {/* Left Icon: Retake */}
           <Pressable onPress={() => setUri(null)} style={styles.iconButton}>
             <MaterialIcons name="cached" size={50} color="#F5EEE3" />
           </Pressable>
-  
+
           {/* Right Icon: Check with Beige Circle */}
           <Pressable
             onPress={() =>
@@ -90,7 +89,6 @@ export default function App() {
       </View>
     );
   };
-   
 
   const renderCamera = () => {
     return (
@@ -154,7 +152,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#15181B",
     alignItems: "center",
     justifyContent: "center",
-  },  
+  },
   camera: {
     flex: 1,
     width: "100%",
@@ -169,9 +167,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     // Optionally reduce or remove horizontal padding
     paddingHorizontal: 0,
-  },  
+  },
   shutterBtn: {
-    width: 70, 
+    width: 70,
     height: 70,
     borderRadius: 35,
     backgroundColor: "transparent",
@@ -180,7 +178,7 @@ const styles = StyleSheet.create({
     borderWidth: 5,
     borderColor: "#A6C7E8",
     flexShrink: 0, // Prevents unwanted resizing
-  },  
+  },
   // Inner circle of the shutter button
   shutterBtnInner: {
     width: 55,
@@ -214,11 +212,11 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 10, // Adjust based on status bar height
-    left: 10,
+    top: 55, // Adjust based on status bar height
+    left: 20,
     zIndex: 10, // Ensure it appears on top
     backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility
     borderRadius: 10,
     padding: 4,
-  },  
+  },
 });

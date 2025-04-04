@@ -7,10 +7,11 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  StyleSheet,
 } from "react-native";
-import feedStyles from "../feedStyles";
-import { FittedLogo, FeedPageIcon, PlusIcon } from "../Icons"; // Icons
 import { supabase } from "@/lib/supabase"; // Import Supabase client
+import FeedHeader from "../components/FeedHeader";
+import BottomNavBar from "../components/BottomNavBar";
 
 // Type for the feed item (optional)
 type FeedItemData = {
@@ -85,7 +86,6 @@ export default function FeedPage() {
   const [activeTab, setActiveTab] = useState<"home" | "add">("home");
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
-  const router = useRouter(); // Initialize router
 
   // Fetch images from Supabase
   const fetchImages = async () => {
@@ -93,23 +93,27 @@ export default function FeedPage() {
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, caption, username, image_path, selectedbrands, selectedoccasions"
+        "id, caption, username, image_path, selectedbrands, selectedoccasions, created_at"
       )
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Error fetching images:", error);
     } else {
-      const formattedData = data.map((row: any) => ({
-        id: row.id,
-        caption: row.caption,
-        username: row.username,
-        postImage:
-          supabase.storage.from("images").getPublicUrl(row.image_path)?.data
-            ?.publicUrl || "",
-        selectedbrands: row.selectedbrands ?? [],
-        selectedoccasions: row.selectedoccasions ?? [],
-      }));
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const formattedData = data
+        .map((row: any) => ({
+          id: row.id,
+          caption: row.caption,
+          username: row.username,
+          postImage:
+            supabase.storage.from("images").getPublicUrl(row.image_path)?.data
+              ?.publicUrl || "",
+          selectedbrands: row.selectedbrands ?? [],
+          selectedoccasions: row.selectedoccasions ?? [],
+          createdAt: new Date(row.created_at),
+        }))
+        .filter((post) => post.createdAt > twentyFourHoursAgo);
       setFeedData(formattedData);
     }
     setLoading(false);
@@ -125,9 +129,7 @@ export default function FeedPage() {
   return (
     <SafeAreaView style={feedStyles.container}>
       {/* Top Bar with the Fitted Logo on the Left */}
-      <View style={feedStyles.feedHeader}>
-        <FittedLogo width={120} height={42} />
-      </View>
+      <FeedHeader />
 
       {/* Feed List */}
       {loading ? (
@@ -143,54 +145,90 @@ export default function FeedPage() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <View style={feedStyles.bottomNav}>
-        {/* HOME TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab("home")}
-        >
-          {activeTab === "home" ? (
-            <View style={feedStyles.beigeCircle}>
-              <FeedPageIcon />
-            </View>
-          ) : (
-            <FeedPageIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* ADD TAB */}
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => {
-            setActiveTab("add");
-            router.push("/pages/camera");
-          }}
-        >
-          {activeTab === "add" ? (
-            <View style={feedStyles.beigeCircle}>
-              <PlusIcon />
-            </View>
-          ) : (
-            <PlusIcon />
-          )}
-        </TouchableOpacity>
-
-        {/* PROFILE TAB - commented out
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text
-            style={[
-              feedStyles.navItemText,
-              activeTab === 'profile' && { color: '#F3EDE2' },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-        */}
-      </View>
+      <BottomNavBar />
     </SafeAreaView>
   );
 }
+
+const feedStyles = StyleSheet.create({
+  // Screen Container
+  container: {
+    flex: 1,
+    backgroundColor: "#15181B", // Dark background
+  },
+
+  // List
+  listContent: {
+    padding: 80,
+    paddingBottom: 80, // Ensure feed items aren't hidden behind bottom nav
+  },
+
+  // Card
+  card: {
+    backgroundColor: "#9AA8B6",
+    borderRadius: 24,
+    marginBottom: 30,
+    overflow: "hidden", // Ensures the image corners match card corners
+    alignSelf: "center",
+    width: 345, // Fixed width
+  },
+
+  // Image Container (with fixed height)
+  imageContainer: {
+    width: "100%",
+    height: 400, // The "frame" for the image
+  },
+  postImage: {
+    width: "100%",
+    height: "100%",
+    resizeMode: "cover", // Fills the container, cropping if needed
+  },
+
+  // User Info
+  userInfo: {
+    backgroundColor: "#595F66",
+    padding: 16,
+  },
+  caption: {
+    fontFamily: "Raleway", // Use Raleway font
+    fontWeight: "700", // Bold
+    fontSize: 17,
+    lineHeight: 20,
+    letterSpacing: 0.1,
+    color: "#F5EEE3",
+    marginBottom: 12,
+  },
+  username: {
+    fontFamily: "Raleway", // Use Raleway font
+    fontWeight: "600", // Bold
+    fontSize: 12,
+    lineHeight: 20,
+    letterSpacing: 0.1,
+    color: "#9AA8B6",
+    marginTop: 4,
+  },
+
+  tagContainer: {
+    flexDirection: "row",
+  },
+  tagPill: {
+    backgroundColor: "#A5C6E8",
+    borderRadius: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginRight: 12,
+    marginBottom: 6,
+  },
+  tagText: {
+    color: "#262A2F",
+    fontWeight: "500",
+    fontSize: 10,
+  },
+
+  loadingText: {
+    textAlign: "center",
+    fontSize: 16,
+    color: "#888",
+    marginTop: 20,
+  },
+});

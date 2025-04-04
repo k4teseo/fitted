@@ -11,7 +11,11 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      supportsTablet: true,
+      bundleIdentifier: 'com.katecs172.fitted',
+      supportsTablet: false,
+      infoPlist: {
+        ITSAppUsesNonExemptEncryption: false
+      }
     },
     android: {
       enableHermes: true,
@@ -54,6 +58,9 @@ export default {
       databaseUrl: process.env.SUPABASE_URL, 
       databaseKey: process.env.SUPABASE_KEY, 
       OPENAI_API_KEY: process.env.OPENAI_API_KEY,
+      eas: {
+        projectId: "ffb68227-02da-4487-8af0-f37ee177d543"
+      }
     },
   },
 };
