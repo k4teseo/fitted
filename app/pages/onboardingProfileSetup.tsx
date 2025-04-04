@@ -5,11 +5,16 @@ import {
   TouchableOpacity,
   StyleSheet,
   TextInput,
+  Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { FittedLogo } from "@/assets/images/FittedLogo";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import { useLocalSearchParams } from "expo-router";
+import { supabase } from "@/lib/supabase";
+import ProfilePictureUpload from "../components/profilePictureUpload";
+
 
 const OnboardingProfileSetup = () => {
   const router = useRouter();
@@ -19,14 +24,81 @@ const OnboardingProfileSetup = () => {
   const [date, setDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isValidDate, setIsValidDate] = useState(true);
+  const { userId } = useLocalSearchParams();
+  const [profilePictureUri, setProfilePictureUri] = useState<string | null>(null);
 
   const currentYear = new Date().getFullYear();
-  const isFormValid =
-    name.length > 0 && username.length > 0 && dob.length === 10 && isValidDate;
+  const isFormValid = name.length > 0 && username.length > 0 && dob.length === 10 && isValidDate;
 
-  const handleSetupProfile = () => {
-    if (isFormValid) {
-      router.replace("./feedPage");
+  
+  useEffect(() => {
+    if (!userId) {
+      router.replace("./passwordPage"); // Redirect to login if no user ID
+    }
+  }, [userId]);
+
+  const handleSetupProfile = async () => {
+    if (!isFormValid) return;
+  
+    try {
+      // Check if username already exists
+      const { data: existingUser, error: fetchError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("username", username)
+        .single();
+  
+      if (fetchError && fetchError.code !== "PGRST116") {
+        Alert.alert("Error", "Something went wrong while checking username.");
+        return;
+      }
+  
+      if (existingUser) {
+        Alert.alert("Error", "Username is already taken. Please choose another.");
+        return;
+      }
+  
+      // Upload profile picture if selected
+      let profilePictureUrl = null;
+      if (profilePictureUri) {
+        profilePictureUrl = await uploadProfilePicture(profilePictureUri, Array.isArray(userId) ? userId[0] : userId);
+      }
+  
+      // Insert new user profile
+      const { error } = await supabase
+        .from("users")
+        .insert([{ id: userId, name, username, dob, profile_picture: profilePictureUrl }]);
+  
+      if (error) {
+        Alert.alert("Error", "Failed to create profile");
+      } else {
+        router.replace("./feedPage");
+      }
+    } catch (err) {
+      console.error("Error creating profile:", err);
+      Alert.alert("Error", "Something went wrong.");
+    }
+  };
+
+  const uploadProfilePicture = async (imageUri: string, userId: string) => {
+    try {
+      const fileExt = imageUri.split('.').pop();
+      const fileName = `${userId}.${fileExt}`;
+      const filePath = `profile_pictures/${fileName}`;
+  
+      const response = await fetch(imageUri);
+      const blob = await response.blob();
+  
+      const { data, error } = await supabase.storage
+        .from("profile_pictures")
+        .upload(filePath, blob, { contentType: `image/${fileExt}` });
+  
+      if (error) throw error;
+  
+      return supabase.storage.from("profile_pictures").getPublicUrl(filePath).data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading profile picture:", error);
+      return null;
     }
   };
 
@@ -96,6 +168,7 @@ const OnboardingProfileSetup = () => {
       return `${month}/${day}/${year.slice(0, 4)}`;
     }
   };
+  
 
   const handleDobChange = (text: string) => {
     const formatted = formatDate(text);
@@ -134,10 +207,10 @@ const OnboardingProfileSetup = () => {
         </View>
 
         <View style={styles.uploadContainer}>
-          <TouchableOpacity style={styles.uploadCircle}>
-            <MaterialIcons name="add-a-photo" size={32} color="#4DA6FD" />
-          </TouchableOpacity>
-          <Text style={styles.uploadText}>Upload Profile Photo</Text>
+          <ProfilePictureUpload 
+            onImageSelect={setProfilePictureUri} 
+            imageUri={profilePictureUri} 
+          />
         </View>
 
         <View style={styles.inputContainer}>

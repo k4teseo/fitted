@@ -39,7 +39,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`/pages/postPage?id=${item.id}`);
+        router.push(`./PostPage?id=${item.id}`);
       }}
       activeOpacity={0.9} // Reduce interference with scroll
     >

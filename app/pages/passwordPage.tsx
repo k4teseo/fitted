@@ -1,26 +1,18 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
+  Alert,
   TouchableOpacity,
   StyleSheet,
-  Alert,
   AppState,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
-import { FittedLogo } from "@/assets/images/FittedLogo";
 import { supabase } from "@/lib/supabase";
-import OnboardingButton from "../components/OnboardingButton";
 import OnboardingInput from "../components/OnboardingInput";
-
-AppState.addEventListener("change", (state) => {
-  if (state === "active") {
-    supabase.auth.startAutoRefresh();
-  } else {
-    supabase.auth.stopAutoRefresh();
-  }
-});
+import OnboardingButton from "../components/OnboardingButton";
+import { FittedLogo } from "@/assets/images/FittedLogo";
 
 const PasswordPage = () => {
   const router = useRouter();
@@ -34,19 +26,60 @@ const PasswordPage = () => {
   });
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    const handleAppStateChange = async (state: string) => {
+      if (state === "active") {
+        await supabase.auth.startAutoRefresh();
+      } else {
+        await supabase.auth.stopAutoRefresh();
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => appStateSubscription.remove();
+  }, []);
+
   async function signUpWithEmail() {
     setLoading(true);
-    const {
-      data: { session },
-      error,
-    } = await supabase.auth.signUp({
-      email: email,
+    console.log("Signing up with:", email);
+  
+    const { data, error } = await supabase.auth.signUp({
+      email: email as string,
       password: password,
     });
-
-    if (error) Alert.alert(error.message);
-    if (!session)
-      Alert.alert("Please check your inbox for email verification!");
+  
+    if (error || !data?.user) {
+      console.error("Error details:", error); // More detailed logging for the error
+      Alert.alert("Error", error?.message || "User creation failed");
+      setLoading(false);
+      return;
+    }
+  
+    const userId = data.user.id;
+    console.log("Created user with ID:", userId);
+    console.log("Inserting into profiles with email:", email); 
+    
+    // Insert into profiles table with email and full_name
+    const { error: insertError } = await supabase
+      .from("profiles")
+      .upsert([
+        {
+          id: userId, 
+          email: email,
+          full_name: "Default Name", // Or you can leave it blank or use a dynamic value
+        },
+      ]);
+  
+    if (insertError) {
+      console.log("Insert error:", insertError);
+      Alert.alert("Database Error", insertError.message);
+      setLoading(false);
+      return;
+    }
+  
+    Alert.alert("Success", "Check your inbox for email verification!");
+    router.push(`./onboardingProfileSetup/${userId}`);
     setLoading(false);
     router.push("./onboardingProfileSetup");
   }
@@ -117,8 +150,7 @@ const PasswordPage = () => {
               passwordValid.specialChar && styles.validationSuccess,
             ]}
           >
-            {passwordValid.specialChar ? "✓ " : "• "}One special character
-            (e.g., !@#$)
+            {passwordValid.specialChar ? "✓ " : "• "}One special character (e.g., !@#$)
           </Text>
         </View>
 
@@ -132,7 +164,11 @@ const PasswordPage = () => {
               ? styles.nextButtonActive
               : null,
           ]}
-          onPress={signUpWithEmail}
+          onPress={() => {
+            if (!loading && passwordValid.length && passwordValid.number && passwordValid.specialChar) {
+              signUpWithEmail();
+            }
+          }}
         />
       </View>
     </View>
