@@ -27,7 +27,7 @@ export default function UploadPage() {
   const imageUri = params.imageUri;
   const [name, setName] = useState('');
   const [postTitle, setPostTitle] = useState('');
-  const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions } = useUploadContext(); // Use Context
+  const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions, brandTags} = useUploadContext(); // Use Context
   
   const [loading, setLoading] = useState(false);
 
@@ -61,7 +61,11 @@ export default function UploadPage() {
 
           const { error: uploadError } = await supabase.storage
               .from("images")
-              .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
+              .upload(
+                fileName, arrayBuffer, { 
+                  contentType: "image/jpeg", 
+                  upsert: false 
+              });
 
           if (uploadError) {
               console.error("Error uploading image:", uploadError);
@@ -79,7 +83,7 @@ export default function UploadPage() {
           const metadata = await analyzeOutfit(publicImageUrl).catch(() => []);
           console.log("Extracted metadata:", metadata);
 
-          const { error: insertError } = await supabase
+          const { data: imageData, error: insertError } = await supabase
               .from("images")
               .insert([{
                   image_path: fileName,
@@ -88,107 +92,42 @@ export default function UploadPage() {
                   selectedbrands: selectedBrands,      
                   selectedoccasions: selectedOccasions,     
                   metadata: Array.isArray(metadata) ? metadata : [],
-              }]);
+              }])
+              .select()
+              .single();
 
           if (insertError) {
               console.error("Error saving image with tags:", insertError);
-          } else {
+              return;
+          }
+
+          if (brandTags?.length > 0) {
+            for (const tag of brandTags) {
+              const { error: tagError } = await supabase
+                .from("image_brand_tags")
+                .insert({
+                  image_id: imageData.id,
+                  brand_name: tag.brand,
+                  x_position: tag.x,
+                  y_position: tag.y,
+                });
+
+              if (tagError) {
+            console.error("Error saving brand tag:", tagError);
+              }
+            }
+          }
 
               setSelectedBrands([]);
               setSelectedOccasions([]);
 
               console.log("Post uploaded successfully with tags:", postTitle);
               router.replace("./feedPage");
-          }
+          
       } catch (error) {
           console.error("Error during upload:", error);
       }
       setLoading(false);
-  };
-
-  if (!imageUri) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
-          </TouchableOpacity>
-        </View>
-        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
-          No image found
-        </Text>
-      </View>
-    );
-  }
-
-  const handlePost = async () => {
-    if (!imageUri || !name) return;
-    try {
-      // Fetch the image blob from the provided URI
-      const response = await fetch(imageUri);
-      const blob = await response.blob();
-      const arrayBuffer = await new Response(blob).arrayBuffer();
-      const fileName = `public/${Date.now()}.jpg`;
-
-      // Upload image to Supabase storage
-      const { error: uploadError } = await supabase.storage
-        .from("images")
-        .upload(fileName, arrayBuffer, {
-          contentType: "image/jpeg",
-          upsert: false,
-        });
-
-      if (uploadError) {
-        console.error("Error uploading image:", uploadError);
-        return;
-      }
-
-      // Insert image metadata into the "images" table
-      const { data: imageData, error: insertError } = await supabase
-        .from("images")
-        .insert([
-          {
-            image_path: fileName,
-            caption: postTitle,
-            username: name,
-            selectedbrands: selectedBrands,
-            selectedoccasions: selectedOccasions,
-          },
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error("Error saving image with tags:", insertError);
-        return;
-      }
-
-      // Save each brand tag from the context to the "image_brand_tags" table
-      if (brandTags.length > 0) {
-        for (const tag of brandTags) {
-          const { error: tagError } = await supabase
-            .from("image_brand_tags")
-            .insert({
-              image_id: imageData.id,
-              brand_name: tag.brand,
-              x_position: tag.x,
-              y_position: tag.y,
-            });
-
-          if (tagError) {
-            console.error("Error saving brand tag:", tagError);
-          }
-        }
-      }
-
-      console.log("Post uploaded successfully with tags:", postTitle);
-      router.replace("/pages/feedPage");
-    } catch (error) {
-      console.error("Error during upload:", error);
-    }
   };
 
   return (
