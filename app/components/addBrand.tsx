@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 80,
     paddingBottom: 30,
     backgroundColor: "#15181B",
     width: "100%",

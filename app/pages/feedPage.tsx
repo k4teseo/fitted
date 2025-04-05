@@ -147,7 +147,7 @@ export default function FeedPage() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <BottomNavBar />
+      <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
     </SafeAreaView>
   );
 }

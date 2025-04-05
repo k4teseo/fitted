@@ -5,8 +5,6 @@ import {
   StyleSheet,
   Pressable,
   FlatList,
-  Switch,
-  Linking,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
@@ -21,7 +19,6 @@ export default function Tagging({ imageUri }: TaggingProps) {
   const { selectedBrands, selectedOccasions, setSelectedOccasions } =
     useUploadContext();
   const [availableOccasions, setAvailableOccasions] = useState<string[]>([]);
-  const [openAIEnabled, setOpenAIEnabled] = useState(false);
   const router = useRouter();
 
   useFocusEffect(
@@ -130,23 +127,6 @@ export default function Tagging({ imageUri }: TaggingProps) {
           <MaterialIcons name="chevron-right" size={24} color="#F5EEE3" />
         </Pressable>
       </View>
-
-      {/* AI Switch */}
-      <View style={[styles.headerRow, { marginBottom: 0 }]}>
-        <Text style={styles.sectionTitle}>Add Tags from OpenAI</Text>
-        <Switch
-          trackColor={{ false: "#767577", true: "#4DA6FD" }}
-          thumbColor={openAIEnabled ? "#F5EEE3" : "#f4f3f4"}
-          onValueChange={setOpenAIEnabled}
-          value={openAIEnabled}
-        />
-      </View>
-      <Text style={styles.aiSubtitle}>
-        AI feature that will analyze your post and create tags
-      </Text>
-      <Pressable onPress={() => Linking.openURL("https://example.com")}>
-        <Text style={styles.learnMore}>Learn more</Text>
-      </Pressable>
     </View>
   );
 }
@@ -182,6 +162,4 @@ const styles = StyleSheet.create({
   tagText: { color: "#9AA8B6", fontSize: 12 },
   tagTextSelected: { color: "#0F1112", fontWeight: "500" },
   brandCountText: { fontSize: 12, color: "#999", marginLeft: 6 },
-  aiSubtitle: { color: "#6D757E", fontSize: 10, marginBottom: 4 },
-  learnMore: { color: "#90BBE5", fontSize: 8, marginBottom: 12 },
 });

@@ -169,9 +169,15 @@ export default function TagBrandsOnPhoto() {
       </View>
 
       <View style={styles.tagsListContainer}>
-        <Text style={styles.tagsListHeader}>Tags</Text>
+        {/* Show header ONLY if tags exist */}
+        {brandTags.length > 0 && (
+          <Text style={styles.tagsListHeader}>Tags</Text>
+        )}
+
+        {/* Show hint text if no tags, otherwise show the list */}
         {brandTags.length === 0 ? (
-          <Text style={styles.footerText}>Tap photo to add brands.</Text>
+          <Text style={styles.footerText}>Tap photo to add brands.
+        </Text>
         ) : (
           <FlatList
             data={brandTags}
@@ -208,7 +214,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 80,
     paddingBottom: 30,
     backgroundColor: "#15181B",
     width: "100%",
@@ -256,16 +262,15 @@ const styles = StyleSheet.create({
     fontWeight: 500,
   },
   tagsListContainer: {
-    backgroundColor: "#1C1F22",
     paddingHorizontal: 16,
     paddingVertical: 10,
   },
   tagsListHeader: {
     color: "#F5EEE3",
     fontSize: 16,
-    marginBottom: 6,
+    marginBottom: 20,
     fontWeight: "600",
-    textAlign: "center",
+    textAlign: "left",
   },
   tagsListItem: {
     flexDirection: "row",
@@ -277,10 +282,27 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginBottom: 6,
   },
-  tagsListItemText: { color: "#F5EEE3", fontSize: 14 },
-  tagsListItemRemove: { padding: 4 },
-  doneButton: { backgroundColor: "#4DA6FD", padding: 12, alignItems: "center" },
-  doneText: { color: "#fff", fontSize: 16 },
-
-  footerText: { color: "#F5EEE3", fontSize: 14, textAlign: "center" },
+  tagsListItemText: { 
+    color: "#F5EEE3", 
+    fontSize: 14 
+  },
+  tagsListItemRemove: { 
+    padding: 4 
+  },
+  doneButton: { 
+    backgroundColor: "#4DA6FD", 
+    padding: 17, 
+    alignItems: "center" 
+  },
+  doneText: { 
+    color: "#fff", 
+    fontSize: 16 
+  },
+  footerText: { 
+    color: "#7F8A95", 
+    fontSize: 14, 
+    textAlign: "center",
+    marginTop: 20,
+    marginBottom: 20
+  },
 });

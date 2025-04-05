@@ -159,7 +159,7 @@ const styles = StyleSheet.create({
   },
   shutterContainer: {
     position: "absolute",
-    bottom: 50,
+    bottom: 75,
     left: 0,
     right: 0,
     flexDirection: "row",
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     position: "absolute",
-    top: 55, // Adjust based on status bar height
+    top: 75, // Adjust based on status bar height
     left: 20,
     zIndex: 10, // Ensure it appears on top
     backgroundColor: "rgba(0,0,0,0.5)", // Slight transparency for better visibility

@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 20,
-    paddingTop: 40, // for iOS notch
+    paddingTop: 80, // for iOS notch
     paddingBottom: 30,
     backgroundColor: "#15181B",
     width: "100%",

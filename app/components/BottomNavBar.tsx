@@ -6,11 +6,13 @@ import { PlusIcon } from "@/assets/images/PlusIcon";
 import { StyleSheet } from "react-native";
 import Ionicons from "react-native-vector-icons/Ionicons";
 
-export default function BottomNavBar() {
+type BottomNavBarProps = {
+  activeTab: "home" | "add" | "profile";
+  setActiveTab: (tab: "home" | "add" | "profile") => void;
+};
+
+export default function BottomNavBar({ activeTab, setActiveTab }: BottomNavBarProps) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
-    "home"
-  );
   const { width, height } = useWindowDimensions();
 
   const styles = StyleSheet.create({

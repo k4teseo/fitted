@@ -8,7 +8,7 @@ export default function FeedHeader() {
     feedHeader: {
       backgroundColor: "#2D3338",
       width: "100%",
-      height: height * 0.12,
+      height: height * 0.14,
       paddingVertical: height * 0.02,
       paddingLeft: width * 0.06, // Add some left padding so the logo isn't flush against the screen edge
       alignItems: "flex-start", // Align logo to the left

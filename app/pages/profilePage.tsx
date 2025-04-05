@@ -6,6 +6,7 @@ import { StyleSheet } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
 
 export default function ProfilePage() {
+    const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
     const { width, height } = useWindowDimensions();
 
     const styles = StyleSheet.create({
@@ -118,7 +119,7 @@ export default function ProfilePage() {
                     <Text>My Outfits</Text>
                 </TouchableOpacity>
             </View>
-            <BottomNavBar />
+            <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
         </View>
     );
 }
