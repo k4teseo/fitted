@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import SearchBar from '../components/searchbar';
+import { supabase } from '@/lib/supabase';
 
 type SearchResult = {
   id: string;
@@ -32,6 +33,27 @@ export default function SearchResultsPage() {
   const [activeTab, setActiveTab] = useState<'Posts' | 'Users'>('Posts');
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [userResults, setUserResults] = useState<UserResult[]>([]);
+
+  useEffect(() => {
+    const fetchResults = async () => {
+      const { data, error } = await supabase
+        .from('images')
+        .select('*')
+        .or(`selectedbrands.cs.{${searchQuery}}, selectedoccasions.cs.{${searchQuery}}`)
+        if (error) {
+          console.error('Error fetching images:', error);
+        }
+        if (data) {
+          
+          setSearchResults(data);
+        }
+    };
+    if (searchQuery.trim() !== '') {
+      fetchResults();
+    }
+  }, [searchQuery]);
 
   const handleSubmit = () => {
     if (searchQuery.trim() !== '') {
@@ -42,37 +64,28 @@ export default function SearchResultsPage() {
     }
   };
 
-  const searchResults: SearchResult[] = [
-    {
-      id: '1',
-      username: 'cammysprinkles',
-      caption: "Evening dress for Bestie's Party",
-      tags: ['Everyday Wow'],
-    },
-    {
-      id: '2',
-      username: 'Irisha',
-      caption: 'Vacay short dress near the beach',
-      tags: ['Vacation'],
-    },
-    {
-      id: '3',
-      username: 'fonalioradress',
-      caption: 'Visited the Beautiful Flower Garden',
-      tags: ['Spring'],
-    },
-    {
-      id: '4',
-      username: 'vacayoutfits',
-      caption: 'In Europe!',
-      tags: ['Vacation'],
-    },
-  ];
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('id, username, pfp')
+        .ilike('username', `%${searchQuery}%`)
 
-  const userResults: UserResult[] = [
-    { id: '1', username: 'dress.dreamer', avatar: 'https://s3-alpha-sig.figma.com/img/dcc9/d1d2/51da8a64460e7c5f2ad47253218968ce?Expires=1744588800&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=W6j83WHyIghEuBFCNe-HQxS6K~dTcRC3hGIBA5hcLmJiZ2CjVrBCTV0kjH4R8qtKLsy64sOnzLAFWc4T93buhBrEzz~jzXH9DfRsMoODOgT~XuYSDJbfTsXyNf6C8G45Kd6SlHUEgY2t60P54fEqpZ3gV08PVq4tk~wbI8JajhbjIE2KzA9hMPsKtxH8yZRhYjKx5rQx3Hh9N46VEf8HRPs6o5D-HjDwmsPHDiKF67K4f4-1yv~~3G9oVQnIYVkjWUBcHKqVp9pUE9y7IIgGr7mi0wYjipNybnR30Dx3x7mQlgd6fZFg8ciZ6Ha70ZraUP0KeX7zsrI7meQWTXknZQ__', isFollowing: true },
-    { id: '2', username: 'dress.and.daisy', avatar: 'https://s3-alpha-sig.figma.com/img/dcc9/d1d2/51da8a64460e7c5f2ad47253218968ce?Expires=1744588800&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=W6j83WHyIghEuBFCNe-HQxS6K~dTcRC3hGIBA5hcLmJiZ2CjVrBCTV0kjH4R8qtKLsy64sOnzLAFWc4T93buhBrEzz~jzXH9DfRsMoODOgT~XuYSDJbfTsXyNf6C8G45Kd6SlHUEgY2t60P54fEqpZ3gV08PVq4tk~wbI8JajhbjIE2KzA9hMPsKtxH8yZRhYjKx5rQx3Hh9N46VEf8HRPs6o5D-HjDwmsPHDiKF67K4f4-1yv~~3G9oVQnIYVkjWUBcHKqVp9pUE9y7IIgGr7mi0wYjipNybnR30Dx3x7mQlgd6fZFg8ciZ6Ha70ZraUP0KeX7zsrI7meQWTXknZQ__', isFollowing: false },
-  ];
+      if (error) {
+        console.error('Error fetching users:', error);
+      }
+      else {
+        const mappedUsers = data.map((user: any) => ({
+          id: user.id,
+          username: user.username,
+          avatar: `${user.pfp}`,
+          isFollowing: false,
+        }));
+        setUserResults(mappedUsers);
+      }
+    };
+    fetchUsers();
+  }, [searchQuery]);
 
   const styles = StyleSheet.create({
     container: {
@@ -244,7 +257,11 @@ export default function SearchResultsPage() {
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <View style={styles.gridItem}>
-                <View style={styles.imagePlaceholder} />
+                <Image 
+                  source={{uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`}}
+                  style={styles.imagePlaceholder}
+                  resizeMode="cover"
+                />
                 <View style={styles.gridContent}>
                 <View style={styles.postUserRow}>
                     <Image
@@ -254,7 +271,7 @@ export default function SearchResultsPage() {
                     <Text style={styles.username}>{item.username}</Text>
                     </View>
                   <Text style={styles.caption}>{item.caption}</Text>
-                  {item.tags.length > 0 && <Text style={styles.tag}>{item.tags[0]}</Text>}
+                  {/* {item.tags.length > 0 && <Text style={styles.tag}>{item.tags[0]}</Text>} */}
                 </View>
               </View>
             )}
