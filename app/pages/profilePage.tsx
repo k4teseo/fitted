@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons} from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
+import { supabase } from "@/lib/supabase";
 
 export default function ProfilePage() {
     const { width, height } = useWindowDimensions();
@@ -84,7 +85,55 @@ export default function ProfilePage() {
             paddingHorizontal: width * 0.1,
             borderRadius: 10,
         },
-      });
+    });
+
+    const [userId, setUserId] = useState<string | null>(null);
+    const [username, setUsername] = useState("");
+    const [profileImageUrl, setProfileImageUrl] = useState("");
+    const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+    const [outfitsCount, setOutfitsCount] = useState(0); // We'll count user posts later
+
+    useEffect(() => {
+        const getUserData = async () => {
+            try {
+                // Log session fetch
+                const { data: { session }, error } = await supabase.auth.getSession();
+                if (error) {
+                  console.error("Error fetching session:", error.message);
+                } else {
+                  console.log("Session fetched:", session);
+                }
+        
+                const id = session?.user?.id ?? null;
+                setUserId(id);
+                if (id) {
+                    console.log("User ID found:", id);
+        
+                    // Fetch profile data
+                    const { data: profile, error: profileError } = await supabase
+                    .from("profiles")
+                    .select("username, pfp")
+                    .eq("id", id)
+                    .single();
+                    
+                    if (profileError) {
+                        console.error("Error fetching profile:", profileError.message);
+                    } else {
+                        console.log("Profile fetched:", profile);
+                        setUsername(profile.username || "Unknown");
+                        setProfileImageUrl(profile.pfp || defaultPfp);
+                        console.log("Updated Profile Image URL:", profileImageUrl);
+                    }
+                } else {
+                    console.log("No user ID found. User might not be logged in.");
+                }
+            } catch (err: any) {  // Using 'any' here temporarily
+                console.error("Error:", err.message);
+            }
+        };
+    
+        getUserData();
+    }, []);
 
     return (
         <View style={styles.container}>
@@ -95,13 +144,16 @@ export default function ProfilePage() {
             </View>
             {/* Profile Section */} 
             <View style={styles.profileSection}>
-                <Image source={{ uri: 'https://example.com/profile.jpg' }} style={styles.profileImage} />
+                <Image
+                    source={{ uri: profileImageUrl }}
+                    style={styles.profileImage}
+                />
                 <TouchableOpacity style={styles.uploadIcon}>
                     <Ionicons name="camera" size={16} color="white" />  
                 </TouchableOpacity>
             </View>
             {/* Username and Stats */}
-            <Text style={styles.username}>Username</Text>
+            <Text style={styles.username}>{username}</Text>
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>0</Text>
