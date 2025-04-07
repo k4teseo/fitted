@@ -87,6 +87,13 @@ export default function SearchResultsPage() {
     fetchUsers();
   }, [searchQuery]);
 
+  const handlePostPress = (postId: string) => {
+    router.push({
+      pathname: './PostPage',
+      params: { id: postId },
+    });
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -256,7 +263,10 @@ export default function SearchResultsPage() {
             numColumns={2}
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
-              <View style={styles.gridItem}>
+              <TouchableOpacity 
+                style={styles.gridItem}
+                onPress={() => handlePostPress(item.id)}
+              >
                 <Image 
                   source={{uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`}}
                   style={styles.imagePlaceholder}
@@ -273,7 +283,7 @@ export default function SearchResultsPage() {
                   <Text style={styles.caption}>{item.caption}</Text>
                   {/* {item.tags.length > 0 && <Text style={styles.tag}>{item.tags[0]}</Text>} */}
                 </View>
-              </View>
+              </TouchableOpacity>
             )}
           />
         )}
