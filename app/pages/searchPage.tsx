@@ -1,36 +1,68 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, FlatList, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import SearchBar from '../components/searchbar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState([
-    'dresses', 'summer', 'hello kitty', 'spring', 'spring break', 'work attire', 'evening wear'
-  ]);
-  const [users, setUsers] = useState([
-    'pixelnova', 'lavender.ghost', 'user', 'hello kitty', 'design_lover', 'fashion_icon'
-  ]);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showAllRecent, setShowAllRecent] = useState(false);
   const [showAllUsers, setShowAllUsers] = useState(false);
+
   const router = useRouter();
   const { width, height } = useWindowDimensions();
 
-  const deleteRecentSearch = (index: number) => {
+  useEffect(() => {
+    const loadRecentSearches = async () => {
+      try {
+        const savedSearches = await AsyncStorage.getItem('recentSearches');
+        if (savedSearches) {
+          setRecentSearches(JSON.parse(savedSearches));
+        }
+      } catch (error) {
+        console.error('Failed to load recent searches', error);
+      }
+    };
+
+    loadRecentSearches();
+  }, []);
+
+  const deleteRecentSearch = async (index: number) => {
     // Create a new array without the item at the specified index
     const updatedSearches = recentSearches.filter((_, i) => i !== index);
     setRecentSearches(updatedSearches);
+
+    try {
+      await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+    } catch (error) {
+      console.error('Failed to save recent searches', error);
+    }
   };
 
-  const deleteUser = (index: number) => {
-    // Create a new array without the item at the specified index
-    const updatedUsers = users.filter((_, i) => i !== index);
-    setUsers(updatedUsers);
+  const clearAllRecentSearches = async () => {
+    setRecentSearches([]);
+    try {
+      await AsyncStorage.removeItem('recentSearches');
+    } catch (error) {
+      console.error('Failed to clear recent searches', error);
+    }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (searchQuery.trim() !== '') {
+      if (!recentSearches.some(s => s.toLowerCase() === searchQuery.toLowerCase())) {
+        const updatedSearches = [searchQuery, ...recentSearches].slice(0, 10);
+        setRecentSearches(updatedSearches);
+
+        try {
+          await AsyncStorage.setItem('recentSearches', JSON.stringify(updatedSearches));
+        } catch (error) {
+          console.error('Failed to save recent searches', error);
+        }
+      }
+
       router.push({
         pathname: './searchResultsPage',
         params: { query: searchQuery },
@@ -83,6 +115,11 @@ export default function SearchPage() {
       color: '#7F8A95',
       fontSize: 14,
     },
+    clearAllButton: {
+      color: '#7F8A95',
+      fontSize: 12,
+      marginLeft: 'auto',
+    },
     listItem: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -134,56 +171,59 @@ export default function SearchPage() {
         {/* Recent Searches Section */}
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionHeader}>Recent history</Text>
-          <TouchableOpacity onPress={() => setShowAllRecent(!showAllRecent)}>
-            <Text style={styles.seeMore}>{showAllRecent ? 'See Less' : 'See More'}</Text>
-          </TouchableOpacity>
+          {recentSearches.length > 0 && (
+            <TouchableOpacity onPress={clearAllRecentSearches}>
+              <Text style={styles.clearAllButton}>Clear All</Text>
+            </TouchableOpacity>
+          )}
         </View>
         
-        <FlatList
-          data={showAllRecent ? recentSearches : recentSearches.slice(0, 4)}
-          renderItem={({ item, index }) => (
-            <View>
-              <View style={styles.listItem}>
-                <Text style={styles.itemText}>{item}</Text>
-                <TouchableOpacity 
-                  style={styles.deleteButton}
-                  onPress={() => deleteRecentSearch(index)}
-                >
-                  <MaterialIcons name="close" size={18} color="#7F8A95" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.divider} />
-            </View>
-          )}
-          keyExtractor={(item, index) => `recent-${index}`}
-        />
+        {recentSearches.length > 0 ? (
+          <>
+            {(showAllRecent ? recentSearches : recentSearches.slice(0, 4)).map((item, i) => {
+              const actualIndex = recentSearches.indexOf(item); // important for deletion
+              return (
+                <View key={i}>
+                  <TouchableOpacity
+                    onPress={() => {
+                      setSearchQuery(item);
+                      router.push({
+                        pathname: './searchResultsPage',
+                        params: { query: item },
+                      });
+                    }}
+                  >
+                    <View style={styles.listItem}>
+                      <Text style={styles.itemText}>{item}</Text>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => deleteRecentSearch(actualIndex)}
+                      >
+                        <MaterialIcons name="close" size={18} color="#7F8A95" />
+                      </TouchableOpacity>
+                    </View>
+                  </TouchableOpacity>
+                  <View style={styles.divider} />
+                </View>
+              );
+            })}
 
-        {/* Users Section */}
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionHeader}>Users</Text>
-          <TouchableOpacity onPress={() => setShowAllUsers(!showAllUsers)}>
-            <Text style={styles.seeMore}>{showAllUsers ? 'See Less' : 'See More'}</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <FlatList
-          data={showAllUsers ? users : users.slice(0, 4)}
-          renderItem={({ item, index }) => (
-            <View>
-              <View style={styles.listItem}>
-                <Text style={styles.itemText}>{item}</Text>
-                <TouchableOpacity 
-                  style={styles.deleteButton}
-                  onPress={() => deleteUser(index)}
-                >
-                  <MaterialIcons name="close" size={18} color="#7F8A95" />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.divider} />
-            </View>
-          )}
-          keyExtractor={(item, index) => `user-${index}`}
-        />
+            {recentSearches.length > 4 && (
+              <TouchableOpacity
+                style={{ alignSelf: 'center', marginVertical: 10 }}
+                onPress={() => setShowAllRecent(!showAllRecent)}
+              >
+                <Text style={styles.seeMore}>
+                  {showAllRecent ? 'See Less' : 'Show More'}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </>
+        ) : (
+          <Text style={[styles.itemText, { paddingHorizontal: 30, paddingVertical: 12 }]}>
+            No recent searches
+          </Text>
+        )}
       </View>
     </View>
   );
