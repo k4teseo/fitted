@@ -24,6 +24,7 @@ type PostData = {
   selectedoccasions: string[];
   selectedbrands_lower: string[];
   selectedoccasions_lower: string[];
+  metadata: string[];
 };
 
 type BrandTag = {
@@ -56,7 +57,7 @@ export default function PostPage() {
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, username, caption, image_path, selectedbrands, selectedoccasions"
+        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata"
       )
       .eq("id", id)
       .single();
@@ -77,6 +78,7 @@ export default function PostPage() {
             ?.publicUrl || "",
         selectedbrands: data.selectedbrands ?? [],
         selectedoccasions: data.selectedoccasions ?? [],
+        metadata: data.metadata ?? [],
       };
       setPost(postData);
     }

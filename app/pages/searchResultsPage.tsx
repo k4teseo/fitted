@@ -39,22 +39,23 @@ export default function SearchResultsPage() {
   useEffect(() => {
     const fetchResults = async () => {
       const lowerQuery = searchQuery.toLowerCase().trim();
-      console.log("🔍 Searching for:", lowerQuery);
+      console.log("Searching for:", lowerQuery);
 
-      const jsonArray = JSON.stringify([lowerQuery]); // => '["brandy melville"]'
+      const jsonArray = JSON.stringify([lowerQuery]); // ["silver necklace"]
+      const pgArray = `{${lowerQuery}}`;
 
       const { data, error } = await supabase
         .from("images")
         .select("*")
         .or(
-          `selectedbrands_lower.cs.${jsonArray},selectedoccasions_lower.cs.${jsonArray}`
+          `selectedbrands_lower.cs.${jsonArray},selectedoccasions_lower.cs.${jsonArray},metadata.cs.${pgArray}`
         );
 
       if (error) {
-        console.error("❌ Supabase error:", error);
+        console.error("Supabase error:", error);
       } else {
         setSearchResults(data);
-        console.log("✅ Search results:", data);
+        console.log("Search results:", data);
       }
     };
 
