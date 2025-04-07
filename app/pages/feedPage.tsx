@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
   SafeAreaView,
@@ -88,6 +88,17 @@ export default function FeedPage() {
   );
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const id = session?.user?.id ?? null;
+      setUserId(id);
+    };
+  
+    getUser();
+  }, []);
 
   // Fetch images from Supabase
   const fetchImages = async () => {
