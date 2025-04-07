@@ -22,10 +22,12 @@ type PostData = {
   postImage: string;
   selectedbrands: string[];
   selectedoccasions: string[];
+  selectedbrands_lower: string[];
+  selectedoccasions_lower: string[];
 };
 
 type BrandTag = {
-  id: string;             // or number, depending on your DB
+  id: string; // or number, depending on your DB
   brand_name: string;
   x_position: number;
   y_position: number;
@@ -53,7 +55,9 @@ export default function PostPage() {
 
     const { data, error } = await supabase
       .from("images")
-      .select("id, username, caption, image_path, selectedbrands, selectedoccasions")
+      .select(
+        "id, username, caption, image_path, selectedbrands, selectedoccasions"
+      )
       .eq("id", id)
       .single();
 
@@ -69,9 +73,8 @@ export default function PostPage() {
         username: data.username,
         caption: data.caption,
         postImage:
-          supabase.storage
-            .from("images")
-            .getPublicUrl(data.image_path)?.data?.publicUrl || "",
+          supabase.storage.from("images").getPublicUrl(data.image_path)?.data
+            ?.publicUrl || "",
         selectedbrands: data.selectedbrands ?? [],
         selectedoccasions: data.selectedoccasions ?? [],
       };
@@ -174,10 +177,7 @@ export default function PostPage() {
               return (
                 <View
                   key={tag.id}
-                  style={[
-                    styles.brandTagPill,
-                    { left: leftPos, top: topPos },
-                  ]}
+                  style={[styles.brandTagPill, { left: leftPos, top: topPos }]}
                 >
                   <Text style={styles.brandTagText}>{tag.brand_name}</Text>
                 </View>

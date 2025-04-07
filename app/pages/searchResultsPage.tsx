@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import {
   View,
   StyleSheet,
@@ -7,11 +7,11 @@ import {
   useWindowDimensions,
   TouchableOpacity,
   Image,
-} from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
-import SearchBar from '../components/searchbar';
-import { supabase } from '@/lib/supabase';
+} from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import SearchBar from "../components/searchbar";
+import { supabase } from "@/lib/supabase";
 
 type SearchResult = {
   id: string;
@@ -29,8 +29,8 @@ type UserResult = {
 
 export default function SearchResultsPage() {
   const { query } = useLocalSearchParams<{ query: string }>();
-  const [searchQuery, setSearchQuery] = useState(query || '');
-  const [activeTab, setActiveTab] = useState<'Posts' | 'Users'>('Posts');
+  const [searchQuery, setSearchQuery] = useState(query || "");
+  const [activeTab, setActiveTab] = useState<"Posts" | "Users">("Posts");
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -38,43 +38,48 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     const fetchResults = async () => {
+      const lowerQuery = searchQuery.toLowerCase().trim();
+      console.log("🔍 Searching for:", lowerQuery);
+
+      const jsonArray = JSON.stringify([lowerQuery]); // => '["brandy melville"]'
+
       const { data, error } = await supabase
-        .from('images')
-        .select('*')
-        .or(`selectedbrands.cs.{${searchQuery}}, selectedoccasions.cs.{${searchQuery}}`)
-        if (error) {
-          console.error('Error fetching images:', error);
-        }
-        if (data) {
-          
-          setSearchResults(data);
-        }
+        .from("images")
+        .select("*")
+        .or(
+          `selectedbrands_lower.cs.${jsonArray},selectedoccasions_lower.cs.${jsonArray}`
+        );
+
+      if (error) {
+        console.error("❌ Supabase error:", error);
+      } else {
+        setSearchResults(data);
+        console.log("✅ Search results:", data);
+      }
     };
-    if (searchQuery.trim() !== '') {
+
+    if (searchQuery.trim() !== "") {
       fetchResults();
     }
   }, [searchQuery]);
 
   const handleSubmit = () => {
-    if (searchQuery.trim() !== '') {
-      router.push({
-        pathname: './searchResultsPage',
-        params: { query: searchQuery },
-      });
+    const cleaned = searchQuery.trim();
+    if (cleaned !== "") {
+      setSearchQuery(cleaned); // force re-trigger if needed
     }
   };
 
   useEffect(() => {
     const fetchUsers = async () => {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, pfp')
-        .ilike('username', `%${searchQuery}%`)
+        .from("profiles")
+        .select("id, username, pfp")
+        .ilike("username", `%${searchQuery}%`);
 
       if (error) {
-        console.error('Error fetching users:', error);
-      }
-      else {
+        console.error("Error fetching users:", error);
+      } else {
         const mappedUsers = data.map((user: any) => ({
           id: user.id,
           username: user.username,
@@ -90,25 +95,25 @@ export default function SearchResultsPage() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#15181B',
+      backgroundColor: "#15181B",
     },
     feedHeader: {
-      backgroundColor: '#2D3338',
-      width: '100%',
+      backgroundColor: "#2D3338",
+      width: "100%",
       height: height * 0.14,
       paddingVertical: height * 0.02,
       paddingLeft: width * 0.06,
       paddingRight: width * 0.04,
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      justifyContent: 'space-between',
-      position: 'absolute',
+      flexDirection: "row",
+      alignItems: "flex-end",
+      justifyContent: "space-between",
+      position: "absolute",
       zIndex: 10,
     },
     headerContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
+      flexDirection: "row",
+      alignItems: "center",
+      width: "100%",
     },
     backButton: {
       marginTop: 15,
@@ -121,78 +126,78 @@ export default function SearchResultsPage() {
       paddingHorizontal: 10,
     },
     tabContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
+      flexDirection: "row",
+      justifyContent: "space-around",
       marginVertical: 10,
       borderBottomWidth: 1,
-      borderBottomColor: '#2D3338',
+      borderBottomColor: "#2D3338",
     },
     tab: {
       paddingBottom: 6,
     },
     activeTab: {
       borderBottomWidth: 2,
-      borderBottomColor: '#60A5FA',
+      borderBottomColor: "#60A5FA",
     },
     tabText: {
       fontSize: 16,
-      color: '#F5EEE3',
+      color: "#F5EEE3",
     },
     gridItem: {
       flex: 1,
-      backgroundColor: '#2D3338',
+      backgroundColor: "#2D3338",
       borderRadius: 16,
       margin: 8,
-      overflow: 'hidden',
+      overflow: "hidden",
     },
     postUserRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 4,
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 4,
     },
-      avatarSmall: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        marginRight: 8,
+    avatarSmall: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      marginRight: 8,
     },
     imagePlaceholder: {
       height: 180,
-      backgroundColor: '#444',
+      backgroundColor: "#444",
     },
     gridContent: {
       padding: 10,
     },
     username: {
-      color: '#F5EEE3',
+      color: "#F5EEE3",
       fontSize: 14,
-      fontWeight: '600',
+      fontWeight: "600",
     },
     caption: {
-      color: '#C8C8C8',
+      color: "#C8C8C8",
       fontSize: 12,
       marginTop: 4,
     },
     tag: {
       marginTop: 8,
-      backgroundColor: '#4B5563',
-      alignSelf: 'flex-start',
-      color: '#F5EEE3',
+      backgroundColor: "#4B5563",
+      alignSelf: "flex-start",
+      color: "#F5EEE3",
       fontSize: 10,
       paddingHorizontal: 8,
       paddingVertical: 3,
       borderRadius: 999,
     },
     userRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
       marginVertical: 8,
       paddingHorizontal: 6,
     },
     userInfo: {
-      flexDirection: 'row',
-      alignItems: 'center',
+      flexDirection: "row",
+      alignItems: "center",
     },
     avatar: {
       width: 44,
@@ -206,17 +211,17 @@ export default function SearchResultsPage() {
       borderRadius: 20,
     },
     followText: {
-      color: '#F5EEE3',
+      color: "#F5EEE3",
     },
     removeIcon: {
       marginLeft: 8,
     },
     follow: {
-      backgroundColor: '#60A5FA',
+      backgroundColor: "#60A5FA",
     },
     following: {
       borderWidth: 1,
-      borderColor: '#F5EEE3',
+      borderColor: "#F5EEE3",
     },
   });
 
@@ -225,11 +230,18 @@ export default function SearchResultsPage() {
       {/* Header */}
       <View style={styles.feedHeader}>
         <View style={styles.headerContent}>
-          <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
             <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
           </TouchableOpacity>
           <View style={styles.searchWrapper}>
-            <SearchBar value={searchQuery} onChangeText={setSearchQuery} onSubmit={handleSubmit} />
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              onSubmit={handleSubmit}
+            />
           </View>
         </View>
       </View>
@@ -237,11 +249,11 @@ export default function SearchResultsPage() {
       {/* Tabs */}
       <View style={styles.contentContainer}>
         <View style={styles.tabContainer}>
-          {['Posts', 'Users'].map((tab) => (
+          {["Posts", "Users"].map((tab) => (
             <TouchableOpacity
               key={tab}
               style={[styles.tab, activeTab === tab && styles.activeTab]}
-              onPress={() => setActiveTab(tab as 'Posts' | 'Users')}
+              onPress={() => setActiveTab(tab as "Posts" | "Users")}
             >
               <Text style={styles.tabText}>{tab}</Text>
             </TouchableOpacity>
@@ -249,7 +261,7 @@ export default function SearchResultsPage() {
         </View>
 
         {/* Posts View */}
-        {activeTab === 'Posts' && (
+        {activeTab === "Posts" && (
           <FlatList
             data={searchResults}
             keyExtractor={(item) => item.id}
@@ -257,19 +269,25 @@ export default function SearchResultsPage() {
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
               <View style={styles.gridItem}>
-                <Image 
-                  source={{uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`}}
+                <Image
+                  source={{
+                    uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`,
+                  }}
                   style={styles.imagePlaceholder}
                   resizeMode="cover"
                 />
                 <View style={styles.gridContent}>
-                <View style={styles.postUserRow}>
+                  <View style={styles.postUserRow}>
                     <Image
-                        source={{ uri: userResults.find((u) => u.username === item.username)?.avatar }}
-                        style={styles.avatarSmall}
+                      source={{
+                        uri: userResults.find(
+                          (u) => u.username === item.username
+                        )?.avatar,
+                      }}
+                      style={styles.avatarSmall}
                     />
                     <Text style={styles.username}>{item.username}</Text>
-                    </View>
+                  </View>
                   <Text style={styles.caption}>{item.caption}</Text>
                   {/* {item.tags.length > 0 && <Text style={styles.tag}>{item.tags[0]}</Text>} */}
                 </View>
@@ -279,7 +297,7 @@ export default function SearchResultsPage() {
         )}
 
         {/* Users View */}
-        {activeTab === 'Users' && (
+        {activeTab === "Users" && (
           <FlatList
             data={userResults}
             keyExtractor={(item) => item.id}
@@ -289,7 +307,7 @@ export default function SearchResultsPage() {
                   <Image source={{ uri: item.avatar }} style={styles.avatar} />
                   <Text style={styles.username}>{item.username}</Text>
                 </View>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TouchableOpacity
                     style={[
                       styles.followButton,
@@ -297,7 +315,7 @@ export default function SearchResultsPage() {
                     ]}
                   >
                     <Text style={styles.followText}>
-                      {item.isFollowing ? 'Following' : 'Follow'}
+                      {item.isFollowing ? "Following" : "Follow"}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.removeIcon}>
