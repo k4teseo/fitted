@@ -11,6 +11,7 @@ import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
 import { FittedLogo } from "@/assets/images/FittedLogo";
+import { supabase } from "@/lib/supabase";
 
 const LoginPage = () => {
   const router = useRouter();
@@ -23,17 +24,19 @@ const LoginPage = () => {
   const [passwordError, setPasswordError] = useState(false);
   const [inputType, setInputType] = useState<"email" | "phone">("email");
 
-  // Mock authentication function - replace with actual auth logic
   const authenticateUser = async (email: string, password: string) => {
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Mock validation - replace with real authentication
-    if (email === "user@example.com" && password === "password123") {
-      return true;
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+  
+    if (error) {
+      throw new Error(error.message);
     }
-    return false;
+  
+    return data.user;
   };
+  
 
   const handleGoogleSignIn = () => {
     console.log("Google sign in pressed");
@@ -124,7 +127,7 @@ const LoginPage = () => {
             <Text style={[
               styles.inputLabel,
               emailError && styles.inputLabelError
-            ]}>Email or Phone Number</Text>
+            ]}>Email</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter your email or phone"
