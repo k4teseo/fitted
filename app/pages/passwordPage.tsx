@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   AppState,
+  TextInput
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -119,15 +120,31 @@ const PasswordPage = () => {
           Please create a secure password to complete your account setup.
         </Text>
 
-        <OnboardingInput
-          title="Password"
-          placeholder="Enter your password"
-          value={password}
-          handleChange={handlePasswordChange}
-          isPassword={true}
-          showPassword={showPassword}
-          togglePasswordVisibility={togglePasswordVisibility}
-        />
+        <View style={styles.inputContainer}>
+          <View style={styles.inputBorder}>
+            <Text style={styles.inputLabel}>Password</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Enter your password"
+                placeholderTextColor="#383C40"
+                secureTextEntry={!showPassword}
+                value={password}
+                onChangeText={handlePasswordChange}
+              />
+              <TouchableOpacity 
+                style={styles.eyeIcon} 
+                onPress={togglePasswordVisibility}
+              >
+                <MaterialIcons 
+                  name={showPassword ? "visibility" : "visibility-off"} 
+                  size={24} 
+                  color="#84919D" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
 
         <View style={styles.validationContainer}>
           <Text
@@ -230,6 +247,41 @@ const styles = StyleSheet.create({
   },
   nextButtonActive: {
     backgroundColor: "#4DA6FD",
+  },
+  inputContainer: {
+    marginBottom: 24,
+    position: "relative",
+  },
+  inputBorder: {
+    borderWidth: 1,
+    borderColor: "#626A73",
+    borderRadius: 4,
+    padding: 16,
+    paddingTop: 20,
+  },
+  inputLabel: {
+    position: "absolute",
+    top: -10,
+    left: 10,
+    backgroundColor: "#0F1112",
+    paddingHorizontal: 5,
+    fontSize: 12,
+    color: "#7F8D9A",
+    fontWeight: "400",
+  },
+  passwordInputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  passwordInput: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    flex: 1,
+    paddingTop: 4,
+  },
+  eyeIcon: {
+    marginLeft: 10,
   },
 });
 

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, StyleSheet, TextInput } from "react-native";
 import { Link, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import Svg, { Path } from "react-native-svg";
@@ -62,15 +62,30 @@ const SignUpPage = () => {
           Sign up and get started with your email address.
         </Text>
 
-        <OnboardingInput
-          title="Email Address"
-          placeholder="example@gmail.com"
-          value={email}
-          handleChange={handleEmailChange}
-          keyboardType="email-address"
-          isValid={isEmailValid}
-          errorMessage="Please enter a valid email address."
-        />
+        {/* Input Container */}
+        <View style={styles.inputContainer}>
+          <View style={[
+            styles.inputBorder,
+            !isEmailValid && styles.inputError
+          ]}>
+            <Text style={[
+              styles.inputLabel,
+              !isEmailValid && styles.inputLabelError
+            ]}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="example@gmail.com"
+              placeholderTextColor="#383C40"
+              keyboardType="email-address"
+              value={email}
+              onChangeText={handleEmailChange}
+              autoCapitalize="none"
+            />
+          </View>
+          {!isEmailValid && email.length > 0 && (
+            <Text style={styles.errorText}>Please enter a valid email address</Text>
+          )}
+        </View>
 
         <OnboardingButton
           title="Next"
@@ -174,6 +189,43 @@ const styles = StyleSheet.create({
     fontWeight: "400",
     marginBottom: 32,
     textAlign: "left",
+  },
+  inputContainer: {
+    marginBottom: 24,
+    position: "relative",
+  },
+  inputBorder: {
+    borderWidth: 1,
+    borderColor: "#626A73",
+    borderRadius: 4,
+    padding: 16,
+    paddingTop: 20,
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
+  inputLabel: {
+    position: "absolute",
+    top: -10,
+    left: 10,
+    backgroundColor: "#0F1112",
+    paddingHorizontal: 5,
+    fontSize: 12,
+    color: "#7F8D9A",
+    fontWeight: "400",
+  },
+  inputLabelError: {
+    color: '#FF3B30',
+  },
+  input: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    paddingTop: 4,
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
   },
   nextButton: {
     backgroundColor: "#6D757E",

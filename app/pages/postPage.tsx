@@ -78,6 +78,8 @@ export default function PostPage() {
             ?.publicUrl || "",
         selectedbrands: data.selectedbrands ?? [],
         selectedoccasions: data.selectedoccasions ?? [],
+        selectedbrands_lower: data.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
+        selectedoccasions_lower: data.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
         metadata: data.metadata ?? [],
       };
       setPost(postData);

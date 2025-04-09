@@ -294,6 +294,9 @@ const OnboardingProfileSetup = () => {
             display="spinner"
             onChange={handleDateChange}
             maximumDate={new Date()}
+            textColor="#4DA6FD" 
+            themeVariant="dark" // This ensures dark mode styling
+            style={styles.datePicker}
           />
         )}
 
@@ -423,6 +426,9 @@ const styles = StyleSheet.create({
   dobInput: {
     flex: 1,
     marginRight: 8,
+  },
+  datePicker: {
+    backgroundColor: '#0F1112', // Match your background color
   },
   input: {
     color: "#FFFFFF",
