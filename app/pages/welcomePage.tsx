@@ -81,12 +81,12 @@ export default function WelcomePage() {
 
           <OnboardingButton
             title="Sign Up"
-            onPress={() => router.push("./pages/signupPage")}
+            onPress={() => router.push("/pages/signupPage")}
             style={styles.signUpButton}
           />
           <OnboardingButton
             title="Log In"
-            onPress={() => router.push("./pages/loginPage")}
+            onPress={() => router.push("/pages/loginPage")}
             style={styles.loginButton}
           />
         </Animated.View>

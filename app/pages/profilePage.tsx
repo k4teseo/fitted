@@ -5,10 +5,12 @@ import { Ionicons} from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
 import { supabase } from "@/lib/supabase";
+import SettingsPage from './settingsPage';
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
     const { width, height } = useWindowDimensions();
+    const [showSettings, setShowSettings] = useState(false);
 
     const styles = StyleSheet.create({
         container: { 
@@ -138,8 +140,15 @@ export default function ProfilePage() {
 
     return (
         <View style={styles.container}>
+            {showSettings && (
+                <SettingsPage onClose={() => setShowSettings(false)} />
+            )}
+            
             <View style={styles.header}>
-                <TouchableOpacity style={styles.settingsIcon}>
+                <TouchableOpacity 
+                    style={styles.settingsIcon}
+                    onPress={() => setShowSettings(true)} // Update this line
+                >
                     <Ionicons name="settings" size={24} color="white" />
                 </TouchableOpacity>
             </View>

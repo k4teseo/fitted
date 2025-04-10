@@ -14,6 +14,8 @@ import { supabase } from "@/lib/supabase";
 import OnboardingInput from "../components/OnboardingInput";
 import OnboardingButton from "../components/OnboardingButton";
 import { FittedLogo } from "@/assets/images/FittedLogo";
+import AccountCreated from "../components/AccountCreated";
+
 
 const PasswordPage = () => {
   const router = useRouter();
@@ -26,6 +28,9 @@ const PasswordPage = () => {
     specialChar: false,
   });
   const [loading, setLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const [showSuccessPage, setShowSuccessPage] = useState(false);
+  const [userId, setUserId] = useState("");
 
   useEffect(() => {
     const handleAppStateChange = async (state: string) => {
@@ -40,6 +45,13 @@ const PasswordPage = () => {
 
     return () => appStateSubscription.remove();
   }, []);
+
+  const handleNext = () => {
+    router.push({
+      pathname: "/pages/onboardingProfileSetup/[userId]",
+      params: { userId },
+    });
+  }
 
   async function signUpWithEmail() {
     setLoading(true);
@@ -58,6 +70,7 @@ const PasswordPage = () => {
     }
   
     const userId = data.user.id;
+    setUserId(userId);
     console.log("Created user with ID:", userId);
     console.log("Inserting into profiles with email:", email); 
     
@@ -80,11 +93,8 @@ const PasswordPage = () => {
   
     // Success, continue with the navigation
     setLoading(false);
-    Alert.alert("Success", "Your account has been created!");
-    router.push({
-      pathname: "/pages/onboardingProfileSetup/[userId]",
-      params: { userId },
-    });
+    setShowConfetti(true);
+    setShowSuccessPage(true);
   }
 
   const handleBack = () => {
@@ -103,6 +113,10 @@ const PasswordPage = () => {
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
+  if (showSuccessPage) {
+    return <AccountCreated showConfetti={showConfetti} onNext={handleNext} />;
+  }
 
   return (
     <View style={styles.background}>
