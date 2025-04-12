@@ -5,14 +5,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { StyleSheet } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
 import { supabase } from "@/lib/supabase";
-import SettingsPage from './settingsPage';
 import FriendRequestPage from './friendRequestPage';
+import SignOutButton from '../components/signOut';
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
     const { width, height } = useWindowDimensions();
     const [showSettings, setShowSettings] = useState(false);
     const [showFriendRequests, setShowFriendRequests] = useState(false);
+    const [posts, setPosts] = useState<any[]>([]);
 
     const styles = StyleSheet.create({
         container: { 
@@ -42,24 +43,26 @@ export default function ProfilePage() {
             marginTop: -height * 0.05,
         },
         profileImage: {
-            width: width * 0.25,
-            height: width * 0.25,
-            borderRadius: (width * 0.25) / 2,
+            width: width * 0.28,
+            height: width * 0.28,
+            borderRadius: (width * 0.28) / 2,
             backgroundColor: "gray",
+            borderWidth: 3,              
+            borderColor: "#63B1FF", 
         },
-        uploadIcon: {
-            position: "absolute",
-            bottom: height * 0.005,
-            right: width * 0.35,
-            backgroundColor: "black",
-            borderRadius: 30,
-            padding: width * 0.025,
-        },
-        username: { 
-            color: "white", 
+        nameText: {
+            color: "#C7D1DB", 
             fontSize: 20, 
             textAlign: "center", 
-            marginTop: height * 0.02 
+            marginTop: height * 0.012,
+            fontWeight: 700
+        },
+        usernameText: {
+            color: "#919CA9",
+            fontSize: 12,
+            textAlign: "center",
+            fontWeight: 400,
+            marginTop: 6
         },
 
         // Stats Section
@@ -71,38 +74,56 @@ export default function ProfilePage() {
             marginBottom: height * 0.015,
         },
         statItem: {
-            alignItems: "center",
-            marginHorizontal: 20,
+            flexDirection: "row", // Changed to row to align horizontally
+            alignItems: "center", // Center vertically
+            marginHorizontal: 5,
         },
         statNumber: { 
-            color: "white", 
+            color: "#9AA8B6", 
             fontSize: 18, 
-            fontWeight: "bold" 
+            fontWeight: 600, 
+            marginRight: 8
         },
         statLabel: { 
-            color: "gray", 
-            fontSize: 14 
+            color: "#919CA9", 
+            fontSize: 16,
+            fontWeight: 400, 
+        },
+
+        // Edit Profile Button
+        editProfileButton: {
+            backgroundColor: "transparent",
+            borderWidth: 0.5,
+            borderColor: "#858E9A",
+            paddingVertical: height * 0.008,
+            borderRadius: 4,
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: width * 0.5, 
+            alignSelf: 'center', 
+            marginTop: height * 0.01,
+            marginBottom: height * 0.03,
+        },
+        editProfileButtonText: {
+            color: "#919CA9",
+            fontSize: 14,
+            fontWeight: "400",
         },
 
         // My Outfits Button
         body: {
             flex: 1,
-            backgroundColor: "#eee",
+            backgroundColor: "#212629",
             alignItems: "center",
             paddingTop: height * 0.02,
-            borderTopLeftRadius: width * 0.08,
-            borderTopRightRadius: width * 0.08,
-        },
-        outfitsButton: {
-            backgroundColor: "lightgray",
-            paddingVertical: height * 0.02,
-            paddingHorizontal: width * 0.1,
-            borderRadius: 10,
+            borderTopLeftRadius: width * 0.09,
+            borderTopRightRadius: width * 0.09,
         },
     });
 
     const [userId, setUserId] = useState<string | null>(null);
     const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
     const [profileImageUrl, setProfileImageUrl] = useState("");
     const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
     const [outfitsCount, setOutfitsCount] = useState(0);
@@ -124,15 +145,15 @@ export default function ProfilePage() {
 
                     const { data: profile, error: profileError } = await supabase
                         .from("profiles")
-                        .select("username, pfp")
+                        .select("username, pfp, name")
                         .eq("id", id)
                         .single();
 
                     if (profileError) {
                         console.error("Error fetching profile:", profileError.message);
                     } else {
-                        console.log("Profile fetched:", profile);
-                        setUsername(profile.username || "Unknown");
+                        setName(profile.name || "User"); // Set the name from profile.name
+                        setUsername(`@${profile.username}` || "@unknown");
                         setProfileImageUrl(profile.pfp || defaultPfp);
                     }
                 } else {
@@ -146,16 +167,17 @@ export default function ProfilePage() {
         getUserData();
     }, []);
 
+    const handleEditProfile = () => {
+        // Add edit profile functionality here
+        console.log("Edit profile button pressed");
+        // router.push('/editProfile');
+    };
+
     return (
         <View style={styles.container}>
-            {showSettings && (
-                <SettingsPage onClose={() => setShowSettings(false)} />
-            )}
-
             {showFriendRequests && (
                 <FriendRequestPage onClose={() => setShowFriendRequests(false)} />
             )}
-
             <View style={styles.header}>
                 <View style={styles.headerIconsContainer}>
                     <TouchableOpacity
@@ -164,12 +186,7 @@ export default function ProfilePage() {
                     >
                         <Ionicons name="person-add" size={24} color="white" />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        onPress={() => setShowSettings(true)}
-                        style={styles.iconButton}
-                    >
-                        <Ionicons name="settings" size={24} color="white" />
-                    </TouchableOpacity>
+                        <SignOutButton /> 
                 </View>
             </View>
 
@@ -179,13 +196,12 @@ export default function ProfilePage() {
                     source={{ uri: profileImageUrl }}
                     style={styles.profileImage}
                 />
-                <TouchableOpacity style={styles.uploadIcon}>
-                    <Ionicons name="camera" size={16} color="white" />
-                </TouchableOpacity>
             </View>
 
             {/* Username and Stats */}
-            <Text style={styles.username}>{username}</Text>
+            <Text style={styles.nameText}>{name}</Text>
+            <Text style={styles.usernameText}>{username}</Text>
+
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>0</Text>
@@ -196,12 +212,17 @@ export default function ProfilePage() {
                     <Text style={styles.statLabel}>Outfits</Text>
                 </View>
             </View>
+            
+            {/* Edit Profile Button */}
+            <TouchableOpacity 
+                style={styles.editProfileButton}
+                onPress={handleEditProfile}
+            >
+                <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
 
             {/* Body Section */}
             <View style={styles.body}>
-                <TouchableOpacity style={styles.outfitsButton}>
-                    <Text>My Outfits</Text>
-                </TouchableOpacity>
             </View>
 
             <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
