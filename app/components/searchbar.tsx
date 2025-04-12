@@ -11,7 +11,7 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({
-  placeholder = 'Search for...',
+  placeholder = 'Search for keywords, users, brands...',
   value,
   onChangeText,
   onSubmit,
@@ -30,15 +30,15 @@ export default function SearchBar({
       alignItems: 'center',
       backgroundColor: '#15181B',
       borderRadius: 30,
-      marginHorizontal: width * 0.05,
+      marginHorizontal: width * 0.04,
       marginTop: 15,
       paddingHorizontal: 15,
-      height: 37,
+      height: 41,
     },
     input: {
       flex: 1,
-      color: '#F5EEE3',
-      fontSize: 16,
+      color: '#7F8D9A',
+      fontSize: 13,
       marginLeft: 10,
     },
     icon: {
@@ -57,7 +57,7 @@ export default function SearchBar({
       <TextInput
         style={styles.input}
         placeholder={placeholder}
-        placeholderTextColor="#B4CFEA"
+        placeholderTextColor="#7F8D9A"
         value={value}
         onChangeText={onChangeText}
         autoFocus={autoFocus}

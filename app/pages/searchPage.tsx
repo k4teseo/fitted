@@ -109,14 +109,15 @@ export default function SearchPage() {
     },
     sectionHeader: {
       color: '#F5EEE3',
-      fontSize: 14,
+      fontSize: 16,
+      paddingVertical: 10
     },
     seeMore: {
       color: '#7F8A95',
       fontSize: 14,
     },
     clearAllButton: {
-      color: '#7F8A95',
+      color: '#85BBF0',
       fontSize: 12,
       marginLeft: 'auto',
     },
@@ -124,8 +125,16 @@ export default function SearchPage() {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      paddingVertical: 12,
+      paddingVertical: 14,
       paddingHorizontal: 30,
+    },
+    itemContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+    },
+    searchIcon: {
+      marginRight: 12,
     },
     itemText: {
       color: '#F5EEE3',
@@ -180,7 +189,7 @@ export default function SearchPage() {
         
         {recentSearches.length > 0 ? (
           <>
-            {(showAllRecent ? recentSearches : recentSearches.slice(0, 4)).map((item, i) => {
+            {(showAllRecent ? recentSearches : recentSearches.slice(0, 5)).map((item, i) => {
               const actualIndex = recentSearches.indexOf(item); // important for deletion
               return (
                 <View key={i}>
@@ -194,7 +203,15 @@ export default function SearchPage() {
                     }}
                   >
                     <View style={styles.listItem}>
+                      <View style={styles.itemContent}>
+                          <MaterialIcons 
+                            name="history" 
+                            size={33} 
+                            color="#90BBE5" 
+                            style={styles.searchIcon} 
+                          />
                       <Text style={styles.itemText}>{item}</Text>
+                      </View>
                       <TouchableOpacity
                         style={styles.deleteButton}
                         onPress={() => deleteRecentSearch(actualIndex)}

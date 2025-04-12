@@ -77,7 +77,7 @@ export default function WelcomePage() {
         <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
           <FittedLogo width={285} height={99} />
 
-          <Text style={styles.subtitle}>Keep It Casual, Share the Style.</Text>
+          <Text style={styles.subtitle}>Keep It Casual. Share the Style.</Text>
 
           <OnboardingButton
             title="Sign Up"

@@ -17,7 +17,8 @@ type SearchResult = {
   id: string;
   username: string;
   caption: string;
-  tags: string[];
+  image_path: string;
+  selectedoccasions: string[];
 };
 
 type UserResult = {
@@ -135,26 +136,36 @@ export default function SearchResultsPage() {
     },
     tabContainer: {
       flexDirection: "row",
-      justifyContent: "space-around",
-      marginVertical: 10,
-      borderBottomWidth: 1,
+      marginVertical: 20,
       borderBottomColor: "#2D3338",
+      paddingHorizontal: 10,
     },
     tab: {
-      paddingBottom: 6,
+      paddingBottom: 10,
+      marginHorizontal: 25, // Equal horizontal margin for both tabs
+      alignItems: "center",
     },
     activeTab: {
-      borderBottomWidth: 2,
+      borderBottomWidth: 3, 
       borderBottomColor: "#60A5FA",
+      width: "100%",
+      position: "absolute",
+      bottom: -1, // Align with the border 
     },
     tabText: {
-      fontSize: 16,
+      fontSize: 14,
       color: "#F5EEE3",
+    },
+    activeTabText: {
+      color: "#60A5FA", // Blue color when active
+    },
+    tabWrapper: {
+      position: "relative",
     },
     gridItem: {
       flex: 1,
       backgroundColor: "#2D3338",
-      borderRadius: 16,
+      borderRadius: 13,
       margin: 8,
       overflow: "hidden",
     },
@@ -170,31 +181,42 @@ export default function SearchResultsPage() {
       marginRight: 8,
     },
     imagePlaceholder: {
-      height: 180,
+      height: 200,
+      width: 174,
       backgroundColor: "#444",
     },
     gridContent: {
       padding: 10,
     },
-    username: {
-      color: "#F5EEE3",
-      fontSize: 14,
+    // Post username style (smaller)
+    postusername: {
+      color: "#B9C7D5",
+      fontSize: 10,
       fontWeight: "600",
+      marginLeft: 5,
+    },
+    // User tab username style (larger)
+    userUsername: {
+      color: "#9DACBB",
+      fontSize: 16,  
+      fontWeight: "600",
+      marginLeft: 10,
     },
     caption: {
-      color: "#C8C8C8",
-      fontSize: 12,
-      marginTop: 4,
+      color: "#F5EEE3",
+      fontSize: 14,
+      marginTop: 2,
+      marginLeft: 5,
     },
     tag: {
       marginTop: 8,
-      backgroundColor: "#4B5563",
+      backgroundColor: "#98A7B7",
       alignSelf: "flex-start",
-      color: "#F5EEE3",
-      fontSize: 10,
+      color: "#262A2F",
+      fontSize: 9,
       paddingHorizontal: 8,
       paddingVertical: 3,
-      borderRadius: 999,
+      borderRadius: 3,
     },
     userRow: {
       flexDirection: "row",
@@ -213,21 +235,23 @@ export default function SearchResultsPage() {
       borderRadius: 22,
       marginRight: 12,
     },
-    followButton: {
+    addButton: {
       paddingHorizontal: 16,
       paddingVertical: 6,
-      borderRadius: 20,
+      borderRadius: 30,
     },
-    followText: {
-      color: "#F5EEE3",
+    addText: {
+      color: "#141618",
+      fontSize: 11,
+      fontWeight: "600"
     },
     removeIcon: {
       marginLeft: 8,
     },
-    follow: {
+    add: {
       backgroundColor: "#60A5FA",
     },
-    following: {
+    friends: {
       borderWidth: 1,
       borderColor: "#F5EEE3",
     },
@@ -258,13 +282,22 @@ export default function SearchResultsPage() {
       <View style={styles.contentContainer}>
         <View style={styles.tabContainer}>
           {["Posts", "Users"].map((tab) => (
-            <TouchableOpacity
-              key={tab}
-              style={[styles.tab, activeTab === tab && styles.activeTab]}
-              onPress={() => setActiveTab(tab as "Posts" | "Users")}
-            >
-              <Text style={styles.tabText}>{tab}</Text>
+            <View key={tab} style={styles.tabWrapper}>
+              <TouchableOpacity
+                  style={styles.tab}
+                  onPress={() => setActiveTab(tab as "Posts" | "Users")}
+              >
+                <Text 
+                  style={[
+                    styles.tabText,
+                    activeTab === tab && styles.activeTabText
+                  ]}
+                >
+                  {tab}
+                </Text>
             </TouchableOpacity>
+            {activeTab === tab && <View style={styles.activeTab} />}
+            </View>
           ))}
         </View>
 
@@ -297,10 +330,13 @@ export default function SearchResultsPage() {
                       }}
                       style={styles.avatarSmall}
                     />
-                    <Text style={styles.username}>{item.username}</Text>
+                    <Text style={styles.postusername}>{item.username}</Text>
                   </View>
-                  <Text style={styles.caption}>{item.caption}</Text>
-                  {/* {item.tags.length > 0 && <Text style={styles.tag}>{item.tags[0]}</Text>} */}
+                  <Text style={styles.caption}>{item.caption}
+                  </Text>
+                  {item.selectedoccasions?.length > 0 && (
+                    <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
+                  )}
                 </View>
               </TouchableOpacity>
             )}
@@ -316,21 +352,21 @@ export default function SearchResultsPage() {
               <View style={styles.userRow}>
                 <View style={styles.userInfo}>
                   <Image source={{ uri: item.avatar }} style={styles.avatar} />
-                  <Text style={styles.username}>{item.username}</Text>
+                  <Text style={styles.userUsername}>{item.username}</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
                   <TouchableOpacity
                     style={[
-                      styles.followButton,
-                      item.isFollowing ? styles.following : styles.follow,
+                      styles.addButton,
+                      item.isFollowing ? styles.friends : styles.add,
                     ]}
                   >
-                    <Text style={styles.followText}>
-                      {item.isFollowing ? "Following" : "Follow"}
+                    <Text style={styles.addText}>
+                      {item.isFollowing ? "Friends" : "Add Friend"}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={styles.removeIcon}>
-                    <MaterialIcons name="close" size={20} color="#F5EEE3" />
+                    <MaterialIcons name="close" size={20} color="#747E89" />
                   </TouchableOpacity>
                 </View>
               </View>
