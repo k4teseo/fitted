@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import SearchBar from "../components/searchbar";
 import { supabase } from "@/lib/supabase";
+import { useCurrentUser } from "../hook/useCurrentUser";
 
 type SearchResult = {
   id: string;
@@ -25,7 +26,7 @@ type UserResult = {
   id: string;
   username: string;
   avatar: string;
-  isFollowing: boolean;
+  status: string | null;
 };
 
 export default function SearchResultsPage() {
@@ -36,6 +37,10 @@ export default function SearchResultsPage() {
   const { width, height } = useWindowDimensions();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
+  
+  const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
+  const currentUserId = useCurrentUser();
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -74,31 +79,140 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const { data, error } = await supabase
+      const { data: users, error } = await supabase
         .from("profiles")
         .select("id, username, pfp")
         .ilike("username", `%${searchQuery}%`);
 
       if (error) {
         console.error("Error fetching users:", error);
-      } else {
-        const mappedUsers = data.map((user: any) => ({
+      } 
+
+      if (!users || !currentUserId) return;
+
+      const filteredUsers = users.filter((user) => user.id !== currentUserId);
+      const userIds = filteredUsers.map((user) => user.id);
+
+      if (userIds?.length === 0) {
+        setUserResults([]);
+        return;
+      }
+      const {data: friendship, error: friendshipError} = await supabase
+      .from("friends")
+      .select("user_id_1, user_id_2, status")
+      .or (
+        userIds
+          .map(
+            (id) =>
+              `and(user_id_1.eq.${id},user_id_2.eq.${currentUserId}),and(user_id_1.eq.${currentUserId},user_id_2.eq.${id})`
+          )
+          .join(",")
+      )
+      if (friendshipError) {
+        console.error("Error fetching friendship:", friendshipError);
+      }
+      const mappedUsers = filteredUsers?.map((user) => {
+        const relation = friendship?.find(
+          (friend: any) =>
+            (friend.user_id_1 === user.id && friend.user_id_2 === currentUserId) ||
+            (friend.user_id_1 === currentUserId && friend.user_id_2 === user.id)
+        );
+        const status = relation 
+        ? relation.status === "accepted" ? "Friends" 
+        : relation.status === "pending" ? "Pending"
+        : "none"
+        : "none";
+        return {
           id: user.id,
           username: user.username,
-          avatar: `${user.pfp}`,
-          isFollowing: false,
-        }));
-        setUserResults(mappedUsers);
-      }
+          avatar: user.pfp,
+          status
+        };
+      });
+      setUserResults(mappedUsers);
     };
     fetchUsers();
-  }, [searchQuery]);
+  }, [searchQuery, currentUserId]);
 
   const handlePostPress = (postId: string) => {
     router.push({
       pathname: "./PostPage",
       params: { id: postId },
     });
+  };
+
+  const handleAddFriend = async (userId: string) => {
+    // Get current user ID
+    const { data: user } = await supabase.auth.getUser();
+    const currentUserId = user.user?.id;
+
+    // Check if a friend request already exists
+    const { data: existingRequest, error: existingRequestError } = await supabase
+      .from("friends")
+      .select("id, status")
+      .or(`and(user_id_1.eq.${userId},user_id_2.eq.${currentUserId}),and(user_id_1.eq.${currentUserId},user_id_2.eq.${userId})`)
+
+    if (existingRequestError) {
+      console.error("Error checking existing friend request:", existingRequestError);
+      return;
+    }
+    if (existingRequest && existingRequest.length > 0) {
+      const requestStatus = existingRequest[0];
+      if (requestStatus.status === "rejected") {
+        await supabase
+          .from("friends")
+          .delete()
+          .eq("id", requestStatus.id);
+      } else {
+        console.log("Friend request already exists:", requestStatus);
+        return;
+      }
+    }
+    // Send a new friend request
+    const { data, error: checkError } = await supabase
+      .from("friends")
+      .insert([
+        {
+          user_id_1: userId,
+          user_id_2: currentUserId, // Replace with actual current user ID
+          status: "pending",
+        },
+      ]);
+    if (checkError) {
+      console.error("Error checking existing friend request:", checkError);
+    } else {
+      console.log("Friend request sent:", data);
+      setUserResults((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? { ...user, status: "Pending" }
+            : user
+        )
+      );
+    }
+  };
+
+  const handleCancelFriendRequest = async (userId: string) => {
+    // Get current user ID
+    const { data: user } = await supabase.auth.getUser();
+    const currentUserId = user.user?.id;
+    // Delete the friend request
+    const { data, error } = await supabase
+      .from("friends")
+      .delete()
+      .or(`and(user_id_1.eq.${userId},user_id_2.eq.${currentUserId}),and(user_id_1.eq.${currentUserId},user_id_2.eq.${userId})`)
+    if (error) {
+      console.error("Error deleting friend request:", error);
+    } else {
+      console.log("Friend request deleted:", data);
+      setUserResults((prevUsers) =>
+        prevUsers.map((user) =>
+          user.id === userId
+            ? { ...user, status: "none" }
+            : user
+        )
+      );
+    }
   };
 
   const styles = StyleSheet.create({
@@ -239,6 +353,7 @@ export default function SearchResultsPage() {
       paddingHorizontal: 16,
       paddingVertical: 6,
       borderRadius: 30,
+      backgroundColor: "#60A5FA",
     },
     addText: {
       color: "#141618",
@@ -248,13 +363,16 @@ export default function SearchResultsPage() {
     removeIcon: {
       marginLeft: 8,
     },
-    add: {
-      backgroundColor: "#60A5FA",
-    },
+    // add: {
+    //   backgroundColor: "#60A5FA",
+    // },
     friends: {
       borderWidth: 1,
-      borderColor: "#F5EEE3",
+      borderColor: "#F5EEE3"
     },
+    friendsText: {
+      borderColor: "#F5EEE3"
+    }
   });
 
   return (
@@ -351,20 +469,32 @@ export default function SearchResultsPage() {
             renderItem={({ item }) => (
               <View style={styles.userRow}>
                 <View style={styles.userInfo}>
-                  <Image source={{ uri: item.avatar }} style={styles.avatar} />
+                  <Image source={{ uri: item.avatar || defaultPfp }} style={styles.avatar} />
                   <Text style={styles.userUsername}>{item.username}</Text>
                 </View>
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TouchableOpacity
-                    style={[
-                      styles.addButton,
-                      item.isFollowing ? styles.friends : styles.add,
-                    ]}
-                  >
-                    <Text style={styles.addText}>
-                      {item.isFollowing ? "Friends" : "Add Friend"}
-                    </Text>
-                  </TouchableOpacity>
+                    <TouchableOpacity
+                    disabled={item.status === "Friends"} 
+                      style={[
+                        styles.addButton,
+                        (item.status === "Friends" || item.status === "Pending") && styles.friends
+                      ]}
+                      onPress={() => {
+                        if (item.status === "Pending") {
+                        //handle cancel friend request
+                        handleCancelFriendRequest(item.id);
+                      } else {
+                        handleAddFriend(item.id)}
+                      }
+                    }
+                    >
+                      <Text style={[styles.addText,
+                         (item.status === "Friends" || item.status === "Pending") && styles.friendsText
+                      ]}>
+                        {item.status === "Friends" ? "Friends" :
+                        item.status === "Pending" ? "Pending": "Add Friend"}
+                      </Text>
+                    </TouchableOpacity>
                   <TouchableOpacity style={styles.removeIcon}>
                     <MaterialIcons name="close" size={20} color="#747E89" />
                   </TouchableOpacity>

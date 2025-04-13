@@ -7,6 +7,7 @@ import BottomNavBar from '../components/BottomNavBar';
 import { supabase } from "@/lib/supabase";
 import FriendRequestPage from './friendRequestPage';
 import SignOutButton from '../components/signOut';
+import { useCurrentUser } from '../hook/useCurrentUser'; // Import the custom hook
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
@@ -14,6 +15,27 @@ export default function ProfilePage() {
     const [showSettings, setShowSettings] = useState(false);
     const [showFriendRequests, setShowFriendRequests] = useState(false);
     const [posts, setPosts] = useState<any[]>([]);
+    const [friendCount, setFriendCount] = useState(0);
+
+    const currentUserId = useCurrentUser(); // Use the custom hook to get the current user ID
+
+    useEffect(() => {
+        const fetchFriendCount = async () => {
+            if (!currentUserId) return; // Ensure currentUserId is available before querying
+
+            const {data, error} = await supabase
+                .from('friends')
+                .select('*', {count: 'exact'})
+                .or(`user_id_1.eq.${currentUserId}, user_id_2.eq.${currentUserId}`)
+                .eq('status', 'accepted');
+            if (error) {
+                console.error('Error fetching friend count:', error);
+            } else {
+                setFriendCount(data.length);
+            }
+        };
+        fetchFriendCount();
+    }, [currentUserId]);
 
     const styles = StyleSheet.create({
         container: { 
@@ -204,7 +226,7 @@ export default function ProfilePage() {
 
             <View style={styles.statsContainer}>
                 <View style={styles.statItem}>
-                    <Text style={styles.statNumber}>0</Text>
+                    <Text style={styles.statNumber}>{friendCount}</Text>
                     <Text style={styles.statLabel}>Friends</Text>
                 </View>
                 <View style={styles.statItem}>

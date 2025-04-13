@@ -10,16 +10,50 @@ import {
   Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { supabase } from '@/lib/supabase';
+import { useCurrentUser } from '../hook/useCurrentUser'; 
 
-const mockFriendRequests = [
-  { id: '1', name: 'Alex Johnson', avatar: 'https://randomuser.me/api/portraits/men/1.jpg' },
-  { id: '2', name: 'Sarah Williams', avatar: 'https://randomuser.me/api/portraits/women/1.jpg' },
-  { id: '3', name: 'Michael Brown', avatar: 'https://randomuser.me/api/portraits/men/2.jpg' },
-];
 
 const friendRequestsPage = ({ onClose }: { onClose: () => void }) => {
   const { width, height } = useWindowDimensions();
   const [slideAnim] = useState(new Animated.Value(width));
+  const [request, setRequest] = useState<any[]>([]);
+
+  const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+  const currentUserId = useCurrentUser();
+
+  useEffect(() => {
+    const fetchFriendRequests = async () => {
+      //get current user id
+
+      if (!currentUserId) return; // Ensure currentUserId is available before querying
+
+      const {data, error} = await supabase 
+      .from('friends')
+      .select('id, user_id_2, sender_profile:profiles!user_id_2(pfp, username)')
+      .eq('user_id_1', currentUserId)
+      .eq('status', 'pending')
+
+    if (error) {
+      console.error('Error fetching friend requests:', error);
+    } else {
+      setRequest(data);
+    }
+  };
+    fetchFriendRequests();
+  }, [currentUserId]);
+
+  const handleFriendRequest = async (requestId: string, accept: boolean) => {
+    const {error} = await supabase
+    .from('friends')
+    .update({status: accept ? 'accepted' : 'rejected'})
+    .eq('id', requestId);
+    if (error) {
+      console.error('Error updating friend request:', error);
+    } else {
+      setRequest((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
+    }
+  };
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -35,10 +69,6 @@ const friendRequestsPage = ({ onClose }: { onClose: () => void }) => {
       duration: 300,
       useNativeDriver: true,
     }).start(() => onClose());
-  };
-
-  const handleRequest = (id: string, accept: boolean) => {
-    console.log(`${accept ? 'Accepted' : 'Rejected'} request ${id}`);
   };
 
   const styles = StyleSheet.create({
@@ -128,24 +158,24 @@ const friendRequestsPage = ({ onClose }: { onClose: () => void }) => {
 
       <View style={styles.content}>
         <FlatList
-          data={mockFriendRequests}
+          data={request}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.requestItem}>
               <View style={styles.userInfo}>
-                <Image source={{ uri: item.avatar }} style={styles.userImage} />
-                <Text style={styles.userName}>{item.name}</Text>
+                <Image source={{ uri: item.sender_profile?.pfp || defaultPfp }} style={styles.userImage} />
+                <Text style={styles.userName}>{item.sender_profile?.username}</Text>
               </View>
               <View style={styles.actionButtons}>
                 <TouchableOpacity 
                   style={styles.rejectButton}  
-                  onPress={() => handleRequest(item.id, false)}
+                  onPress={() => handleFriendRequest(item.id, false)}
                 >
                   <Text style={styles.buttonText}>Reject</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.acceptButton}  
-                  onPress={() => handleRequest(item.id, true)}
+                  onPress={() => handleFriendRequest(item.id, true)}
                 >
                   <Text style={styles.buttonText}>Accept</Text>
                 </TouchableOpacity>
