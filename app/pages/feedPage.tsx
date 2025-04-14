@@ -92,22 +92,26 @@ export default function FeedPage() {
 
   useEffect(() => {
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       const id = session?.user?.id ?? null;
       setUserId(id);
     };
-  
+
     getUser();
   }, []);
 
   // Fetch images from Supabase
   const fetchImages = async () => {
     setLoading(true);
+
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, caption, username, image_path, selectedbrands, selectedoccasions, created_at"
+        "id, caption, username, user_id, image_path, selectedbrands, selectedoccasions, created_at"
       )
+
       .order("created_at", { ascending: false });
 
     if (error) {
