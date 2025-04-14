@@ -21,7 +21,7 @@ export default function Tagging({ imageUri }: TaggingProps) {
   const { selectedBrands, selectedOccasions, setSelectedOccasions } =
     useUploadContext();
   const [availableOccasions, setAvailableOccasions] = useState<string[]>([]);
-  const [openAIEnabled, setOpenAIEnabled] = useState(false);
+  const { openAIEnabled, setOpenAIEnabled } = useUploadContext();
   const router = useRouter();
 
   useFocusEffect(

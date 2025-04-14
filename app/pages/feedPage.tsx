@@ -39,7 +39,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`./PostPage?id=${item.id}`);
+        router.push(`./postPage?id=${item.id}`);
       }}
       activeOpacity={0.9} // Reduce interference with scroll
     >
@@ -50,9 +50,12 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
 
       {/* Info at the Bottom of the Card */}
       <View style={feedStyles.userInfo}>
+        {/* Username */}
+        <Text style={feedStyles.username}>{item.username}</Text>
+
         {/* Caption */}
         <Text style={feedStyles.caption}>{item.caption}</Text>
-
+        
         {/* Ensure Tag Pills are Scrollable */}
         {visibleTags.length > 0 && (
           <View style={{ flexDirection: "row", marginTop: 5 }}>
@@ -72,9 +75,6 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
             />
           </View>
         )}
-
-        {/* Username */}
-        <Text style={feedStyles.username}>{item.username}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -209,16 +209,17 @@ const feedStyles = StyleSheet.create({
     lineHeight: 20,
     letterSpacing: 0.1,
     color: "#F5EEE3",
-    marginBottom: 12,
+    marginBottom: 2,
   },
   username: {
     fontFamily: "Raleway", // Use Raleway font
     fontWeight: "600", // Bold
-    fontSize: 12,
+    fontSize: 15,
     lineHeight: 20,
     letterSpacing: 0.1,
     color: "#9AA8B6",
     marginTop: 4,
+    marginBottom: 4,
   },
 
   tagContainer: {

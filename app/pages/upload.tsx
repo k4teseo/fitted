@@ -1,5 +1,5 @@
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -14,6 +14,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { User } from "@supabase/supabase-js";
 import { MaterialIcons } from "@expo/vector-icons";
 import Tagging from './tagging';
 import { useUploadContext } from "../context/uploadContext";  
@@ -25,9 +26,44 @@ export default function UploadPage() {
   const params = useLocalSearchParams() as { imageUri?: string };
   const router = useRouter();
   const imageUri = params.imageUri;
-  const [name, setName] = useState('');
-  const [postTitle, setPostTitle] = useState('');
-  const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions } = useUploadContext(); // Use Context
+  const [caption, setCaption] = useState('');
+  const { selectedBrands, selectedOccasions, setSelectedBrands, setSelectedOccasions, brandTags } = useUploadContext(); // Use Context
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState('');
+  const { openAIEnabled } = useUploadContext();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        setUser(user);
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("username")
+          .eq("id", user.id)
+          .single();
+
+        if (profile) {
+          setUsername(profile.username);
+        }
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  const MAX_NEWLINES = 3;
+
+  const handleCaptionChange = (text: string) => {
+    const newlineCount = (text.match(/\n/g) || []).length;
+    if (newlineCount <= MAX_NEWLINES) {
+      setCaption(text);
+    }
+  };
   
   const [loading, setLoading] = useState(false);
 
@@ -49,125 +85,66 @@ export default function UploadPage() {
   }
 
   const handlePost = async () => {
-      if (!imageUri || !name) return;
+    if (!imageUri || !username || !user) return;
 
-      setLoading(true);
-
-      try {
-          const response = await fetch(imageUri);
-          const blob = await response.blob();
-          const arrayBuffer = await new Response(blob).arrayBuffer();
-          const fileName = `public/${Date.now()}.jpg`;
-
-          const { error: uploadError } = await supabase.storage
-              .from("images")
-              .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
-
-          if (uploadError) {
-              console.error("Error uploading image:", uploadError);
-              return;
-          }
-
-          const { data: publicUrlData } = supabase.storage.from("images").getPublicUrl(fileName);
-          const publicImageUrl = publicUrlData?.publicUrl;
-
-          if (!publicImageUrl) {
-            console.error("Failed to retrieve public image URL.");
-            return;
-          }
-
-          const metadata = await analyzeOutfit(publicImageUrl).catch(() => []);
-          console.log("Extracted metadata:", metadata);
-
-          const { error: insertError } = await supabase
-              .from("images")
-              .insert([{
-                  image_path: fileName,
-                  caption: postTitle,
-                  username: name,
-                  selectedbrands: selectedBrands,      
-                  selectedoccasions: selectedOccasions,     
-                  metadata: Array.isArray(metadata) ? metadata : [],
-              }]);
-
-          if (insertError) {
-              console.error("Error saving image with tags:", insertError);
-          } else {
-
-              setSelectedBrands([]);
-              setSelectedOccasions([]);
-
-              console.log("Post uploaded successfully with tags:", postTitle);
-              router.replace("./feedPage");
-          }
-      } catch (error) {
-          console.error("Error during upload:", error);
-      }
-      setLoading(false);
-  };
-
-  if (!imageUri) {
-    return (
-      <View style={styles.container}>
-        <View style={styles.topBar}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => router.back()}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
-          </TouchableOpacity>
-        </View>
-        <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
-          No image found
-        </Text>
-      </View>
-    );
-  }
-
-  const handlePost = async () => {
-    if (!imageUri || !name) return;
+    if (!caption.trim()) {
+      alert("Please enter a title for your post.");
+      return;
+    }
+  
+    setLoading(true);
+  
     try {
-      // Fetch the image blob from the provided URI
       const response = await fetch(imageUri);
       const blob = await response.blob();
       const arrayBuffer = await new Response(blob).arrayBuffer();
       const fileName = `public/${Date.now()}.jpg`;
-
-      // Upload image to Supabase storage
+  
       const { error: uploadError } = await supabase.storage
         .from("images")
-        .upload(fileName, arrayBuffer, {
-          contentType: "image/jpeg",
-          upsert: false,
-        });
-
+        .upload(fileName, arrayBuffer, { contentType: "image/jpeg", upsert: false });
+  
       if (uploadError) {
         console.error("Error uploading image:", uploadError);
         return;
       }
+  
+      const { data: publicUrlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      const publicImageUrl = publicUrlData?.publicUrl;
+  
+      if (!publicImageUrl) {
+        console.error("Failed to retrieve public image URL.");
+        return;
+      }
+  
+      const metadata = openAIEnabled
+        ? await analyzeOutfit(publicImageUrl).catch(() => [])
+        : [];
 
-      // Insert image metadata into the "images" table
+      console.log("Extracted metadata:", metadata);
+  
+      // Insert image record
       const { data: imageData, error: insertError } = await supabase
         .from("images")
-        .insert([
-          {
-            image_path: fileName,
-            caption: postTitle,
-            username: name,
-            selectedbrands: selectedBrands,
-            selectedoccasions: selectedOccasions,
-          },
-        ])
+        .insert([{
+          image_path: fileName,
+          caption: caption,
+          username: username,
+          user_id: user.id,
+          selectedbrands: selectedBrands,
+          selectedoccasions: selectedOccasions,
+          metadata: Array.isArray(metadata) ? metadata : [],
+        }])
         .select()
         .single();
-
+  
       if (insertError) {
         console.error("Error saving image with tags:", insertError);
         return;
       }
-
-      // Save each brand tag from the context to the "image_brand_tags" table
-      if (brandTags.length > 0) {
+  
+      // 💡 Save brand tag positions
+      if (Array.isArray(brandTags) && brandTags.length > 0) {
         for (const tag of brandTags) {
           const { error: tagError } = await supabase
             .from("image_brand_tags")
@@ -177,19 +154,25 @@ export default function UploadPage() {
               x_position: tag.x,
               y_position: tag.y,
             });
-
+  
           if (tagError) {
             console.error("Error saving brand tag:", tagError);
           }
         }
       }
-
-      console.log("Post uploaded successfully with tags:", postTitle);
-      router.replace("/pages/feedPage");
+  
+      // Clear context selections
+      setSelectedBrands([]);
+      setSelectedOccasions([]);
+  
+      console.log("Post uploaded successfully with metadata and brand tags:", caption);
+      router.replace("./feedPage");
     } catch (error) {
       console.error("Error during upload:", error);
     }
-  };
+  
+    setLoading(false);
+  };  
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
@@ -215,22 +198,18 @@ export default function UploadPage() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.contentContainer}>
-            <TextInput
-              style={styles.postTitleInput}
-              placeholder="Write Post Title..."
-              placeholderTextColor="#7E8487"
-              value={postTitle}
-              onChangeText={setPostTitle}
-            />
             <Image source={{ uri: imageUri }} style={styles.image} />
             <TextInput
-              style={styles.nameInput}
-              placeholder="Input your name here..."
+              style={styles.captionInput}
+              placeholder="Add caption..."
               placeholderTextColor="#7E8487"
-              value={name}
-              onChangeText={setName}
+              value={caption}
+              onChangeText={handleCaptionChange}
+              multiline
+              numberOfLines={3}
             />
           </View>
+          <View style={styles.separator} />
           {/* Tagging component to manage occasions and brands */}
           <Tagging imageUri={imageUri} />
         </ScrollView>
@@ -271,12 +250,14 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   contentContainer: { alignItems: "center", marginBottom: 20 },
-  postTitleInput: {
-    width: "80%",
-    padding: 10,
-    fontSize: 18,
-    fontWeight: "bold",
-    textAlign: "center",
+  captionInput: {
+    width: "88%",
+    height: 40,
+    padding: 12,
+    fontSize: 14,
+    fontWeight: "500",
+    textAlign: "left",
+    textAlignVertical: "top",
     marginBottom: 20,
     color: "#F5EEE3",
   },
@@ -294,5 +275,13 @@ const styles = StyleSheet.create({
     width: "80%",
     backgroundColor: "transparent",
     color: "#F5EEE3",
+  },
+  separator: {
+    width: "82%",
+    height: 0.5,
+    backgroundColor: "#F5EEE3",
+    alignSelf: "center",
+    marginBottom: -10,
+    opacity: 0.3,
   },
 });
