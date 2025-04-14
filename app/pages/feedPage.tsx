@@ -21,6 +21,7 @@ type FeedItemData = {
   postImage: string;
   selectedbrands: string[];
   selectedoccasions: string[];
+  userPfp: string;
 };
 
 const defaultPfp =
@@ -123,12 +124,41 @@ export default function FeedPage() {
   const fetchImages = async () => {
     setLoading(true);
 
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      setFeedData([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: friendData, error: friendError } = await supabase
+      .from("friends")
+      .select("user_id_1, user_id_2")
+      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+      .eq("status", "accepted");
+
+    if (friendError) {
+      console.error("Error fetching friends:", friendError);
+      setFeedData([]);
+      setLoading(false);
+      return;
+    }
+
+    const friendIds = friendData.map((f) =>
+      f.user_id_1 === userId ? f.user_id_2 : f.user_id_1
+    );
+    const visibleUserIds = [...new Set([...friendIds, userId])];
+
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, caption, username, user_id, image_path, selectedbrands, selectedoccasions, created_at"
+        `id, caption, username, user_id, image_path, selectedbrands, selectedoccasions, created_at, profiles(pfp)`
       )
-
+      .in("user_id", visibleUserIds)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -146,6 +176,7 @@ export default function FeedPage() {
           selectedbrands: row.selectedbrands ?? [],
           selectedoccasions: row.selectedoccasions ?? [],
           createdAt: new Date(row.created_at),
+          userPfp: row.profiles?.pfp || defaultPfp,
         }))
         .filter((post) => post.createdAt > twentyFourHoursAgo);
       setFeedData(formattedData);
@@ -173,12 +204,14 @@ export default function FeedPage() {
         <FlatList
           data={feedData}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <FeedItem item={item} userPfp={userPfp} />}
+          renderItem={({ item }) => (
+            <FeedItem item={item} userPfp={item.userPfp} />
+          )}
           contentContainerStyle={feedStyles.listContent}
           showsVerticalScrollIndicator={false}
         />
       )}
-      <BottomNavBar />
+      <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
     </SafeAreaView>
   );
 }
