@@ -4,10 +4,13 @@ import { useRouter } from "expo-router";
 import { FeedPageIcon } from "@/assets/images/FeedPageIcon";
 import { PlusIcon } from "@/assets/images/PlusIcon";
 import { StyleSheet } from "react-native";
+import Ionicons from "react-native-vector-icons/Ionicons";
 
 export default function BottomNavBar() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<"home" | "add">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
+    "home"
+  );
   const { width, height } = useWindowDimensions();
 
   const styles = StyleSheet.create({
@@ -43,7 +46,10 @@ export default function BottomNavBar() {
       {/* HOME TAB */}
       <TouchableOpacity
         style={styles.navItem}
-        onPress={() => setActiveTab("home")}
+        onPress={() => {
+          setActiveTab("home");
+          router.push("/pages/feedPage");
+        }}
       >
         {activeTab === "home" ? (
           <View style={styles.beigeCircle}>
@@ -59,7 +65,7 @@ export default function BottomNavBar() {
         style={styles.navItem}
         onPress={() => {
           setActiveTab("add");
-          router.push("/pages/Camera");
+          router.push("/pages/camera");
         }}
       >
         {activeTab === "add" ? (
@@ -71,21 +77,26 @@ export default function BottomNavBar() {
         )}
       </TouchableOpacity>
 
-      {/* PROFILE TAB - commented out
-        <TouchableOpacity
-          style={feedStyles.navItem}
-          onPress={() => setActiveTab('profile')}
-        >
-          <Text
-            style={[
-              feedStyles.navItemText,
-              activeTab === 'profile' && { color: '#F3EDE2' },
-            ]}
-          >
-            Profile
-          </Text>
-        </TouchableOpacity>
-        */}
+      {/* Profile Tab */}
+      <TouchableOpacity
+        style={styles.navItem}
+        onPress={() => {
+          setActiveTab("profile");
+          router.push("/pages/profilePage");
+        }}
+      >
+        {activeTab === "profile" ? (
+          <View style={styles.beigeCircle}>
+            <Ionicons
+              name="person-circle-outline"
+              size={width * 0.09}
+              color="#3A3A3A"
+            />
+          </View>
+        ) : (
+          <Ionicons name="person-circle-outline" size={width * 0.09} />
+        )}
+      </TouchableOpacity>
     </View>
   );
 }

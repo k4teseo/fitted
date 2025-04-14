@@ -122,7 +122,7 @@ export default function Tagging({ imageUri }: TaggingProps) {
           style={styles.chevronButton}
           onPress={() =>
             router.push({
-              pathname: "/components/tagBrandsOnPhoto",
+              pathname: "../components/tagBrandsOnPhoto",
               params: { imageUri },
             })
           }

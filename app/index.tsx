@@ -1,8 +1,8 @@
 // app/index.tsx
 import React from "react";
-import FeedPage from "./pages/feedPage";
-import LoginPage from "./pages/loginPage";
+import App from "./pages/app"; // Make sure to import your WelcomePage
+import WelcomePage from "./pages/welcomePage";
 
 export default function Index() {
-  return <FeedPage />;
+  return <WelcomePage />;
 }

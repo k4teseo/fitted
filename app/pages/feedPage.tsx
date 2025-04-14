@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
   SafeAreaView,
@@ -39,7 +39,7 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`/pages/postPage?id=${item.id}`);
+        router.push(`./PostPage?id=${item.id}`);
       }}
       activeOpacity={0.9} // Reduce interference with scroll
     >
@@ -83,9 +83,22 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
 // The main feed page component
 export default function FeedPage() {
   // Track the active tab: 'home' or 'add'
-  const [activeTab, setActiveTab] = useState<"home" | "add">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
+    "home"
+  );
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const id = session?.user?.id ?? null;
+      setUserId(id);
+    };
+  
+    getUser();
+  }, []);
 
   // Fetch images from Supabase
   const fetchImages = async () => {

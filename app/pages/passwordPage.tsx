@@ -1,0 +1,236 @@
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  Alert,
+  TouchableOpacity,
+  StyleSheet,
+  AppState,
+} from "react-native";
+import { useRouter, useLocalSearchParams } from "expo-router";
+import { MaterialIcons } from "@expo/vector-icons";
+import { supabase } from "@/lib/supabase";
+import OnboardingInput from "../components/OnboardingInput";
+import OnboardingButton from "../components/OnboardingButton";
+import { FittedLogo } from "@/assets/images/FittedLogo";
+
+const PasswordPage = () => {
+  const router = useRouter();
+  const { email } = useLocalSearchParams();
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [passwordValid, setPasswordValid] = useState({
+    length: false,
+    number: false,
+    specialChar: false,
+  });
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const handleAppStateChange = async (state: string) => {
+      if (state === "active") {
+        await supabase.auth.startAutoRefresh();
+      } else {
+        await supabase.auth.stopAutoRefresh();
+      }
+    };
+
+    const appStateSubscription = AppState.addEventListener("change", handleAppStateChange);
+
+    return () => appStateSubscription.remove();
+  }, []);
+
+  async function signUpWithEmail() {
+    setLoading(true);
+    console.log("Signing up with:", email);
+  
+    const { data, error } = await supabase.auth.signUp({
+      email: email as string,
+      password: password,
+    });
+  
+    if (error || !data?.user) {
+      console.error("Error details:", error);
+      Alert.alert("Error", error?.message || "User creation failed");
+      setLoading(false);
+      return;  // Early exit on error
+    }
+  
+    const userId = data.user.id;
+    console.log("Created user with ID:", userId);
+    console.log("Inserting into profiles with email:", email); 
+    
+    const { error: insertError } = await supabase
+      .from("profiles")
+      .upsert([
+        {
+          id: userId, 
+          email: email,
+          name: "Default Name", // Or you can leave it blank or use a dynamic value
+        },
+      ]);
+  
+    if (insertError) {
+      console.log("Insert error:", insertError);
+      Alert.alert("Database Error", insertError.message);
+      setLoading(false);
+      return;  // Early exit on insert error
+    }
+  
+    // Success, continue with the navigation
+    setLoading(false);
+    Alert.alert("Success", "Your account has been created!");
+    router.push({
+      pathname: "/pages/onboardingProfileSetup/[userId]",
+      params: { userId },
+    });
+  }
+
+  const handleBack = () => {
+    router.back();
+  };
+
+  const handlePasswordChange = (text: string) => {
+    setPassword(text);
+    setPasswordValid({
+      length: text.length >= 8,
+      number: /\d/.test(text),
+      specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(text),
+    });
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  return (
+    <View style={styles.background}>
+      <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+        <MaterialIcons name="navigate-before" size={30} color="white" />
+      </TouchableOpacity>
+
+      <View style={styles.container}>
+        <View style={styles.logoContainer}>
+          <FittedLogo width={238} height={74} />
+        </View>
+
+        <Text style={styles.subheader}>Create a Password</Text>
+        <Text style={styles.description}>
+          Please create a secure password to complete your account setup.
+        </Text>
+
+        <OnboardingInput
+          title="Password"
+          placeholder="Enter your password"
+          value={password}
+          handleChange={handlePasswordChange}
+          isPassword={true}
+          showPassword={showPassword}
+          togglePasswordVisibility={togglePasswordVisibility}
+        />
+
+        <View style={styles.validationContainer}>
+          <Text
+            style={[
+              styles.validationText,
+              passwordValid.length && styles.validationSuccess,
+            ]}
+          >
+            {passwordValid.length ? "✓ " : "• "}Minimum 8 characters
+          </Text>
+          <Text
+            style={[
+              styles.validationText,
+              passwordValid.number && styles.validationSuccess,
+            ]}
+          >
+            {passwordValid.number ? "✓ " : "• "}One number
+          </Text>
+          <Text
+            style={[
+              styles.validationText,
+              passwordValid.specialChar && styles.validationSuccess,
+            ]}
+          >
+            {passwordValid.specialChar ? "✓ " : "• "}One special character (e.g., !@#$)
+          </Text>
+        </View>
+        <OnboardingButton
+          title="Create Account"
+          style={[
+            styles.nextButton,
+            passwordValid.length &&
+            passwordValid.number &&
+            passwordValid.specialChar
+              ? styles.nextButtonActive
+              : null,
+          ]}
+          onPress={() => {
+            if (!loading && passwordValid.length && passwordValid.number && passwordValid.specialChar) {
+              signUpWithEmail();  // No need to check the result
+            }
+          }}
+        />
+      </View>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  background: {
+    flex: 1,
+    backgroundColor: "#0F1112",
+    width: "100%",
+    height: "100%",
+  },
+  container: {
+    flex: 1,
+    padding: 32,
+    paddingTop: 100,
+  },
+  backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+    zIndex: 1,
+  },
+  logoContainer: {
+    alignItems: "flex-start",
+    marginTop: 32,
+    marginLeft: -10,
+    marginBottom: 56,
+  },
+  subheader: {
+    fontSize: 25,
+    fontWeight: "400",
+    color: "#B9CADB",
+    marginBottom: 8,
+    textAlign: "left",
+  },
+  description: {
+    fontSize: 12,
+    color: "#84919D",
+    fontWeight: "400",
+    marginBottom: 32,
+    textAlign: "left",
+  },
+  validationContainer: {
+    marginBottom: 32,
+  },
+  validationText: {
+    color: "#84919D",
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  validationSuccess: {
+    color: "#47BD78",
+  },
+  nextButton: {
+    backgroundColor: "#6D757E",
+  },
+  nextButtonActive: {
+    backgroundColor: "#4DA6FD",
+  },
+});
+
+export default PasswordPage;
