@@ -1,11 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  Pressable,
-  FlatList,
-} from "react-native";
+import { View, Text, StyleSheet, Pressable, FlatList } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "expo-router";
@@ -19,6 +13,7 @@ export default function Tagging({ imageUri }: TaggingProps) {
   const { selectedBrands, selectedOccasions, setSelectedOccasions } =
     useUploadContext();
   const [availableOccasions, setAvailableOccasions] = useState<string[]>([]);
+  const { openAIEnabled, setOpenAIEnabled } = useUploadContext();
   const router = useRouter();
 
   useFocusEffect(
