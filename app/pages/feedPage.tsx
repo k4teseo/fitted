@@ -8,12 +8,12 @@ import {
   Image,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from "react-native";
-import { supabase } from "@/lib/supabase"; // Import Supabase client
+import { supabase } from "@/lib/supabase";
 import FeedHeader from "../components/FeedHeader";
 import BottomNavBar from "../components/BottomNavBar";
 
-// Type for the feed item (optional)
 type FeedItemData = {
   id: string;
   caption: string;
@@ -21,17 +21,26 @@ type FeedItemData = {
   postImage: string;
   selectedbrands: string[];
   selectedoccasions: string[];
+  userPfp: string;
 };
 
+const defaultPfp =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
 // A small component for each feed item
-const FeedItem = ({ item }: { item: FeedItemData }) => {
+const FeedItem = ({
+  item,
+  userPfp,
+}: {
+  item: FeedItemData;
+  userPfp: string;
+}) => {
   const router = useRouter();
   const combinedTags = [
     ...(item.selectedbrands ?? []),
     ...(item.selectedoccasions ?? []),
   ];
 
-  // Limit to a maximum of 3 tags
   const maxTags = 3;
   const visibleTags = combinedTags.slice(0, maxTags);
 
@@ -39,9 +48,9 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
     <TouchableOpacity
       style={feedStyles.card}
       onPress={() => {
-        router.push(`./PostPage?id=${item.id}`);
+        router.push(`./postPage?id=${item.id}`);
       }}
-      activeOpacity={0.9} // Reduce interference with scroll
+      activeOpacity={0.9}
     >
       {/* Image Container */}
       <View style={feedStyles.imageContainer}>
@@ -50,19 +59,22 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
 
       {/* Info at the Bottom of the Card */}
       <View style={feedStyles.userInfo}>
-        {/* Caption */}
+        <View style={feedStyles.profileRow}>
+          <Image source={{ uri: userPfp }} style={feedStyles.profileImage} />
+          <Text style={feedStyles.username}>{item.username}</Text>
+        </View>
+
         <Text style={feedStyles.caption}>{item.caption}</Text>
 
-        {/* Ensure Tag Pills are Scrollable */}
         {visibleTags.length > 0 && (
           <View style={{ flexDirection: "row", marginTop: 5 }}>
             <FlatList
               data={visibleTags}
               horizontal
               showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled={true} // Ensure it scrolls inside another scrollable view
+              nestedScrollEnabled={true}
               keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ flexGrow: 1 }} // Ensure it takes full width
+              contentContainerStyle={{ flexGrow: 1 }}
               keyExtractor={(tag, index) => `${tag}-${index}`}
               renderItem={({ item: tag }) => (
                 <View style={feedStyles.tagPill}>
@@ -72,42 +84,81 @@ const FeedItem = ({ item }: { item: FeedItemData }) => {
             />
           </View>
         )}
-
-        {/* Username */}
-        <Text style={feedStyles.username}>{item.username}</Text>
       </View>
     </TouchableOpacity>
   );
 };
 
-// The main feed page component
 export default function FeedPage() {
-  // Track the active tab: 'home' or 'add'
   const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
     "home"
   );
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userPfp, setUserPfp] = useState<string>(defaultPfp);
 
   useEffect(() => {
-    const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const id = session?.user?.id ?? null;
-      setUserId(id);
+    const getUserAndProfile = async () => {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+
+      if (userId) {
+        const { data: profile, error: profileError } = await supabase
+          .from("profiles")
+          .select("pfp")
+          .eq("id", userId)
+          .single();
+
+        if (profile && profile.pfp) {
+          setUserPfp(profile.pfp);
+        }
+      }
     };
-  
-    getUser();
+
+    getUserAndProfile();
   }, []);
 
-  // Fetch images from Supabase
   const fetchImages = async () => {
     setLoading(true);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+
+    if (!userId) {
+      setFeedData([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data: friendData, error: friendError } = await supabase
+      .from("friends")
+      .select("user_id_1, user_id_2")
+      .or(`user_id_1.eq.${userId},user_id_2.eq.${userId}`)
+      .eq("status", "accepted");
+
+    if (friendError) {
+      console.error("Error fetching friends:", friendError);
+      setFeedData([]);
+      setLoading(false);
+      return;
+    }
+
+    const friendIds = friendData.map((f) =>
+      f.user_id_1 === userId ? f.user_id_2 : f.user_id_1
+    );
+    const visibleUserIds = [...new Set([...friendIds, userId])];
+
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, caption, username, image_path, selectedbrands, selectedoccasions, created_at"
+        `id, caption, username, user_id, image_path, selectedbrands, selectedoccasions, created_at, profiles(pfp)`
       )
+      .in("user_id", visibleUserIds)
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -125,6 +176,7 @@ export default function FeedPage() {
           selectedbrands: row.selectedbrands ?? [],
           selectedoccasions: row.selectedoccasions ?? [],
           createdAt: new Date(row.created_at),
+          userPfp: row.profiles?.pfp || defaultPfp,
         }))
         .filter((post) => post.createdAt > twentyFourHoursAgo);
       setFeedData(formattedData);
@@ -136,93 +188,88 @@ export default function FeedPage() {
     React.useCallback(() => {
       setActiveTab("home");
       fetchImages();
-    }, []) // Dependency array is empty, so it runs when screen is focused
+    }, [])
   );
 
   return (
     <SafeAreaView style={feedStyles.container}>
-      {/* Top Bar with the Fitted Logo on the Left */}
       <FeedHeader />
-
-      {/* Feed List */}
       {loading ? (
-        <Text style={feedStyles.loadingText}>Loading feed...</Text>
+        <ActivityIndicator
+          size="large"
+          color="#ccc"
+          style={{ marginTop: 40 }}
+        />
       ) : (
         <FlatList
           data={feedData}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => <FeedItem item={item} />}
+          renderItem={({ item }) => (
+            <FeedItem item={item} userPfp={item.userPfp} />
+          )}
           contentContainerStyle={feedStyles.listContent}
           showsVerticalScrollIndicator={false}
         />
       )}
-
-      {/* Bottom Navigation Bar */}
       <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
     </SafeAreaView>
   );
 }
 
 const feedStyles = StyleSheet.create({
-  // Screen Container
   container: {
     flex: 1,
-    backgroundColor: "#15181B", // Dark background
+    backgroundColor: "#15181B",
   },
-
-  // List
   listContent: {
     padding: 80,
-    paddingBottom: 80, // Ensure feed items aren't hidden behind bottom nav
+    paddingBottom: 80,
   },
-
-  // Card
   card: {
     backgroundColor: "#9AA8B6",
     borderRadius: 24,
     marginBottom: 30,
-    overflow: "hidden", // Ensures the image corners match card corners
+    overflow: "hidden",
     alignSelf: "center",
-    width: 345, // Fixed width
+    width: 345,
   },
-
-  // Image Container (with fixed height)
   imageContainer: {
     width: "100%",
-    height: 400, // The "frame" for the image
+    height: 400,
   },
   postImage: {
     width: "100%",
     height: "100%",
-    resizeMode: "cover", // Fills the container, cropping if needed
+    resizeMode: "cover",
   },
-
-  // User Info
   userInfo: {
     backgroundColor: "#595F66",
     padding: 16,
   },
-  caption: {
-    fontFamily: "Raleway", // Use Raleway font
-    fontWeight: "700", // Bold
-    fontSize: 17,
-    lineHeight: 20,
-    letterSpacing: 0.1,
-    color: "#F5EEE3",
-    marginBottom: 12,
+  profileRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  profileImage: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    marginRight: 10,
+    backgroundColor: "gray",
   },
   username: {
-    fontFamily: "Raleway", // Use Raleway font
-    fontWeight: "600", // Bold
-    fontSize: 12,
-    lineHeight: 20,
-    letterSpacing: 0.1,
+    fontFamily: "Raleway",
+    fontWeight: "600",
+    fontSize: 15,
     color: "#9AA8B6",
-    marginTop: 4,
   },
-
-  tagContainer: {
-    flexDirection: "row",
+  caption: {
+    fontFamily: "Raleway",
+    fontWeight: "700",
+    fontSize: 17,
+    color: "#F5EEE3",
+    marginBottom: 2,
   },
   tagPill: {
     backgroundColor: "#A5C6E8",
@@ -236,12 +283,5 @@ const feedStyles = StyleSheet.create({
     color: "#262A2F",
     fontWeight: "500",
     fontSize: 10,
-  },
-
-  loadingText: {
-    textAlign: "center",
-    fontSize: 16,
-    color: "#888",
-    marginTop: 20,
   },
 });

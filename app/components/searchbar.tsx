@@ -1,6 +1,13 @@
 // components/SearchBar.tsx
-import { View, TextInput, StyleSheet, useWindowDimensions, Keyboard } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import {
+  View,
+  TextInput,
+  StyleSheet,
+  useWindowDimensions,
+  Keyboard,
+  TouchableOpacity,
+} from "react-native";
+import { MaterialIcons } from "@expo/vector-icons";
 
 type SearchBarProps = {
   placeholder?: string;
@@ -11,7 +18,7 @@ type SearchBarProps = {
 };
 
 export default function SearchBar({
-  placeholder = 'Search for keywords, users, brands...',
+  placeholder = "Search for...",
   value,
   onChangeText,
   onSubmit,
@@ -26,9 +33,9 @@ export default function SearchBar({
 
   const styles = StyleSheet.create({
     container: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#15181B',
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: "#15181B",
       borderRadius: 30,
       marginHorizontal: width * 0.04,
       marginTop: 15,
@@ -37,22 +44,25 @@ export default function SearchBar({
     },
     input: {
       flex: 1,
-      color: '#7F8D9A',
-      fontSize: 13,
+      color: "#7F8D9A",
+      fontSize: 16,
       marginLeft: 10,
     },
-    icon: {
+    searchIcon: {
       marginLeft: 0,
+    },
+    closeIcon: {
+      marginLeft: 10,
     },
   });
 
   return (
     <View style={styles.container}>
-      <MaterialIcons 
-        name="search" 
-        size={25} 
-        color="#B4CFEA" 
-        style={styles.icon} 
+      <MaterialIcons
+        name="search"
+        size={25}
+        color="#B4CFEA"
+        style={styles.searchIcon}
       />
       <TextInput
         style={styles.input}
@@ -64,6 +74,13 @@ export default function SearchBar({
         onSubmitEditing={handleSubmit}
         returnKeyType="search"
       />
+
+      <TouchableOpacity
+        onPress={() => onChangeText("")}
+        style={styles.closeIcon}
+      >
+        <MaterialIcons name="close" size={25} color="#FFFFFF" />
+      </TouchableOpacity>
     </View>
   );
 }
