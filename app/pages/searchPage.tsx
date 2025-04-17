@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   useWindowDimensions,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import SearchBar from "../components/searchbar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -16,7 +16,6 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showAllRecent, setShowAllRecent] = useState(false);
-  const [showAllUsers, setShowAllUsers] = useState(false);
 
   const router = useRouter();
   const { width, height } = useWindowDimensions();
@@ -35,6 +34,33 @@ export default function SearchPage() {
 
     loadRecentSearches();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const clearSearchIfNeeded = async () => {
+        const shouldClear = await AsyncStorage.getItem("shouldClearSearch");
+        if (shouldClear === "true") {
+          setSearchQuery("");
+          await AsyncStorage.removeItem("shouldClearSearch");
+        }
+      };
+      clearSearchIfNeeded();
+    }, [])
+  )
+
+  const updateRecentSearches = async (searchTerm: string) => {
+    // Create a new array without the existing term (case insensitive)
+    const updatedSearches = recentSearches.filter(
+      (s) => s.toLowerCase() !== searchTerm.toLowerCase()
+    );
+    
+    // Add the search term to the beginning of the array
+    const newRecentSearches = [searchTerm, ...updatedSearches].slice(0, 10);
+    
+    setRecentSearches(newRecentSearches);
+    await AsyncStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
+    return newRecentSearches;
+  };
 
   const deleteRecentSearch = async (index: number) => {
     // Create a new array without the item at the specified index
@@ -60,31 +86,25 @@ export default function SearchPage() {
     }
   };
 
-  const handleSubmit = async () => {
-    if (searchQuery.trim() !== "") {
-      if (
-        !recentSearches.some(
-          (s) => s.toLowerCase() === searchQuery.toLowerCase()
-        )
-      ) {
-        const updatedSearches = [searchQuery, ...recentSearches].slice(0, 10);
-        setRecentSearches(updatedSearches);
-
-        try {
-          await AsyncStorage.setItem(
-            "recentSearches",
-            JSON.stringify(updatedSearches)
-          );
-        } catch (error) {
-          console.error("Failed to save recent searches", error);
-        }
-      }
-
+  const handleSubmit = async (text?: string) => {
+    const searchTerm = text || searchQuery.trim();
+    if (searchTerm) {
+      await updateRecentSearches(searchTerm);
+      setSearchQuery("");
       router.push({
         pathname: "./searchResultsPage",
-        params: { query: searchQuery },
+        params: { query: searchTerm },
       });
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
+
+  const handleBackPress = () => {
+    setSearchQuery("");
+    router.back();
   };
 
   const styles = StyleSheet.create({
@@ -177,7 +197,7 @@ export default function SearchPage() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBackPress}
           >
             <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
           </TouchableOpacity>
@@ -187,6 +207,7 @@ export default function SearchPage() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmit={handleSubmit}
+              onClear={handleClearSearch}
             />
           </View>
         </View>
@@ -212,7 +233,8 @@ export default function SearchPage() {
                 return (
                   <View key={i}>
                     <TouchableOpacity
-                      onPress={() => {
+                      onPress={async () => {
+                        const updatedSearches = await updateRecentSearches(item);
                         setSearchQuery(item);
                         router.push({
                           pathname: "./searchResultsPage",
