@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   View,
   StyleSheet,
@@ -7,12 +7,14 @@ import {
   useWindowDimensions,
   TouchableOpacity,
   Image,
+  Keyboard,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import SearchBar from "../components/searchbar";
 import { supabase } from "@/lib/supabase";
 import { useCurrentUser } from "../hook/useCurrentUser";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 type SearchResult = {
   id: string;
@@ -37,6 +39,7 @@ export default function SearchResultsPage() {
   const { width, height } = useWindowDimensions();
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [userResults, setUserResults] = useState<UserResult[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const defaultPfp =
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
@@ -45,49 +48,68 @@ export default function SearchResultsPage() {
 
   useEffect(() => {
     const fetchResults = async () => {
+      if (!searchQuery.trim()) {
+        setSearchResults([]);
+        return;
+      }
+
+      setLoading(true);
       const lowerQuery = searchQuery.toLowerCase().trim();
       console.log("Searching for:", lowerQuery);
 
-      const jsonArray = JSON.stringify([lowerQuery]); // ["silver necklace"]
+      const jsonArray = JSON.stringify([lowerQuery]);
       const pgArray = `{${lowerQuery}}`;
 
-      const { data, error } = await supabase
-        .from("images")
-        .select("*")
-        .or(
-          `selectedbrands_lower.cs.${jsonArray},selectedoccasions_lower.cs.${jsonArray},metadata.cs.${pgArray}`
-        );
+      try {
+        const { data, error } = await supabase
+          .from("images")
+          .select("*")
+          .or(
+            `selectedbrands_lower.cs.${jsonArray},selectedoccasions_lower.cs.${jsonArray},metadata.cs.${pgArray}`
+          );
 
-      if (error) {
-        console.error("Supabase error:", error);
-      } else {
-        setSearchResults(data);
-        console.log("Search results:", data);
+        if (error) {
+          console.error("Supabase error:", error);
+        } else {
+          setSearchResults(data || []);
+        }
+      } finally {
+        setLoading(false);
       }
     };
 
-    if (searchQuery.trim() !== "") {
-      fetchResults();
-    }
+    const debounceTimer = setTimeout(fetchResults, 500);
+    return () => clearTimeout(debounceTimer);
   }, [searchQuery]);
 
-  const handleSubmit = () => {
-    const cleaned = searchQuery.trim();
-    if (cleaned !== "") {
-      setSearchQuery(cleaned); // force re-trigger if needed
+  const handleSubmit = (text?: string) => {
+    const searchTerm = text || searchQuery.trim();
+    if (searchTerm) {
+      setSearchQuery(searchTerm);
     }
+    Keyboard.dismiss();
   };
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const { data: users, error } = await supabase
-        .from("profiles")
-        .select("id, username, pfp")
-        .ilike("username", `%${searchQuery}%`);
-
-      if (error) {
-        console.error("Error fetching users:", error);
+      if (!searchQuery.trim()) {
+        setUserResults([]);
+        return;
       }
+      try {
+        const { data: users, error } = await supabase
+          .from("profiles")
+          .select("id, username, pfp")
+          .ilike("username", `%${searchQuery}%`);
+
+        if (error) {
+          console.error("Error fetching users:", error);
+          return;
+        }
+        if (error) {
+          console.error("Error fetching users:", error);
+          return;
+        }
 
       if (!users || !currentUserId) return;
 
@@ -129,14 +151,29 @@ export default function SearchResultsPage() {
         return {
           id: user.id,
           username: user.username,
-          avatar: user.pfp,
+          avatar: user.pfp || defaultPfp,
           status,
         };
       });
       setUserResults(mappedUsers);
-    };
-    fetchUsers();
+    } catch (error) {
+      console.error("Error in fetchUsers:", error);
+    }
+  };
+
+  const debounceTimer = setTimeout(fetchUsers, 500);
+    return () => clearTimeout(debounceTimer);
   }, [searchQuery, currentUserId]);
+
+  const handleBackPress = async () => {
+    await AsyncStorage.setItem("shouldClearSearch", "true");
+    setSearchQuery("");
+    router.back();
+  };
+
+  const handleClearSearch = () => {
+    setSearchQuery("");
+  };
 
   const handlePostPress = (postId: string) => {
     router.push({
@@ -146,6 +183,7 @@ export default function SearchResultsPage() {
   };
 
   const handleAddFriend = async (userId: string) => {
+    
     // Get current user ID
     const { data: user } = await supabase.auth.getUser();
     const currentUserId = user.user?.id;
@@ -377,7 +415,113 @@ export default function SearchResultsPage() {
     friendsText: {
       borderColor: "#F5EEE3",
     },
+    pending: {
+      backgroundColor: "#3A3F45",
+    },
+    pendingText: {
+      color: "#F5EEE3",
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    emptyState: {
+      flex: 1,
+      justifyContent: "center",
+      alignItems: "center",
+      paddingTop: 100,
+    },
+    emptyText: {
+      color: "#7F8D9A",
+      fontSize: 16,
+    },
   });
+
+  const renderPostItem = ({ item }: { item: SearchResult }) => (
+    <TouchableOpacity
+      style={styles.gridItem}
+      onPress={() => handlePostPress(item.id)}
+    >
+      <Image
+        source={{
+          uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`,
+        }}
+        style={styles.imagePlaceholder}
+        resizeMode="cover"
+      />
+      <View style={styles.gridContent}>
+        <View style={styles.postUserRow}>
+          <Image
+            source={{
+              uri:
+                userResults.find((u) => u.username === item.username)?.avatar ||
+                defaultPfp,
+            }}
+            style={styles.avatarSmall}
+          />
+          <Text style={styles.postusername}>{item.username}</Text>
+        </View>
+        <Text style={styles.caption} numberOfLines={1}>
+          {item.caption}
+        </Text>
+        {item.selectedoccasions?.length > 0 && (
+          <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderUserItem = ({ item }: { item: UserResult }) => (
+    <View style={styles.userRow}>
+      <View style={styles.userInfo}>
+        <Image source={{ uri: item.avatar }} style={styles.avatar} />
+        <Text style={styles.userUsername}>{item.username}</Text>
+      </View>
+      <View style={{ flexDirection: "row", alignItems: "center" }}>
+        <TouchableOpacity
+          disabled={item.status === "Friends"}
+          style={[
+            styles.addButton,
+            item.status === "Friends" && styles.friends,
+            item.status === "Pending" && styles.pending,
+          ]}
+          onPress={() => {
+            if (item.status === "Pending") {
+              handleCancelFriendRequest(item.id);
+            } else {
+              handleAddFriend(item.id);
+            }
+          }}
+        >
+          <Text
+            style={[
+              styles.addText,
+              item.status === "Friends" && styles.friendsText,
+              item.status === "Pending" && styles.pendingText,
+            ]}
+          >
+            {item.status === "Friends"
+              ? "Friends"
+              : item.status === "Pending"
+              ? "Pending"
+              : "Add Friend"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.removeIcon}>
+          <MaterialIcons name="close" size={20} color="#747E89" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const renderEmptyState = () => (
+    <View style={styles.emptyState}>
+      <Text style={styles.emptyText}>
+        {loading ? "Searching..." : "No results found"}
+      </Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -386,7 +530,7 @@ export default function SearchResultsPage() {
         <View style={styles.headerContent}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => router.back()}
+            onPress={handleBackPress}
           >
             <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
           </TouchableOpacity>
@@ -395,6 +539,7 @@ export default function SearchResultsPage() {
               value={searchQuery}
               onChangeText={setSearchQuery}
               onSubmit={handleSubmit}
+              onClear={handleClearSearch}
             />
           </View>
         </View>
@@ -423,101 +568,36 @@ export default function SearchResultsPage() {
           ))}
         </View>
 
-        {/* Posts View */}
-        {activeTab === "Posts" && (
-          <FlatList
-            data={searchResults}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={styles.gridItem}
-                onPress={() => handlePostPress(item.id)}
-              >
-                <Image
-                  source={{
-                    uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`,
-                  }}
-                  style={styles.imagePlaceholder}
-                  resizeMode="cover"
+        {loading ? (
+          <View style={styles.loadingContainer}>
+            <Text style={styles.emptyText}>Searching...</Text>
+          </View>
+        ) : (
+          <>
+            {activeTab === "Posts" &&
+              (searchResults.length > 0 ? (
+                <FlatList
+                  data={searchResults}
+                  keyExtractor={(item) => item.id}
+                  numColumns={2}
+                  showsVerticalScrollIndicator={false}
+                  renderItem={renderPostItem}
                 />
-                <View style={styles.gridContent}>
-                  <View style={styles.postUserRow}>
-                    <Image
-                      source={{
-                        uri: userResults.find(
-                          (u) => u.username === item.username
-                        )?.avatar,
-                      }}
-                      style={styles.avatarSmall}
-                    />
-                    <Text style={styles.postusername}>{item.username}</Text>
-                  </View>
-                  <Text style={styles.caption}>{item.caption}</Text>
-                  {item.selectedoccasions?.length > 0 && (
-                    <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
-                  )}
-                </View>
-              </TouchableOpacity>
-            )}
-          />
-        )}
+              ) : (
+                renderEmptyState()
+              ))}
 
-        {/* Users View */}
-        {activeTab === "Users" && (
-          <FlatList
-            data={userResults}
-            keyExtractor={(item) => item.id}
-            renderItem={({ item }) => (
-              <View style={styles.userRow}>
-                <View style={styles.userInfo}>
-                  <Image
-                    source={{ uri: item.avatar || defaultPfp }}
-                    style={styles.avatar}
-                  />
-                  <Text style={styles.userUsername}>{item.username}</Text>
-                </View>
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <TouchableOpacity
-                    disabled={item.status === "Friends"}
-                    style={[
-                      styles.addButton,
-                      (item.status === "Friends" ||
-                        item.status === "Pending") &&
-                        styles.friends,
-                    ]}
-                    onPress={() => {
-                      if (item.status === "Pending") {
-                        //handle cancel friend request
-                        handleCancelFriendRequest(item.id);
-                      } else {
-                        handleAddFriend(item.id);
-                      }
-                    }}
-                  >
-                    <Text
-                      style={[
-                        styles.addText,
-                        (item.status === "Friends" ||
-                          item.status === "Pending") &&
-                          styles.friendsText,
-                      ]}
-                    >
-                      {item.status === "Friends"
-                        ? "Friends"
-                        : item.status === "Pending"
-                        ? "Pending"
-                        : "Add Friend"}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.removeIcon}>
-                    <MaterialIcons name="close" size={20} color="#747E89" />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-          />
+            {activeTab === "Users" &&
+              (userResults.length > 0 ? (
+                <FlatList
+                  data={userResults}
+                  keyExtractor={(item) => item.id}
+                  renderItem={renderUserItem}
+                />
+              ) : (
+                renderEmptyState()
+              ))}
+          </>
         )}
       </View>
     </View>

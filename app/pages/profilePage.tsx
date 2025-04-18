@@ -1,41 +1,109 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { StyleSheet } from 'react-native';
 import BottomNavBar from '../components/BottomNavBar';
 import { supabase } from "@/lib/supabase";
 import FriendRequestPage from './friendRequestPage';
 import SignOutButton from '../components/signOut';
 import { useCurrentUser } from '../hook/useCurrentUser'; // Import the custom hook
 
+const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
     const { width, height } = useWindowDimensions();
-    const [showSettings, setShowSettings] = useState(false);
     const [showFriendRequests, setShowFriendRequests] = useState(false);
-    const [posts, setPosts] = useState<any[]>([]);
     const [friendCount, setFriendCount] = useState(0);
+    const [outfitsCount, setOutfitsCount] = useState(0);
+    const [recentOutfit, setRecentOutfit] = useState<any>(null);
 
     const currentUserId = useCurrentUser(); // Use the custom hook to get the current user ID
+    const [userId, setUserId] = useState<string | null>(null);
+    const [username, setUsername] = useState("");
+    const [name, setName] = useState("");
+    const [profileImageUrl, setProfileImageUrl] = useState(defaultPfp);
 
     useEffect(() => {
-        const fetchFriendCount = async () => {
-            if (!currentUserId) return; // Ensure currentUserId is available before querying
+        const fetchUserData = async () => {
+            if (!currentUserId) return;
 
-            const {data, error} = await supabase
+            // Fetch profile data
+            const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("username, pfp, name")
+                .eq("id", currentUserId)
+                .single();
+
+            if (profileError) {
+                console.error("Error fetching profile:", profileError.message);
+            } else {
+                setName(profile.name || "User");
+                setUsername(`@${profile.username}` || "@unknown");
+                setProfileImageUrl(profile.pfp || defaultPfp);
+            }
+
+            // Fetch friend count
+            const { data: friends, error: friendsError } = await supabase
                 .from('friends')
-                .select('*', {count: 'exact'})
+                .select('*', { count: 'exact' })
                 .or(`user_id_1.eq.${currentUserId}, user_id_2.eq.${currentUserId}`)
                 .eq('status', 'accepted');
-            if (error) {
-                console.error('Error fetching friend count:', error);
+
+            if (friendsError) {
+                console.error('Error fetching friend count:', friendsError);
             } else {
-                setFriendCount(data.length);
+                setFriendCount(friends.length);
+            }
+
+            // Fetch outfits data
+            const { data: outfits, error: outfitsError } = await supabase
+                .from('images')
+                .select('id, image_path, created_at')
+                .eq('user_id', currentUserId)
+                .order('created_at', { ascending: false });
+
+            if (outfitsError) {
+                console.error('Error fetching outfits:', outfitsError);
+            } else {
+                setOutfitsCount(outfits.length);
+                if (outfits.length > 0) {
+                    const mostRecent = outfits[0];
+                    const publicUrl = supabase.storage.from('images').getPublicUrl(mostRecent.image_path).data.publicUrl;
+                    setRecentOutfit({
+                        id: mostRecent.id,
+                        uri: publicUrl
+                    });
+                }
             }
         };
-        fetchFriendCount();
+
+        if (currentUserId) {
+            fetchUserData();
+            setUserId(currentUserId);
+        }
     }, [currentUserId]);
+
+    const router = useRouter();
+
+    const handleEditProfile = () => {
+        router.push({
+            pathname: "./editProfilePage",
+            params: { 
+                userId,
+                name,
+                username: username.replace('@', ''),
+                pfp: profileImageUrl
+            }
+        });
+    };
+
+    const navigateToMyOutfits = () => {
+        router.push({
+            pathname: "./myOutfitsPage",
+            params: { userId }
+        });
+    };
 
     const styles = StyleSheet.create({
         container: { 
@@ -136,64 +204,45 @@ export default function ProfilePage() {
         body: {
             flex: 1,
             backgroundColor: "#212629",
-            alignItems: "center",
+            paddingHorizontal: width * 0.05, // Add horizontal padding
             paddingTop: height * 0.02,
             borderTopLeftRadius: width * 0.09,
             borderTopRightRadius: width * 0.09,
         },
+        outfitCardContainer: {
+            width: width * 0.4,
+            marginBottom: 20,
+            marginLeft: 10,
+            marginTop: 10,
+        },
+        outfitCard: {
+            width: width * 0.4,
+            height: width * 0.6,
+            borderRadius: 10,
+            backgroundColor: '#333',
+            overflow: 'hidden',
+        },
+        outfitImage: {
+            width: '100%',
+            height: '100%',
+        },
+        outfitLabelContainer: {
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            width: width * 0.4,
+            marginTop: 8,
+        },
+        outfitLabel: {
+            color: "#C7D1DB",
+            fontSize: 16,
+            fontWeight: '600',
+        },
+        outfitCount: {
+            color: "#9AA8B6",
+            fontSize: 16,
+            fontWeight: '600',
+        },
     });
-
-    const [userId, setUserId] = useState<string | null>(null);
-    const [username, setUsername] = useState("");
-    const [name, setName] = useState("");
-    const [profileImageUrl, setProfileImageUrl] = useState("");
-    const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
-    const [outfitsCount, setOutfitsCount] = useState(0);
-
-    useEffect(() => {
-        const getUserData = async () => {
-            try {
-                const { data: { session }, error } = await supabase.auth.getSession();
-                if (error) {
-                    console.error("Error fetching session:", error.message);
-                } else {
-                    console.log("Session fetched:", session);
-                }
-
-                const id = session?.user?.id ?? null;
-                setUserId(id);
-                if (id) {
-                    console.log("User ID found:", id);
-
-                    const { data: profile, error: profileError } = await supabase
-                        .from("profiles")
-                        .select("username, pfp, name")
-                        .eq("id", id)
-                        .single();
-
-                    if (profileError) {
-                        console.error("Error fetching profile:", profileError.message);
-                    } else {
-                        setName(profile.name || "User"); // Set the name from profile.name
-                        setUsername(`@${profile.username}` || "@unknown");
-                        setProfileImageUrl(profile.pfp || defaultPfp);
-                    }
-                } else {
-                    console.log("No user ID found. User might not be logged in.");
-                }
-            } catch (err: any) {
-                console.error("Error:", err.message);
-            }
-        };
-
-        getUserData();
-    }, []);
-
-    const handleEditProfile = () => {
-        // Add edit profile functionality here
-        console.log("Edit profile button pressed");
-        // router.push('/editProfile');
-    };
 
     return (
         <View style={styles.container}>
@@ -243,8 +292,29 @@ export default function ProfilePage() {
                 <Text style={styles.editProfileButtonText}>Edit Profile</Text>
             </TouchableOpacity>
 
-            {/* Body Section */}
+            {/* Body Section with Outfits Preview */}
             <View style={styles.body}>
+                <View style={styles.outfitCardContainer}>
+                {recentOutfit ? (
+                        <>
+                            <Pressable onPress={navigateToMyOutfits}>
+                                <View style={styles.outfitCard}>
+                                    <Image 
+                                        source={{ uri: recentOutfit.uri }} 
+                                        style={styles.outfitImage}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                            </Pressable>
+                            <View style={styles.outfitLabelContainer}>
+                                <Text style={styles.outfitLabel}>My Outfits</Text>
+                                <Text style={styles.outfitCount}>{outfitsCount}</Text>
+                            </View>
+                        </>
+                    ) : (
+                        <Text style={{ color: '#919CA9' }}>No outfits yet</Text>
+                    )}
+                </View>
             </View>
 
             <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />

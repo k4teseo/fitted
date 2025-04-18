@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect }  from "react";
 import { TouchableOpacity, Image, StyleSheet } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -6,11 +6,15 @@ import * as ImagePicker from "expo-image-picker";
 interface ProfilePictureSelectorProps {
   onImageSelect: (uri: string) => void;
   imageUri?: string | null;
+  showImagePicker?: boolean;
+  setShowImagePicker?: (show: boolean) => void;
 }
 
 const ProfilePictureSelector: React.FC<ProfilePictureSelectorProps> = ({
   onImageSelect,
   imageUri,
+  showImagePicker,
+  setShowImagePicker,
 }) => {
   const selectProfilePicture = async () => {
     // Request permissions
@@ -31,7 +35,19 @@ const ProfilePictureSelector: React.FC<ProfilePictureSelectorProps> = ({
     if (!pickerResult.canceled && pickerResult.assets.length > 0) {
       onImageSelect(pickerResult.assets[0].uri); 
     }
+
+    // Close the picker after selection
+    if (setShowImagePicker) {
+      setShowImagePicker(false);
+    }
   };
+ 
+  useEffect(() => {
+    if (showImagePicker) {
+      selectProfilePicture();
+    }
+  }, [showImagePicker]);
+
 
   return (
     <TouchableOpacity style={styles.uploadCircle} onPress={selectProfilePicture}>
