@@ -42,8 +42,8 @@ const TimeStamp = ({ createdAt, style }: TimeStampProps) => {
 
 const styles = StyleSheet.create({
   timeText: {
-    color: '#9AA8B6',
-    fontSize: 12,
+    color: '#6D757E',
+    fontSize: 10,
   },
 });
 

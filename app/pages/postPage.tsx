@@ -9,13 +9,17 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import TimeStamp from "../components/TimeStamp";
+import CommentingBar from "../components/CommentingBar";
+import Comments from "../components/comments";
 
-// Adjust this type as needed for your own table schema
+const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
 type PostData = {
   id: string;
   username: string;
@@ -27,70 +31,150 @@ type PostData = {
   selectedoccasions_lower: string[];
   metadata: string[];
   created_at: string;
+  userPfp?: string;
 };
 
 type BrandTag = {
-  id: string; // or number, depending on your DB
+  id: string; 
   brand_name: string;
   x_position: number;
   y_position: number;
 };
 
+type Comment = {
+  id: string;
+  username: string;
+  text: string;
+  pfp: string;
+  createdAt: string;
+  replies?: Comment[];
+  parentId?: string | null;
+};
+
 export default function PostPage() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
+  const { width, height } = useWindowDimensions();
 
-  // Main post data
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // For brand tags that were added during upload
   const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
   const [showTags, setShowTags] = useState(false);
-
-  // We need the layout of the Image container to position tags properly
   const [photoLayout, setPhotoLayout] = useState({ width: 0, height: 0 });
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
+  const [currentUserPfp, setCurrentUserPfp] = useState(defaultPfp);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
 
-  // 1) Fetch the main post from "images"
+  const mockComments: Comment[] = [
+    {
+      id: "1",
+      username: "coffeexclothes",
+      text: "This outfit is EVERYTHING 🔥 serving looks as always",
+      pfp: defaultPfp,
+      createdAt: "2d",
+      parentId: null,
+    },
+    {
+      id: "2",
+      username: "outfit_user123",
+      text: "Thank you bro",
+      pfp: defaultPfp,
+      createdAt: "2d",
+      parentId: "1",
+    },
+    {
+      id: "3",
+      username: "vintage.viv",
+      text: "Where did you buy your jacket",
+      pfp: defaultPfp,
+      createdAt: "2hr",
+      parentId: null,
+    },
+    {
+      id: "4",
+      username: "outfit_user123",
+      text: "Uniqlo",
+      pfp: defaultPfp,
+      createdAt: "20min",
+      parentId: "3",
+    },
+    {
+      id: "5",
+      username: "cutsypup",
+      text: "streetwear royalty right here",
+      pfp: defaultPfp,
+      createdAt: "2d",
+      parentId: null,
+    },
+    {
+      id: "6",
+      username: "outfit_user123",
+      text: "Thank you!",
+      pfp: defaultPfp,
+      createdAt: "2d",
+      parentId: "5",
+    },
+  ];
+
+  useEffect(() => {
+    setComments(mockComments);
+    setCommentCount(mockComments.length);
+  }, []);
+    
   const fetchPost = async () => {
     if (!id) return;
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data: postData , error: postError } = await supabase
       .from("images")
       .select(
-        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata, created_at"
+        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata, created_at, user_id"
       )
       .eq("id", id)
       .single();
 
-    if (error) {
-      console.error("Error fetching post:", error);
+    if (postError) {
+      console.error("Error fetching post:", postError);
       setLoading(false);
       return;
     }
 
-    if (data) {
-      const postData: PostData = {
-        id: data.id,
-        username: data.username,
-        caption: data.caption,
+    if (postData) {
+      let pfpUrl = defaultPfp;
+      if (postData.user_id) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("pfp")
+          .eq("id", postData.user_id)
+          .single();
+
+        if (!profileError && profileData?.pfp) {
+          pfpUrl = profileData.pfp;
+        }
+      }
+
+      const formattedPost: PostData = {
+        id: postData.id,
+        username: postData.username,
+        caption: postData.caption,
         postImage:
-          supabase.storage.from("images").getPublicUrl(data.image_path)?.data
+          supabase.storage.from("images").getPublicUrl(postData.image_path)?.data
             ?.publicUrl || "",
-        selectedbrands: data.selectedbrands ?? [],
-        selectedoccasions: data.selectedoccasions ?? [],
-        selectedbrands_lower: data.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
-        selectedoccasions_lower: data.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
-        metadata: data.metadata ?? [],
-        created_at: data.created_at,
+        selectedbrands: postData.selectedbrands ?? [],
+        selectedoccasions: postData.selectedoccasions ?? [],
+        selectedbrands_lower: postData.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
+        selectedoccasions_lower: postData.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
+        metadata: postData.metadata ?? [],
+        created_at: postData.created_at,
+        userPfp: pfpUrl,
       };
-      setPost(postData);
+      setPost(formattedPost);
     }
     setLoading(false);
   };
 
-  // 2) Fetch brand tags from "image_brand_tags"
   const fetchBrandTags = async () => {
     if (!id) return;
 
@@ -111,7 +195,45 @@ export default function PostPage() {
     fetchBrandTags();
   }, [id]);
 
-  // Basic loading / error checks
+  useEffect(() => {
+    const fetchCurrentUserPfp = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("pfp")
+          .eq("id", session.user.id)
+          .single();
+        if (profile?.pfp) {
+          setCurrentUserPfp(profile.pfp);
+        }
+      }
+    };
+    fetchCurrentUserPfp();
+  }, []);
+
+  const handleSendComment = (text: string) => {
+    const newComment: Comment = {
+      id: Date.now().toString(),
+      username: "current_user",
+      text,
+      pfp: currentUserPfp,
+      createdAt: "Just now",
+      parentId: replyingTo || null,
+    };
+    setComments([...comments, newComment]);
+    setCommentCount(commentCount + 1);
+    setReplyingTo(null);
+  };
+
+  const toggleComments = () => {
+    setShowComments(!showComments);
+  };
+
+  const toggleTags = () => {
+    setShowTags((prev) => !prev);
+  };
+
   if (!id) {
     return (
       <View style={styles.container}>
@@ -137,26 +259,27 @@ export default function PostPage() {
     );
   }
 
-  // Combine arrays for tag “pills” (if you still want them at the bottom, separate from brandTags)
   const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
 
-  // Toggle showing brand tags on the photo
-  const toggleTags = () => {
-    setShowTags((prev) => !prev);
-  };
-
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Top Bar with username and back arrow */}
+    <SafeAreaView style={styles.container} >
       <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
-        </Pressable>
-        <Text style={styles.username}>{post.username}</Text>
+        <View style={styles.headerContent}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
+          </Pressable>
+          <Image 
+            source={{ uri: post.userPfp || defaultPfp }} 
+            style={styles.profileImage} 
+          />
+          <Text style={styles.username}>{post.username}</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Image Container with brand tags overlay */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardDismissMode="on-drag"
+      >
         <View
           style={styles.imageContainer}
           onLayout={(e) => {
@@ -170,15 +293,12 @@ export default function PostPage() {
             resizeMode="cover"
           />
 
-          {/* Tag icon in bottom-right corner */}
           <Pressable style={styles.tagIconContainer} onPress={toggleTags}>
             <MaterialIcons name="tag" size={24} color="#F5EEE3" />
           </Pressable>
 
-          {/* Conditionally render brand tags */}
           {showTags &&
             brandTags.map((tag) => {
-              // Multiply x_position/y_position by container width/height to place the pill
               const leftPos = tag.x_position * photoLayout.width;
               const topPos = tag.y_position * photoLayout.height;
               return (
@@ -192,10 +312,8 @@ export default function PostPage() {
             })}
         </View>
 
-        {/* Post Title (User’s caption) */}
         <Text style={styles.postTitle}>{post.caption}</Text>
 
-        {/* Tag “pills” at the bottom (for brand + occasions from your arrays) */}
         {combinedTags.length > 0 && (
           <View style={styles.tagsContainer}>
             {combinedTags.map((tag, index) => (
@@ -203,15 +321,34 @@ export default function PostPage() {
                 <Text style={styles.tagText}>{tag}</Text>
               </View>
             ))}
-            </View>
+          </View>
         )}
-        {/* TimeStamp component */}
         {post.created_at && (
           <View style={styles.timestampContainer}>
             <TimeStamp createdAt={post.created_at} />
           </View>
         )}
       </ScrollView>
+
+      <CommentingBar
+        commentCount={commentCount}
+        onCommentPress={toggleComments}
+        onSendComment={handleSendComment}
+        currentUserPfp={currentUserPfp}
+        replyingTo={null}
+        onCancelReply={() => setReplyingTo(null)}
+      />
+      
+      <Comments
+        showComments={showComments}
+        setShowComments={setShowComments}
+        comments={comments}
+        commentCount={commentCount}
+        currentUserPfp={currentUserPfp}
+        replyingTo={replyingTo}
+        setReplyingTo={setReplyingTo}
+        handleSendComment={handleSendComment}
+      />
     </SafeAreaView>
   );
 }
@@ -222,29 +359,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#15181B",
   },
   topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 30,
-    paddingBottom: 30,
     backgroundColor: "#2D3338",
+    width: "100%",
+    height: 123,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: "flex-end",
+    position: "absolute",
+    zIndex: 10,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   backButton: {
-    marginRight: 20,
+    padding: 8,
+    marginBottom: 0,
+  },
+  profileImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 5,
+    marginLeft: 10,
   },
   username: {
     color: "#7F8A95",
     fontSize: 24,
     fontWeight: "500",
+    marginLeft: 8,
   },
   scrollContainer: {
     padding: 20,
+    paddingTop: 80,
   },
-  // Container that wraps the image + the brand tags overlay + the tag icon
   imageContainer: {
     position: "relative",
     width: "100%",
-    height: 500, // or any fixed aspect ratio
+    height: 500,
     marginBottom: 20,
     backgroundColor: "#333",
   },
@@ -252,7 +406,6 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  // The button in the bottom-right corner for toggling tags
   tagIconContainer: {
     position: "absolute",
     bottom: 10,
@@ -261,7 +414,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 8,
   },
-  // A small “pill” for brand tags on the photo
   brandTagPill: {
     position: "absolute",
     backgroundColor: "#202325",
