@@ -91,8 +91,8 @@ export default function EditProfilePage() {
         },
         header: {
             fontSize: width * 0.06,
-            fontWeight: "700",
-            color: "#B9CADB",
+            fontWeight: "400",
+            color: "#7F8A95",
         },
         uploadContainer: {
             alignItems: "center",

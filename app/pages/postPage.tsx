@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import TimeStamp from "../components/TimeStamp";
 
 // Adjust this type as needed for your own table schema
 type PostData = {
@@ -25,6 +26,7 @@ type PostData = {
   selectedbrands_lower: string[];
   selectedoccasions_lower: string[];
   metadata: string[];
+  created_at: string;
 };
 
 type BrandTag = {
@@ -57,7 +59,7 @@ export default function PostPage() {
     const { data, error } = await supabase
       .from("images")
       .select(
-        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata"
+        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata, created_at"
       )
       .eq("id", id)
       .single();
@@ -81,6 +83,7 @@ export default function PostPage() {
         selectedbrands_lower: data.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
         selectedoccasions_lower: data.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
         metadata: data.metadata ?? [],
+        created_at: data.created_at,
       };
       setPost(postData);
     }
@@ -200,6 +203,12 @@ export default function PostPage() {
                 <Text style={styles.tagText}>{tag}</Text>
               </View>
             ))}
+            </View>
+        )}
+        {/* TimeStamp component */}
+        {post.created_at && (
+          <View style={styles.timestampContainer}>
+            <TimeStamp createdAt={post.created_at} />
           </View>
         )}
       </ScrollView>
@@ -265,9 +274,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   postTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#A5C6E8",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#F5EEE3",
     marginBottom: 14,
   },
   tagsContainer: {
@@ -276,7 +285,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tagPill: {
-    backgroundColor: "#262A2F",
+    backgroundColor: "#98A7B7",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 4,
@@ -284,7 +293,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tagText: {
-    color: "#6D757E",
-    fontSize: 14,
+    color: "#141618",
+    fontSize: 10,
+  },
+  timestampContainer: {
+    marginTop: -10,
+    marginBottom: 10,
   },
 });

@@ -13,6 +13,7 @@ import {
 import { supabase } from "@/lib/supabase";
 import FeedHeader from "../components/FeedHeader";
 import BottomNavBar from "../components/BottomNavBar";
+import TimeStamp from "../components/TimeStamp";
 
 type FeedItemData = {
   id: string;
@@ -22,6 +23,7 @@ type FeedItemData = {
   selectedbrands: string[];
   selectedoccasions: string[];
   userPfp: string;
+  createdAt: Date;
 };
 
 const defaultPfp =
@@ -36,13 +38,7 @@ const FeedItem = ({
   userPfp: string;
 }) => {
   const router = useRouter();
-  const combinedTags = [
-    ...(item.selectedbrands ?? []),
-    ...(item.selectedoccasions ?? []),
-  ];
-
-  const maxTags = 3;
-  const visibleTags = combinedTags.slice(0, maxTags);
+  const visibleTags = (item.selectedoccasions ?? []).slice(0, 2);
 
   return (
     <TouchableOpacity
@@ -66,24 +62,22 @@ const FeedItem = ({
 
         <Text style={feedStyles.caption}>{item.caption}</Text>
 
-        {visibleTags.length > 0 && (
-          <View style={{ flexDirection: "row", marginTop: 5 }}>
-            <FlatList
-              data={visibleTags}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              nestedScrollEnabled={true}
-              keyboardShouldPersistTaps="handled"
-              contentContainerStyle={{ flexGrow: 1 }}
-              keyExtractor={(tag, index) => `${tag}-${index}`}
-              renderItem={({ item: tag }) => (
-                <View style={feedStyles.tagPill}>
+        {/* Tags and Timestamp Row */}
+        <View style={feedStyles.tagsRow}>
+          {visibleTags.length > 0 && (
+            <View style={{ flexDirection: 'row' }}>
+              {visibleTags.map((tag, index) => (
+                <View key={index} style={feedStyles.tagPill}>
                   <Text style={feedStyles.tagText}>{tag}</Text>
                 </View>
-              )}
-            />
-          </View>
-        )}
+              ))}
+            </View>
+          )}
+          {/* Timestamp - added here */}
+          {item.createdAt && (
+            <TimeStamp createdAt={item.createdAt.toISOString()} style={feedStyles.timestamp} />
+          )}
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -222,7 +216,7 @@ const feedStyles = StyleSheet.create({
     backgroundColor: "#15181B",
   },
   listContent: {
-    padding: 80,
+    padding: 90,
     paddingBottom: 80,
   },
   card: {
@@ -243,17 +237,17 @@ const feedStyles = StyleSheet.create({
     resizeMode: "cover",
   },
   userInfo: {
-    backgroundColor: "#595F66",
+    backgroundColor: "#202325",
     padding: 16,
   },
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: 10,
   },
   profileImage: {
-    width: 28,
-    height: 28,
+    width: 20,
+    height: 20,
     borderRadius: 14,
     marginRight: 10,
     backgroundColor: "gray",
@@ -261,18 +255,18 @@ const feedStyles = StyleSheet.create({
   username: {
     fontFamily: "Raleway",
     fontWeight: "600",
-    fontSize: 15,
-    color: "#9AA8B6",
+    fontSize: 12,
+    color: "#919CA9",
   },
   caption: {
     fontFamily: "Raleway",
-    fontWeight: "700",
-    fontSize: 17,
+    fontWeight: "600",
+    fontSize: 16,
     color: "#F5EEE3",
-    marginBottom: 2,
+    marginBottom: 8,
   },
   tagPill: {
-    backgroundColor: "#A5C6E8",
+    backgroundColor: "#9BABBC",
     borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -282,6 +276,16 @@ const feedStyles = StyleSheet.create({
   tagText: {
     color: "#262A2F",
     fontWeight: "500",
+    fontSize: 10,
+  },
+  tagsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 5,
+  },
+  timestamp: {
+    color: '#6D757E',
     fontSize: 10,
   },
 });
