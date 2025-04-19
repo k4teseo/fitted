@@ -1,3 +1,4 @@
+// app/feedPage.tsx
 import React, { useState, useEffect } from "react";
 import { useRouter, useFocusEffect } from "expo-router";
 import {
@@ -5,15 +6,13 @@ import {
   View,
   Text,
   FlatList,
-  Image,
-  TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
+  StyleSheet,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
 import FeedHeader from "../components/FeedHeader";
 import BottomNavBar from "../components/BottomNavBar";
-import TimeStamp from "../components/TimeStamp";
+import FeedItem from "../components/FeedItem";
 
 type FeedItemData = {
   id: string;
@@ -24,72 +23,18 @@ type FeedItemData = {
   selectedoccasions: string[];
   userPfp: string;
   createdAt: Date;
+  reaction?: string | null;
 };
 
 const defaultPfp =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
-// A small component for each feed item
-const FeedItem = ({
-  item,
-  userPfp,
-}: {
-  item: FeedItemData;
-  userPfp: string;
-}) => {
-  const router = useRouter();
-  const visibleTags = (item.selectedoccasions ?? []).slice(0, 2);
-
-  return (
-    <TouchableOpacity
-      style={feedStyles.card}
-      onPress={() => {
-        router.push(`./postPage?id=${item.id}`);
-      }}
-      activeOpacity={0.9}
-    >
-      {/* Image Container */}
-      <View style={feedStyles.imageContainer}>
-        <Image source={{ uri: item.postImage }} style={feedStyles.postImage} />
-      </View>
-
-      {/* Info at the Bottom of the Card */}
-      <View style={feedStyles.userInfo}>
-        <View style={feedStyles.profileRow}>
-          <Image source={{ uri: userPfp }} style={feedStyles.profileImage} />
-          <Text style={feedStyles.username}>{item.username}</Text>
-        </View>
-
-        <Text style={feedStyles.caption}>{item.caption}</Text>
-
-        {/* Tags and Timestamp Row */}
-        <View style={feedStyles.tagsRow}>
-          {visibleTags.length > 0 && (
-            <View style={{ flexDirection: 'row' }}>
-              {visibleTags.map((tag, index) => (
-                <View key={index} style={feedStyles.tagPill}>
-                  <Text style={feedStyles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-          {/* Timestamp - added here */}
-          {item.createdAt && (
-            <TimeStamp createdAt={item.createdAt.toISOString()} style={feedStyles.timestamp} />
-          )}
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-};
-
 export default function FeedPage() {
-  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
-    "home"
-  );
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("home");
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPfp, setUserPfp] = useState<string>(defaultPfp);
+  const [reactions, setReactions] = useState<Record<string, string | null>>({});
 
   useEffect(() => {
     const getUserAndProfile = async () => {
@@ -114,6 +59,49 @@ export default function FeedPage() {
 
     getUserAndProfile();
   }, []);
+
+  const handleReaction = async (postId: string, emoji: string) => {
+    setReactions(prev => ({
+      ...prev,
+      [postId]: emoji || null
+    }));
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      if (emoji) {
+        await supabase
+          .from("post_reactions")
+          .upsert({
+            post_id: postId,
+            user_id: session.user.id,
+            reaction: emoji,
+          });
+      } else {
+        await supabase
+          .from("post_reactions")
+          .delete()
+          .match({ post_id: postId, user_id: session.user.id });
+      }
+    }
+  };
+
+  const loadReactions = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user?.id) {
+      const { data } = await supabase
+        .from("post_reactions")
+        .select("post_id, reaction")
+        .eq("user_id", session.user.id);
+      
+      if (data) {
+        const reactionsMap = data.reduce((acc, curr) => {
+          acc[curr.post_id] = curr.reaction;
+          return acc;
+        }, {} as Record<string, string>);
+        setReactions(reactionsMap);
+      }
+    }
+  };
 
   const fetchImages = async () => {
     setLoading(true);
@@ -182,11 +170,12 @@ export default function FeedPage() {
     React.useCallback(() => {
       setActiveTab("home");
       fetchImages();
+      loadReactions();
     }, [])
   );
 
   return (
-    <SafeAreaView style={feedStyles.container}>
+    <SafeAreaView style={styles.container}>
       <FeedHeader />
       {loading ? (
         <ActivityIndicator
@@ -199,9 +188,13 @@ export default function FeedPage() {
           data={feedData}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <FeedItem item={item} userPfp={item.userPfp} />
+            <FeedItem 
+              item={{ ...item, reaction: reactions[item.id] || null }} 
+              userPfp={item.userPfp}
+              onReaction={handleReaction}
+            />
           )}
-          contentContainerStyle={feedStyles.listContent}
+          contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         />
       )}
@@ -210,7 +203,7 @@ export default function FeedPage() {
   );
 }
 
-const feedStyles = StyleSheet.create({
+const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#15181B",
@@ -218,74 +211,5 @@ const feedStyles = StyleSheet.create({
   listContent: {
     padding: 90,
     paddingBottom: 80,
-  },
-  card: {
-    backgroundColor: "#9AA8B6",
-    borderRadius: 24,
-    marginBottom: 30,
-    overflow: "hidden",
-    alignSelf: "center",
-    width: 345,
-  },
-  imageContainer: {
-    width: "100%",
-    height: 400,
-  },
-  postImage: {
-    width: "100%",
-    height: "100%",
-    resizeMode: "cover",
-  },
-  userInfo: {
-    backgroundColor: "#202325",
-    padding: 16,
-  },
-  profileRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 10,
-  },
-  profileImage: {
-    width: 20,
-    height: 20,
-    borderRadius: 14,
-    marginRight: 10,
-    backgroundColor: "gray",
-  },
-  username: {
-    fontFamily: "Raleway",
-    fontWeight: "600",
-    fontSize: 12,
-    color: "#919CA9",
-  },
-  caption: {
-    fontFamily: "Raleway",
-    fontWeight: "600",
-    fontSize: 16,
-    color: "#F5EEE3",
-    marginBottom: 8,
-  },
-  tagPill: {
-    backgroundColor: "#9BABBC",
-    borderRadius: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginRight: 12,
-    marginBottom: 6,
-  },
-  tagText: {
-    color: "#262A2F",
-    fontWeight: "500",
-    fontSize: 10,
-  },
-  tagsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 5,
-  },
-  timestamp: {
-    color: '#6D757E',
-    fontSize: 10,
   },
 });
