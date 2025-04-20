@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavBar from '../components/BottomNavBar';
@@ -9,6 +9,23 @@ import SignOutButton from '../components/signOut';
 import { useCurrentUser } from '../hook/useCurrentUser'; // Import the custom hook
 
 const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
+const dummyCollections = [
+    {
+      id: 'Everyday Wear',
+      name: 'Saved',
+      outfitCount: 10,
+      previewImage: 'https://via.placeholder.com/150', // replace with a sample image URL
+      isSaved: true,
+    },
+    {
+      id: 'winter',
+      name: 'Winter',
+      outfitCount: 10,
+      previewImage: 'https://via.placeholder.com/150',
+      isSaved: true,
+    },
+  ];
 
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
@@ -242,6 +259,27 @@ export default function ProfilePage() {
             fontSize: 16,
             fontWeight: '600',
         },
+        collectionsContainer: {
+            flexDirection: 'row',
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
+            paddingHorizontal: 16,
+          },
+          
+          collectionCard: {
+            width: '48%',
+            marginBottom: 20,
+            borderRadius: 12,
+            overflow: 'hidden',
+            backgroundColor: '#f3f3f3',
+            position: 'relative',
+        },
+        starOverlay: {
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 1,
+          },
     });
 
     return (
@@ -315,8 +353,43 @@ export default function ProfilePage() {
                         <Text style={{ color: '#919CA9' }}>No outfits yet</Text>
                     )}
                 </View>
+                <View>
+                    <View style={styles.collectionsContainer}>
+                        {dummyCollections.map((collection) => (
+                            <TouchableOpacity
+                                key={collection.id}
+                                style={styles.collectionCard}
+                                onPress={() => router.push({
+                                    pathname: "./collectionDetail",
+                                    params: { 
+                                        collectionId: collection.id,
+                                        collectionName: collection.name
+                                    }
+                                })}
+                            >
+                                {collection.isSaved && (
+                                <View style={styles.starOverlay}>
+                                    <Text style={{ fontSize: 16 }}>⭐️</Text>
+                                </View> 
+                                )}
+                                {collection.previewImage && (
+                                    <View style={{ width: '100%', height: 100, overflow: 'hidden' }}>
+                                        <Image
+                                        source={{ uri: collection.previewImage }}
+                                        style={{ width: '100%', height: '100%' }}
+                                        resizeMode="cover"
+                                        />
+                                    </View>
+                                    )}
+                                <View style={{ padding: 10 }}>
+                                    <Text style={{ color: "#C7D1DB", fontSize: 16 }}>{collection.name}</Text>
+                                    <Text style={{ color: "#9AA8B6", fontSize: 14 }}>{collection.outfitCount} outfits</Text>
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </View>
             </View>
-
             <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
         </View>
     );
