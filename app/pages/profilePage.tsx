@@ -1,5 +1,15 @@
+// app/profilePage.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable } from 'react-native';
+import {
+  View, 
+  Text, 
+  TextInput,  
+  TouchableOpacity, 
+  Image, 
+  useWindowDimensions, 
+  StyleSheet, 
+  Pressable 
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavBar from '../components/BottomNavBar';
@@ -320,10 +330,13 @@ export default function ProfilePage() {
             <Text style={styles.usernameText}>{username}</Text>
 
             <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
+                <Pressable 
+                    style={styles.statItem}
+                    onPress={() => router.push("./friendsPage")}
+                >
                     <Text style={styles.statNumber}>{friendCount}</Text>
                     <Text style={styles.statLabel}>Friends</Text>
-                </View>
+                </Pressable>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{outfitsCount}</Text>
                     <Text style={styles.statLabel}>Outfits</Text>
