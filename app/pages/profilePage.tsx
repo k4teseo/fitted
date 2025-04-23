@@ -24,10 +24,13 @@ export default function ProfilePage() {
     const [username, setUsername] = useState("");
     const [name, setName] = useState("");
     const [profileImageUrl, setProfileImageUrl] = useState(defaultPfp);
-
+    
     const allCards = [
-        { type: 'recent', data: recentOutfit },
-        ...collections.map((c) => ({ type: 'collection', data: c }))
+        { type: 'add', data: null },
+        ...(recentOutfit
+            ? [{ type: 'recent', data: recentOutfit }]
+            : []),
+        ...collections.map((c) => ({ type: 'collection', data: c })),
     ];
 
     useEffect(() => {
@@ -76,10 +79,13 @@ export default function ProfilePage() {
                 if (outfits.length > 0) {
                     const mostRecent = outfits[0];
                     const publicUrl = supabase.storage.from('images').getPublicUrl(mostRecent.image_path).data.publicUrl;
-                    setRecentOutfit({
-                        id: mostRecent.id,
-                        uri: publicUrl
-                    });
+                    console.log(publicUrl);  // Add this line to check if the URL is correct
+                    if (publicUrl) { // Only set recentOutfit if publicUrl is valid
+                        setRecentOutfit({
+                          id: mostRecent.id,
+                          uri: publicUrl
+                        });
+                    }
                 }
             }
             // Fetch collections data
@@ -91,7 +97,19 @@ export default function ProfilePage() {
             if (collectionsError) {
                 console.error('Error fetching collections:', collectionsError);
             } else {
-                setCollections(userCollections);
+                const updatedCollections = userCollections.map((collection) => {
+                    const imagePath = collection.previewImage;
+                    const publicUrl = imagePath
+                      ? supabase.storage.from('images').getPublicUrl(imagePath).data.publicUrl
+                      : null;
+                  
+                    return {
+                      ...collection,
+                      previewImage: publicUrl
+                    };
+                });
+                  
+                setCollections(updatedCollections);
             }
         };
 
@@ -225,12 +243,7 @@ export default function ProfilePage() {
             paddingTop: height * 0.02,
             borderTopLeftRadius: width * 0.09,
             borderTopRightRadius: width * 0.09,
-        },
-        outfitCardContainer: {
-            width: width * 0.45,
-            marginRight: width * 0.025,
-            marginBottom: 20,
-        },        
+        },  
         outfitCard: {
             width: width * 0.4,
             height: width * 0.6,
@@ -247,6 +260,7 @@ export default function ProfilePage() {
             justifyContent: 'space-between',
             width: width * 0.4,
             marginTop: 8,
+            marginBottom: 10,
         },
         outfitLabel: {
             color: "#C7D1DB",
@@ -263,6 +277,13 @@ export default function ProfilePage() {
             flexWrap: 'wrap',
             justifyContent: 'space-between',
         },        
+        addCard: {
+            backgroundColor: '#2A2F36',   // Different color for the "Add" card
+            justifyContent: 'center',
+            alignItems: 'center',
+            borderRadius: 10,
+            padding: 10,
+        },
     });
 
     return (
@@ -285,7 +306,7 @@ export default function ProfilePage() {
             {/* Profile Section */}
             <View style={styles.profileSection}>
                 <Image
-                    source={{ uri: profileImageUrl }}
+                    source={{ uri: profileImageUrl || defaultPfp}}
                     style={styles.profileImage}
                 />
             </View>
@@ -314,53 +335,70 @@ export default function ProfilePage() {
             </TouchableOpacity>
 
             {/* Body Section with Outfits Preview */}
-            <View style={styles.body}>
+            <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 100 }}>
                 <View style={styles.gridContainer}>
                     {allCards.map((item, index) => {
-                    const isRecent = item.type === 'recent';
-                    const cardData = item.data;
-                    return (
-                        <Pressable
-                        key={isRecent ? 'recent' : cardData.id}
-                        onPress={
-                            isRecent
-                            ? navigateToMyOutfits
-                            : () =>
-                                router.push({
-                                    pathname: './collectionDetail',
-                                    params: {
-                                    collectionId: cardData.id,
-                                    collectionName: cardData.name,
-                                    },
-                                })
+                         if (item.type === 'add') { // Handle the 'add' card separately
+                            return (
+                                <Pressable
+                                    key={`add-card-${index}`} // Unique key for the add card
+                                    onPress={() => router.push({ pathname: './createCollectionPage' })}
+                                >
+                                    <View>
+                                        <View style={[styles.outfitCard, styles.addCard]}>
+                                            <Ionicons name="add-circle-outline" size={40} color="#919CA9" />
+                                        </View>
+                                        <View style={styles.outfitLabelContainer}>
+                                            <Text style={styles.outfitLabel}>New Collection</Text>
+                                        </View>
+                                    </View>
+                                </Pressable>
+                            );
                         }
-                        >
-                        <View style={styles.outfitCard}>
-                            <Image
-                            source={{
-                                uri:
+                        const isRecent = item.type === 'recent';
+                        const cardData = item.data;
+                        return (
+                            <Pressable
+                            key={isRecent ? 'recent' : cardData.id}
+                            onPress={
                                 isRecent
-                                    ? cardData.uri
-                                    : cardData.previewImage ||
-                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1024px-No-Image-Placeholder.svg.png',
-                            }}
-                            style={styles.outfitImage}
-                            resizeMode="cover"
-                            />
-                        </View>
-                        <View style={styles.outfitLabelContainer}>
-                            <Text style={styles.outfitLabel}>
-                            {isRecent ? 'All Outfits' : cardData.name}
-                            </Text>
-                            <Text style={styles.outfitCount}>
-                            {isRecent ? outfitsCount : cardData.outfitCount}
-                            </Text>
-                        </View>
-                        </Pressable>
-                    );
+                                ? navigateToMyOutfits
+                                : () =>
+                                    router.push({
+                                        pathname: './collectionDetail',
+                                        params: {
+                                        collectionId: cardData.id,
+                                        collectionName: cardData.name,
+                                        },
+                                    })
+                            }
+                            >
+                            <View style={styles.outfitCard}>
+                                <Image
+                                source={{
+                                    uri:
+                                    isRecent
+                                        ? cardData.uri
+                                        : cardData.previewImage ||
+                                        'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1024px-No-Image-Placeholder.svg.png',
+                                }}
+                                style={styles.outfitImage}
+                                resizeMode="cover"
+                                />
+                            </View>
+                            <View style={styles.outfitLabelContainer}>
+                                <Text style={styles.outfitLabel}>
+                                    {isRecent ? 'My Outfits' : cardData.name}
+                                </Text>
+                                <Text style={styles.outfitCount}>
+                                    {isRecent ? outfitsCount : cardData.outfit_count}
+                                </Text>
+                            </View>
+                            </Pressable>
+                        );
                     })}
                 </View>
-            </View>
+            </ScrollView>
             <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
         </View>
     );
