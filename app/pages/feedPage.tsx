@@ -20,7 +20,7 @@ type FeedItemData = {
   selectedbrands: string[];
   selectedoccasions: string[];
   userPfp: string;
-  createdAt: Date;
+  createdAt: string;
   reaction?: string | null;
 };
 
@@ -159,10 +159,10 @@ export default function FeedPage() {
               ?.publicUrl || "",
           selectedbrands: row.selectedbrands ?? [],
           selectedoccasions: row.selectedoccasions ?? [],
-          createdAt: new Date(row.created_at),
+          createdAt: row.created_at,
           userPfp: row.profiles?.pfp || defaultPfp,
         }))
-        .filter((post) => post.createdAt > twentyFourHoursAgo);
+        .filter((post) => new Date(post.createdAt) > twentyFourHoursAgo);
       setFeedData(formattedData);
     }
     setLoading(false);

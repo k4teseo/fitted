@@ -1,4 +1,3 @@
-// components/FeedItem.tsx
 import React from "react";
 import { View, Text, Image, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
@@ -13,7 +12,7 @@ type FeedItemData = {
   selectedbrands: string[];
   selectedoccasions: string[];
   userPfp: string;
-  createdAt: Date;
+  createdAt: string; // ✅ changed from Date to string
   reaction?: string | null;
 };
 
@@ -43,11 +42,11 @@ const FeedItem = ({ item, userPfp, onReaction }: FeedItemProps) => {
     >
       <View style={styles.imageContainer}>
         <Image source={{ uri: item.postImage }} style={styles.postImage} />
-        
+
         {/* Emoji Reactions Component */}
         <View style={styles.reactionsContainer}>
-          <EmojiReactions 
-            onReaction={handleReaction} 
+          <EmojiReactions
+            onReaction={handleReaction}
             initialReaction={item.reaction || null}
           />
         </View>
@@ -63,7 +62,7 @@ const FeedItem = ({ item, userPfp, onReaction }: FeedItemProps) => {
 
         <View style={styles.tagsRow}>
           {visibleTags.length > 0 && (
-            <View style={{ flexDirection: 'row' }}>
+            <View style={{ flexDirection: "row" }}>
               {visibleTags.map((tag, index) => (
                 <View key={index} style={styles.tagPill}>
                   <Text style={styles.tagText}>{tag}</Text>
@@ -72,7 +71,7 @@ const FeedItem = ({ item, userPfp, onReaction }: FeedItemProps) => {
             </View>
           )}
           {item.createdAt && (
-            <TimeStamp createdAt={item.createdAt.toISOString()} style={styles.timestamp} />
+            <TimeStamp createdAt={item.createdAt} style={styles.timestamp} />
           )}
         </View>
       </View>
@@ -100,7 +99,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: "100%",
     height: 400,
-    position: 'relative',  // This is crucial for absolute positioning children
+    position: "relative",
   },
   postImage: {
     width: "100%",
@@ -108,10 +107,10 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   reactionsContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 10,
     right: 10,
-    zIndex: 10,  // Ensure it appears above the image
+    zIndex: 10,
   },
   userInfo: {
     backgroundColor: "#202325",
@@ -156,13 +155,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   tagsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginTop: 5,
   },
   timestamp: {
-    color: '#6D757E',
+    color: "#6D757E",
     fontSize: 10,
   },
 });
