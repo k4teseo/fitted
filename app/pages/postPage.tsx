@@ -78,58 +78,6 @@ export default function PostPage() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Reaction[]>([]);
 
-  // Mock comments
-  const mockComments: Comment[] = [
-    {
-      id: "1",
-      username: "coffeexclothes",
-      text: "This outfit is EVERYTHING 🔥 serving looks as always",
-      pfp: defaultPfp,
-      createdAt: "2d",
-      parentId: null,
-    },
-    {
-      id: "2",
-      username: "outfit_user123",
-      text: "Thank you bro",
-      pfp: defaultPfp,
-      createdAt: "2d",
-      parentId: "1",
-    },
-    {
-      id: "3",
-      username: "vintage.viv",
-      text: "Where did you buy your jacket",
-      pfp: defaultPfp,
-      createdAt: "2hr",
-      parentId: null,
-    },
-    {
-      id: "4",
-      username: "outfit_user123",
-      text: "Uniqlo",
-      pfp: defaultPfp,
-      createdAt: "20min",
-      parentId: "3",
-    },
-    {
-      id: "5",
-      username: "cutsypup",
-      text: "streetwear royalty right here",
-      pfp: defaultPfp,
-      createdAt: "2d",
-      parentId: null,
-    },
-    {
-      id: "6",
-      username: "outfit_user123",
-      text: "Thank you!",
-      pfp: defaultPfp,
-      createdAt: "2d",
-      parentId: "5",
-    },
-  ];
-
   // Mock Reactions
   const mockReactions: Reaction[] = [
     {
@@ -241,7 +189,7 @@ export default function PostPage() {
     } = await supabase.auth.getSession();
     if (session?.user?.id && id) {
       const { data } = await supabase
-        .from("post_reactions")
+        .from("reactions")
         .select("reaction")
         .eq("image_id", id)
         .eq("user_id", session.user.id)
@@ -301,7 +249,7 @@ export default function PostPage() {
     const { data, error } = await supabase
       .from("comments")
       .select("id, text, created_at, parent_id, profiles(username, pfp)")
-      .eq("image_id", id) // ✅ CORRECT COLUMN NAME
+      .eq("image_id", id)
       .order("created_at", { ascending: true });
 
     if (error) {
@@ -311,7 +259,7 @@ export default function PostPage() {
 
     const formatted = data.map((c: any) => ({
       id: c.id,
-      text: c.text, // ✅ CORRECT FIELD
+      text: c.text,
       createdAt: new Date(c.created_at).toLocaleString(),
       parentId: c.parent_id,
       username: c.profiles?.username || "Unknown",
@@ -320,20 +268,6 @@ export default function PostPage() {
 
     setComments(formatted);
     setCommentCount(formatted.length);
-  };
-
-  const handleSendComment = (text: string) => {
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      username: "current_user",
-      text,
-      pfp: currentUserPfp,
-      createdAt: "Just now",
-      parentId: replyingTo || null,
-    };
-    setComments([...comments, newComment]);
-    setCommentCount(commentCount + 1);
-    setReplyingTo(null);
   };
 
   const handleReaction = async (emoji: string) => {
@@ -375,12 +309,12 @@ export default function PostPage() {
     // Update in Supabase
     if (existingReaction?.emoji === emoji) {
       await supabase
-        .from("post_reactions")
+        .from("reactions")
         .delete()
-        .match({ post_id: id, user_id: session.user.id });
+        .match({ image_id: id, user_id: session.user.id });
     } else {
-      await supabase.from("post_reactions").upsert({
-        post_id: id,
+      await supabase.from("reactions").upsert({
+        image_id: id,
         user_id: session.user.id,
         reaction: emoji,
       });
@@ -667,7 +601,7 @@ const styles = StyleSheet.create({
   },
   reactionsContainer: {
     position: "absolute",
-    bottom: 40,
+    bottom: 45,
     right: 0,
     zIndex: 10,
   },
