@@ -9,7 +9,7 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
-  useWindowDimensions
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
@@ -19,7 +19,8 @@ import CommentingBar from "../components/CommentingBar";
 import Comments from "../components/comments";
 import EmojiReactions from "../components/EmojiReactions";
 
-const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+const defaultPfp =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
 type Reaction = {
   id: string;
@@ -44,7 +45,7 @@ type PostData = {
 };
 
 type BrandTag = {
-  id: string; 
+  id: string;
   brand_name: string;
   x_position: number;
   y_position: number;
@@ -136,35 +137,36 @@ export default function PostPage() {
       userId: "user1",
       emoji: "❤️",
       userPfp: "https://randomuser.me/api/portraits/women/44.jpg",
-      username: "fashionista"
+      username: "fashionista",
     },
     {
       id: "2",
       userId: "user2",
       emoji: "😂",
       userPfp: "https://randomuser.me/api/portraits/men/32.jpg",
-      username: "styleguy"
+      username: "styleguy",
     },
     {
       id: "3",
-      userId: "user3", 
+      userId: "user3",
       emoji: "😲",
       userPfp: currentUserPfp,
-      username: "current_user"
-    }
+      username: "current_user",
+    },
   ];
 
   useEffect(() => {
-    setComments(mockComments);
-    setCommentCount(mockComments.length);
-    setReactions(mockReactions);
-  }, []);
+    fetchPost();
+    fetchBrandTags();
+    fetchReaction();
+    fetchComments();
+  }, [id]);
 
   const fetchPost = async () => {
     if (!id) return;
     setLoading(true);
 
-    const { data: postData , error: postError } = await supabase
+    const { data: postData, error: postError } = await supabase
       .from("images")
       .select(
         "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata, created_at, user_id"
@@ -197,12 +199,18 @@ export default function PostPage() {
         username: postData.username,
         caption: postData.caption,
         postImage:
-          supabase.storage.from("images").getPublicUrl(postData.image_path)?.data
-            ?.publicUrl || "",
+          supabase.storage.from("images").getPublicUrl(postData.image_path)
+            ?.data?.publicUrl || "",
         selectedbrands: postData.selectedbrands ?? [],
         selectedoccasions: postData.selectedoccasions ?? [],
-        selectedbrands_lower: postData.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
-        selectedoccasions_lower: postData.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
+        selectedbrands_lower:
+          postData.selectedbrands?.map((brand: string) =>
+            brand.toLowerCase()
+          ) ?? [],
+        selectedoccasions_lower:
+          postData.selectedoccasions?.map((occasion: string) =>
+            occasion.toLowerCase()
+          ) ?? [],
         metadata: postData.metadata ?? [],
         created_at: postData.created_at,
         userPfp: pfpUrl,
@@ -228,30 +236,35 @@ export default function PostPage() {
   };
 
   const fetchReaction = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user?.id && id) {
       const { data } = await supabase
         .from("post_reactions")
         .select("reaction")
-        .eq("post_id", id)
+        .eq("image_id", id)
         .eq("user_id", session.user.id)
         .single();
-      
+
       if (data) {
-        setReactions(prev => {
-          const existing = prev.find(r => r.userId === session.user.id);
+        setReactions((prev) => {
+          const existing = prev.find((r) => r.userId === session.user.id);
           if (existing) {
-            return prev.map(r => 
-              r.userId === session.user.id ? {...r, emoji: data.reaction} : r
+            return prev.map((r) =>
+              r.userId === session.user.id ? { ...r, emoji: data.reaction } : r
             );
           }
-          return [...prev, {
-            id: Date.now().toString(),
-            userId: session.user.id,
-            emoji: data.reaction,
-            userPfp: currentUserPfp,
-            username: "You"
-          }];
+          return [
+            ...prev,
+            {
+              id: Date.now().toString(),
+              userId: session.user.id,
+              emoji: data.reaction,
+              userPfp: currentUserPfp,
+              username: "You",
+            },
+          ];
         });
       }
     }
@@ -265,7 +278,9 @@ export default function PostPage() {
 
   useEffect(() => {
     const fetchCurrentUserPfp = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (session?.user?.id) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -279,6 +294,33 @@ export default function PostPage() {
     };
     fetchCurrentUserPfp();
   }, []);
+
+  const fetchComments = async () => {
+    if (!id) return;
+
+    const { data, error } = await supabase
+      .from("comments")
+      .select("id, text, created_at, parent_id, profiles(username, pfp)")
+      .eq("image_id", id) // ✅ CORRECT COLUMN NAME
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching comments:", error);
+      return;
+    }
+
+    const formatted = data.map((c: any) => ({
+      id: c.id,
+      text: c.text, // ✅ CORRECT FIELD
+      createdAt: new Date(c.created_at).toLocaleString(),
+      parentId: c.parent_id,
+      username: c.profiles?.username || "Unknown",
+      pfp: c.profiles?.pfp || defaultPfp,
+    }));
+
+    setComments(formatted);
+    setCommentCount(formatted.length);
+  };
 
   const handleSendComment = (text: string) => {
     const newComment: Comment = {
@@ -295,20 +337,26 @@ export default function PostPage() {
   };
 
   const handleReaction = async (emoji: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session?.user?.id) return;
 
-    const existingReaction = reactions.find(r => r.userId === session.user.id);
+    const existingReaction = reactions.find(
+      (r) => r.userId === session.user.id
+    );
     let updatedReactions = [...reactions];
 
     if (existingReaction) {
       if (existingReaction.emoji === emoji) {
         // Remove reaction
-        updatedReactions = reactions.filter(r => r.userId !== session.user.id);
+        updatedReactions = reactions.filter(
+          (r) => r.userId !== session.user.id
+        );
       } else {
         // Update reaction
-        updatedReactions = reactions.map(r => 
-          r.userId === session.user.id ? {...r, emoji} : r
+        updatedReactions = reactions.map((r) =>
+          r.userId === session.user.id ? { ...r, emoji } : r
         );
       }
     } else {
@@ -318,12 +366,12 @@ export default function PostPage() {
         userId: session.user.id,
         emoji,
         userPfp: currentUserPfp,
-        username: "You"
+        username: "You",
       });
     }
 
     setReactions(updatedReactions);
-    
+
     // Update in Supabase
     if (existingReaction?.emoji === emoji) {
       await supabase
@@ -331,13 +379,11 @@ export default function PostPage() {
         .delete()
         .match({ post_id: id, user_id: session.user.id });
     } else {
-      await supabase
-        .from("post_reactions")
-        .upsert({
-          post_id: id,
-          user_id: session.user.id,
-          reaction: emoji,
-        });
+      await supabase.from("post_reactions").upsert({
+        post_id: id,
+        user_id: session.user.id,
+        reaction: emoji,
+      });
     }
   };
 
@@ -384,9 +430,9 @@ export default function PostPage() {
           <Pressable style={styles.backButton} onPress={() => router.back()}>
             <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
           </Pressable>
-          <Image 
-            source={{ uri: post.userPfp || defaultPfp }} 
-            style={styles.profileImage} 
+          <Image
+            source={{ uri: post.userPfp || defaultPfp }}
+            style={styles.profileImage}
           />
           <Text style={styles.username}>{post.username}</Text>
         </View>
@@ -414,13 +460,16 @@ export default function PostPage() {
           {reactions.length > 0 && (
             <View style={styles.reactionIndicators}>
               {reactions.slice(0, 3).map((reaction, index) => (
-                <View key={reaction.id} style={[
-                  styles.reactionIndicator,
-                  { zIndex: reactions.length - index }
-                ]}>
-                  <Image 
-                    source={{ uri: reaction.userPfp }} 
-                    style={styles.reactionPfp} 
+                <View
+                  key={reaction.id}
+                  style={[
+                    styles.reactionIndicator,
+                    { zIndex: reactions.length - index },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: reaction.userPfp }}
+                    style={styles.reactionPfp}
                   />
                   <View style={styles.emojiBadge}>
                     <Text style={styles.emojiText}>{reaction.emoji}</Text>
@@ -429,7 +478,9 @@ export default function PostPage() {
               ))}
               {reactions.length > 3 && (
                 <View style={styles.moreReactions}>
-                  <Text style={styles.moreReactionsText}>+{reactions.length - 3}</Text>
+                  <Text style={styles.moreReactionsText}>
+                    +{reactions.length - 3}
+                  </Text>
                 </View>
               )}
             </View>
@@ -437,9 +488,12 @@ export default function PostPage() {
 
           {/* Emoji Reactions Button (Right Side) */}
           <View style={styles.reactionsContainer}>
-            <EmojiReactions 
-              onReaction={handleReaction} 
-              initialReaction={reactions.find(r => r.username === "current_user")?.emoji || null}
+            <EmojiReactions
+              onReaction={handleReaction}
+              initialReaction={
+                reactions.find((r) => r.username === "current_user")?.emoji ||
+                null
+              }
             />
           </View>
 
@@ -449,18 +503,19 @@ export default function PostPage() {
           </Pressable>
 
           {/* Brand Tags Overlay */}
-          {showTags && brandTags.map((tag) => {
-            const leftPos = tag.x_position * photoLayout.width;
-            const topPos = tag.y_position * photoLayout.height;
-            return (
-              <View
-                key={tag.id}
-                style={[styles.brandTagPill, { left: leftPos, top: topPos }]}
-              >
-                <Text style={styles.brandTagText}>{tag.brand_name}</Text>
-              </View>
-            );
-          })}
+          {showTags &&
+            brandTags.map((tag) => {
+              const leftPos = tag.x_position * photoLayout.width;
+              const topPos = tag.y_position * photoLayout.height;
+              return (
+                <View
+                  key={tag.id}
+                  style={[styles.brandTagPill, { left: leftPos, top: topPos }]}
+                >
+                  <Text style={styles.brandTagText}>{tag.brand_name}</Text>
+                </View>
+              );
+            })}
         </View>
 
         {/* Post Content */}
@@ -489,12 +544,13 @@ export default function PostPage() {
       <CommentingBar
         commentCount={commentCount}
         onCommentPress={toggleComments}
-        onSendComment={handleSendComment}
+        onCommentPosted={fetchComments} // <- this is key
         currentUserPfp={currentUserPfp}
         replyingTo={null}
         onCancelReply={() => setReplyingTo(null)}
+        postId={post.id} // <- must pass this so CommentingBar can insert
       />
-      
+
       {/* Comments Modal */}
       <Comments
         showComments={showComments}
@@ -504,7 +560,8 @@ export default function PostPage() {
         currentUserPfp={currentUserPfp}
         replyingTo={replyingTo}
         setReplyingTo={setReplyingTo}
-        handleSendComment={handleSendComment}
+        onCommentPosted={fetchComments}
+        postId={post.id}
       />
     </SafeAreaView>
   );
@@ -521,14 +578,14 @@ const styles = StyleSheet.create({
     height: 123,
     paddingVertical: 15,
     paddingHorizontal: 20,
-    flexDirection: 'row',
+    flexDirection: "row",
     alignItems: "flex-end",
     position: "absolute",
     zIndex: 10,
   },
   headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     flex: 1,
   },
   backButton: {
@@ -564,11 +621,11 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   reactionIndicators: {
-    position: 'absolute',
+    position: "absolute",
     left: 10,
     bottom: 10,
-    flexDirection: 'column-reverse',
-    alignItems: 'flex-start',
+    flexDirection: "column-reverse",
+    alignItems: "flex-start",
     gap: 2,
   },
   reactionIndicator: {
@@ -579,37 +636,37 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 2,
-    borderColor: '#15181B',
+    borderColor: "#15181B",
   },
   emojiBadge: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -5,
     right: -5,
-    backgroundColor: '#15181B',
+    backgroundColor: "#15181B",
     borderRadius: 10,
     width: 20,
     height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#2D3338',
+    borderColor: "#2D3338",
   },
   emojiText: {
     fontSize: 12,
   },
   moreReactions: {
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: "rgba(0,0,0,0.7)",
     borderRadius: 10,
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 5,
   },
   moreReactionsText: {
-    color: 'white',
+    color: "white",
     fontSize: 12,
   },
   reactionsContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 40,
     right: 0,
     zIndex: 10,

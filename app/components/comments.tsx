@@ -30,7 +30,8 @@ type CommentsProps = {
   currentUserPfp: string;
   replyingTo: string | null;
   setReplyingTo: (id: string | null) => void;
-  handleSendComment: (text: string) => void;
+  onCommentPosted: () => void;
+  postId: string;
 };
 
 export default function Comments({
@@ -41,8 +42,10 @@ export default function Comments({
   currentUserPfp,
   replyingTo,
   setReplyingTo,
-  handleSendComment,
+  onCommentPosted,
+  postId,
 }: CommentsProps) {
+  console.log("🧠 Incoming comments from postPage:", comments);
   const getReplies = (commentId: string) => {
     return comments.filter((comment) => comment.parentId === commentId);
   };
@@ -50,13 +53,18 @@ export default function Comments({
   const renderComment = (comment: Comment, isReply = false) => {
     const replies = getReplies(comment.id);
     return (
-      <View key={comment.id} style={[styles.commentItem, isReply && styles.replyItem]}>
+      <View
+        key={comment.id}
+        style={[styles.commentItem, isReply && styles.replyItem]}
+      >
         <Image
           source={{ uri: comment.pfp }}
           style={[styles.commentItemPfp, isReply && styles.replyPfp]}
         />
         <View style={styles.commentContent}>
-          <Text style={[styles.commentUsername, isReply && styles.replyUsername]}>
+          <Text
+            style={[styles.commentUsername, isReply && styles.replyUsername]}
+          >
             {comment.username}
           </Text>
           <Text style={[styles.commentText, isReply && styles.replyText]}>
@@ -89,13 +97,11 @@ export default function Comments({
               <CommentingBar
                 commentCount={0}
                 onCommentPress={() => {}}
-                onSendComment={(text) => {
-                  handleSendComment(text);
-                  setReplyingTo(null);
-                }}
+                onCommentPosted={onCommentPosted}
                 currentUserPfp={currentUserPfp}
                 replyingTo={comment.id}
                 onCancelReply={() => setReplyingTo(null)}
+                postId={postId}
               />
             </View>
           )}
@@ -104,7 +110,9 @@ export default function Comments({
     );
   };
 
-  const topLevelComments = comments.filter((comment) => !comment.parentId);
+  const topLevelComments = comments.filter(
+    (comment) => comment.parentId === null
+  );
 
   return (
     <Modal

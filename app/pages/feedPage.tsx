@@ -1,10 +1,8 @@
 // app/feedPage.tsx
 import React, { useState, useEffect } from "react";
-import { useRouter, useFocusEffect } from "expo-router";
+import { useFocusEffect } from "expo-router";
 import {
   SafeAreaView,
-  View,
-  Text,
   FlatList,
   ActivityIndicator,
   StyleSheet,
@@ -30,7 +28,9 @@ const defaultPfp =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
 export default function FeedPage() {
-  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("home");
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
+    "home"
+  );
   const [feedData, setFeedData] = useState<FeedItemData[]>([]);
   const [loading, setLoading] = useState(true);
   const [userPfp, setUserPfp] = useState<string>(defaultPfp);
@@ -61,21 +61,21 @@ export default function FeedPage() {
   }, []);
 
   const handleReaction = async (postId: string, emoji: string) => {
-    setReactions(prev => ({
+    setReactions((prev) => ({
       ...prev,
-      [postId]: emoji || null
+      [postId]: emoji || null,
     }));
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user?.id) {
       if (emoji) {
-        await supabase
-          .from("post_reactions")
-          .upsert({
-            post_id: postId,
-            user_id: session.user.id,
-            reaction: emoji,
-          });
+        await supabase.from("post_reactions").upsert({
+          post_id: postId,
+          user_id: session.user.id,
+          reaction: emoji,
+        });
       } else {
         await supabase
           .from("post_reactions")
@@ -86,13 +86,15 @@ export default function FeedPage() {
   };
 
   const loadReactions = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (session?.user?.id) {
       const { data } = await supabase
         .from("post_reactions")
         .select("post_id, reaction")
         .eq("user_id", session.user.id);
-      
+
       if (data) {
         const reactionsMap = data.reduce((acc, curr) => {
           acc[curr.post_id] = curr.reaction;
@@ -188,8 +190,8 @@ export default function FeedPage() {
           data={feedData}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <FeedItem 
-              item={{ ...item, reaction: reactions[item.id] || null }} 
+            <FeedItem
+              item={{ ...item, reaction: reactions[item.id] || null }}
               userPfp={item.userPfp}
               onReaction={handleReaction}
             />
