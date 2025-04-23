@@ -34,6 +34,8 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
   postId,
 }) => {
   const [commentText, setCommentText] = useState("");
+  const [isSaved, setIsSaved] = useState(false);
+  const [showCollections, setShowCollections] = useState(false);
 
   const handleSend = async () => {
     if (!commentText.trim()) return;
@@ -127,12 +129,19 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
             />
           </TouchableOpacity>
           <Text style={styles.count}>{commentCount}</Text>
-          <FontAwesome
-            name="star-o"
-            size={20}
-            color="#6D757E"
-            style={styles.star}
-          />
+          <TouchableOpacity
+            onPress={() => {
+              if (!isSaved) setShowCollections(true);
+              setIsSaved(!isSaved);
+            }}
+          >
+            <FontAwesome
+              name={isSaved ? "star" : "star-o"}
+              size={20}
+              color={isSaved ? "#FFD700" : "#6D757E"}
+              style={styles.star}
+            />
+</TouchableOpacity>
         </View>
       )}
     </View>

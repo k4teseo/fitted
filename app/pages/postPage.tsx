@@ -451,22 +451,7 @@ export default function PostPage() {
             ))}
           </View>
         )}
-        {/* Save to Collection Button 
-        <View style={styles.saveRow}>
-          <TouchableOpacity
-            onPress={() => {
-              if (!isSaved) setShowCollections(true); // only open Save panel if not already saved
-              setIsSaved(!isSaved); // toggle star state
-            }}
-          >
-            <Text
-              style={{ fontSize: 22, color: isSaved ? "#FFD700" : "#FFFFFF" }}
-            >
-              {isSaved ? "⭐" : "☆"}
-            </Text>
-          </TouchableOpacity>
-        </View> */}
-
+        
         {/* Timestamp */}
         {post.created_at && (
           <View style={styles.timestampContainer}>
