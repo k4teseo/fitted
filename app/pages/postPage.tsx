@@ -9,11 +9,13 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  TouchableOpacity,
   useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import SaveToCollection from "../components/SaveToCollection";
 import TimeStamp from "../components/TimeStamp";
 import CommentingBar from "../components/CommentingBar";
 import Comments from "../components/comments";
@@ -51,6 +53,13 @@ type BrandTag = {
   y_position: number;
 };
 
+const dummyCollections = [
+  { id: "EverydayWear", name: "Everyday Wear" },
+  { id: "winter", name: "Winter" },
+  { id: "birthday", name: "Birthday" },
+  { id: "dresses", name: "Dresses" },
+];
+
 type Comment = {
   id: string;
   username: string;
@@ -71,6 +80,10 @@ export default function PostPage() {
   const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
   const [showTags, setShowTags] = useState(false);
   const [photoLayout, setPhotoLayout] = useState({ width: 0, height: 0 });
+
+  //Saving
+  const [isSaved, setIsSaved] = useState(false);
+  const [showCollections, setShowCollections] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentCount, setCommentCount] = useState(0);
@@ -438,6 +451,21 @@ export default function PostPage() {
             ))}
           </View>
         )}
+        {/* Save to Collection Button 
+        <View style={styles.saveRow}>
+          <TouchableOpacity
+            onPress={() => {
+              if (!isSaved) setShowCollections(true); // only open Save panel if not already saved
+              setIsSaved(!isSaved); // toggle star state
+            }}
+          >
+            <Text
+              style={{ fontSize: 22, color: isSaved ? "#FFD700" : "#FFFFFF" }}
+            >
+              {isSaved ? "⭐" : "☆"}
+            </Text>
+          </TouchableOpacity>
+        </View> */}
 
         {/* Timestamp */}
         {post.created_at && (
@@ -446,6 +474,17 @@ export default function PostPage() {
           </View>
         )}
       </ScrollView>
+      {/* Save to Collection Bottom Sheet */}
+      {showCollections && (
+        <SaveToCollection
+          collections={dummyCollections} // Replace with your actual collections
+          onSave={(collectionId) => {
+            console.log("Saved to collection:", collectionId);
+            setShowCollections(false);
+          }}
+          onClose={() => setShowCollections(false)}
+        />
+      )}
 
       {/* Commenting Bar */}
       <CommentingBar
@@ -624,5 +663,17 @@ const styles = StyleSheet.create({
   timestampContainer: {
     marginTop: -10,
     marginBottom: 10,
+  },
+  saveRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    paddingHorizontal: 20,
+    marginTop: 10,
+  },
+
+  starButton: {
+    backgroundColor: "#222",
+    borderRadius: 20,
+    padding: 8,
   },
 });
