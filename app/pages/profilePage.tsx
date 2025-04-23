@@ -1,10 +1,20 @@
+// app/profilePage.tsx
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable } from 'react-native';
+import {
+  View, 
+  Text, 
+  TextInput,  
+  TouchableOpacity, 
+  Image, 
+  useWindowDimensions, 
+  StyleSheet, 
+  Pressable 
+} from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import BottomNavBar from '../components/BottomNavBar';
 import { supabase } from "@/lib/supabase";
-import FriendRequestPage from './friendRequestPage';
+import NotificationsPage from './notificationsPage';
 import SignOutButton from '../components/signOut';
 import { useCurrentUser } from '../hook/useCurrentUser'; // Import the custom hook
 
@@ -17,6 +27,7 @@ export default function ProfilePage() {
     const [friendCount, setFriendCount] = useState(0);
     const [outfitsCount, setOutfitsCount] = useState(0);
     const [recentOutfit, setRecentOutfit] = useState<any>(null);
+    const [notificationCount, setNotificationCount] = useState(0);
 
     const currentUserId = useCurrentUser(); // Use the custom hook to get the current user ID
     const [userId, setUserId] = useState<string | null>(null);
@@ -82,6 +93,25 @@ export default function ProfilePage() {
             fetchUserData();
             setUserId(currentUserId);
         }
+    }, [currentUserId]);
+
+    // Fetch notifications
+    useEffect(() => {
+        const fetchNotifications = async () => {
+        if (!currentUserId) return;
+        
+        // Fetch friend requests count
+        const { count } = await supabase
+            .from('friends')
+            .select('*', { count: 'exact' })
+            .eq('user_id_1', currentUserId)
+            .eq('status', 'pending')
+            .maybeSingle();
+    
+        setNotificationCount(count || 0);
+        };
+    
+        fetchNotifications();
     }, [currentUserId]);
 
     const router = useRouter();
@@ -242,22 +272,48 @@ export default function ProfilePage() {
             fontSize: 16,
             fontWeight: '600',
         },
+        notificationBadge: {
+            position: 'absolute',
+            right: -2,
+            top: -1,
+            backgroundColor: 'red',
+            borderRadius: 10,
+            width: 12,
+            height: 12,
+            justifyContent: 'center',
+            alignItems: 'center',
+          },
+          notificationText: {
+            color: 'white',
+            fontSize: 8,
+            fontWeight: 'bold',
+          },
     });
 
     return (
         <View style={styles.container}>
             {showFriendRequests && (
-                <FriendRequestPage onClose={() => setShowFriendRequests(false)} />
+                <NotificationsPage onClose={() => setShowFriendRequests(false)} />
             )}
+            
             <View style={styles.header}>
                 <View style={styles.headerIconsContainer}>
                     <TouchableOpacity
                         onPress={() => setShowFriendRequests(true)}
                         style={styles.iconButton}
                     >
-                        <Ionicons name="person-add" size={24} color="white" />
+                        <View>
+                        <Ionicons name="notifications-outline" size={25} color="#747E89" />
+                        {notificationCount > 0 && (
+                            <View style={styles.notificationBadge}>
+                            <Text style={styles.notificationText}>
+                                {notificationCount > 9 ? '9+' : notificationCount}
+                            </Text>
+                            </View>
+                        )}
+                        </View>
                     </TouchableOpacity>
-                        <SignOutButton /> 
+                    <SignOutButton />
                 </View>
             </View>
 
@@ -274,10 +330,13 @@ export default function ProfilePage() {
             <Text style={styles.usernameText}>{username}</Text>
 
             <View style={styles.statsContainer}>
-                <View style={styles.statItem}>
+                <Pressable 
+                    style={styles.statItem}
+                    onPress={() => router.push("./friendsPage")}
+                >
                     <Text style={styles.statNumber}>{friendCount}</Text>
                     <Text style={styles.statLabel}>Friends</Text>
-                </View>
+                </Pressable>
                 <View style={styles.statItem}>
                     <Text style={styles.statNumber}>{outfitsCount}</Text>
                     <Text style={styles.statLabel}>Outfits</Text>

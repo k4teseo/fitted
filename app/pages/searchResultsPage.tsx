@@ -390,36 +390,40 @@ export default function SearchResultsPage() {
       height: 44,
       borderRadius: 22,
       marginRight: 12,
+      marginHorizontal: 8,
     },
     addButton: {
-      paddingHorizontal: 16,
+      paddingHorizontal: 20,
       paddingVertical: 6,
       borderRadius: 30,
-      backgroundColor: "#60A5FA",
+      marginVertical: 8,
+      marginHorizontal: 8,
     },
-    addText: {
-      color: "#141618",
-      fontSize: 11,
-      fontWeight: "600",
-    },
-    removeIcon: {
-      marginLeft: 8,
-    },
-    // add: {
-    //   backgroundColor: "#60A5FA",
-    // },
-    friends: {
-      borderWidth: 1,
-      borderColor: "#F5EEE3",
-    },
-    friendsText: {
-      borderColor: "#F5EEE3",
+    addFriend: {
+      backgroundColor: "#60A5FA", // Blue for "Add Friend"
     },
     pending: {
-      backgroundColor: "#3A3F45",
+      backgroundColor: "transparent", // Transparent for "Pending"
+      borderWidth: 1,
+      borderColor: "#747E89", // Gray border
+    },
+    friends: {
+      backgroundColor: "transparent", // Transparent for "Friends"
+      borderWidth: 1,
+      borderColor: "#60A5FA", // Blue border
+    },  
+    buttonText: {
+      fontSize: 13,
+      fontWeight: "600",
+    },
+    addFriendText: {
+      color: "#141618", // Dark text for "Add Friend"
     },
     pendingText: {
-      color: "#F5EEE3",
+      color: "#747E89", // Gray text for "Pending"
+    },
+    friendsText: {
+      color: "#60A5FA", // Blue text for "Friends"
     },
     loadingContainer: {
       flex: 1,
@@ -478,13 +482,13 @@ export default function SearchResultsPage() {
         <Image source={{ uri: item.avatar }} style={styles.avatar} />
         <Text style={styles.userUsername}>{item.username}</Text>
       </View>
-      <View style={{ flexDirection: "row", alignItems: "center" }}>
         <TouchableOpacity
           disabled={item.status === "Friends"}
           style={[
             styles.addButton,
-            item.status === "Friends" && styles.friends,
+            item.status === "none" && styles.addFriend,
             item.status === "Pending" && styles.pending,
+            item.status === "Friends" && styles.friends,
           ]}
           onPress={() => {
             if (item.status === "Pending") {
@@ -496,9 +500,10 @@ export default function SearchResultsPage() {
         >
           <Text
             style={[
-              styles.addText,
+              styles.buttonText,
               item.status === "Friends" && styles.friendsText,
               item.status === "Pending" && styles.pendingText,
+              item.status === "none" && styles.addFriendText,
             ]}
           >
             {item.status === "Friends"
@@ -508,11 +513,7 @@ export default function SearchResultsPage() {
               : "Add Friend"}
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.removeIcon}>
-          <MaterialIcons name="close" size={20} color="#747E89" />
-        </TouchableOpacity>
       </View>
-    </View>
   );
 
   const renderEmptyState = () => (

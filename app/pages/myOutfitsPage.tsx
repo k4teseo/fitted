@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, Image, useWindowDimensions, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 
   export default function MyOutfitsPage() {
@@ -64,9 +64,9 @@ import { supabase } from '@/lib/supabase';
             marginBottom: 20,
         },
         title: {
-            color: '#C7D1DB',
-            fontSize: 20,
-            fontWeight: '600',
+            color: '#7F8A95',
+            fontSize: width * 0.06,
+            fontWeight: '400',
             marginTop: 55,
             marginBottom: 20,
         },
@@ -115,7 +115,7 @@ import { supabase } from '@/lib/supabase';
                     style={styles.backButton} 
                     onPress={() => router.back()}
                 >
-                    <Ionicons name="arrow-back" size={24} color="white" />
+                    <MaterialIcons name="navigate-before" size={30} color="white" />
                 </TouchableOpacity>
                 <Text style={styles.title}>My Outfits</Text>
             </View>

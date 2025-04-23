@@ -9,12 +9,27 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import TimeStamp from "../components/TimeStamp";
+import CommentingBar from "../components/CommentingBar";
+import Comments from "../components/comments";
+import EmojiReactions from "../components/EmojiReactions";
 
-// Adjust this type as needed for your own table schema
+const defaultPfp =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+
+type Reaction = {
+  id: string;
+  userId: string;
+  emoji: string;
+  userPfp: string;
+  username: string;
+};
+
 type PostData = {
   id: string;
   username: string;
@@ -25,69 +40,120 @@ type PostData = {
   selectedbrands_lower: string[];
   selectedoccasions_lower: string[];
   metadata: string[];
+  created_at: string;
+  userPfp?: string;
 };
 
 type BrandTag = {
-  id: string; // or number, depending on your DB
+  id: string;
   brand_name: string;
   x_position: number;
   y_position: number;
 };
 
+type Comment = {
+  id: string;
+  username: string;
+  text: string;
+  pfp: string;
+  createdAt: string;
+  replies?: Comment[];
+  parentId?: string | null;
+};
+
 export default function PostPage() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-
-  // Main post data
+  const { width, height } = useWindowDimensions();
+  const [session, setSession] = useState<any>(null);
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // For brand tags that were added during upload
   const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
   const [showTags, setShowTags] = useState(false);
-
-  // We need the layout of the Image container to position tags properly
   const [photoLayout, setPhotoLayout] = useState({ width: 0, height: 0 });
+  const [showComments, setShowComments] = useState(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
+  const [currentUserPfp, setCurrentUserPfp] = useState(defaultPfp);
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [reactions, setReactions] = useState<Reaction[]>([]);
 
-  // 1) Fetch the main post from "images"
+  useEffect(() => {
+    fetchPost();
+    fetchBrandTags();
+    fetchReactions();
+    fetchComments();
+  }, [id]);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
+    };
+
+    getSession();
+  }, []);
+
   const fetchPost = async () => {
     if (!id) return;
     setLoading(true);
 
-    const { data, error } = await supabase
+    const { data: postData, error: postError } = await supabase
       .from("images")
       .select(
-        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata"
+        "id, username, caption, image_path, selectedbrands, selectedoccasions, metadata, created_at, user_id"
       )
       .eq("id", id)
       .single();
 
-    if (error) {
-      console.error("Error fetching post:", error);
+    if (postError) {
+      console.error("Error fetching post:", postError);
       setLoading(false);
       return;
     }
 
-    if (data) {
-      const postData: PostData = {
-        id: data.id,
-        username: data.username,
-        caption: data.caption,
+    if (postData) {
+      let pfpUrl = defaultPfp;
+      if (postData.user_id) {
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("pfp")
+          .eq("id", postData.user_id)
+          .single();
+
+        if (!profileError && profileData?.pfp) {
+          pfpUrl = profileData.pfp;
+        }
+      }
+
+      const formattedPost: PostData = {
+        id: postData.id,
+        username: postData.username,
+        caption: postData.caption,
         postImage:
-          supabase.storage.from("images").getPublicUrl(data.image_path)?.data
-            ?.publicUrl || "",
-        selectedbrands: data.selectedbrands ?? [],
-        selectedoccasions: data.selectedoccasions ?? [],
-        selectedbrands_lower: data.selectedbrands?.map((brand: string) => brand.toLowerCase()) ?? [], 
-        selectedoccasions_lower: data.selectedoccasions?.map((occasion: string) => occasion.toLowerCase()) ?? [],
-        metadata: data.metadata ?? [],
+          supabase.storage.from("images").getPublicUrl(postData.image_path)
+            ?.data?.publicUrl || "",
+        selectedbrands: postData.selectedbrands ?? [],
+        selectedoccasions: postData.selectedoccasions ?? [],
+        selectedbrands_lower:
+          postData.selectedbrands?.map((brand: string) =>
+            brand.toLowerCase()
+          ) ?? [],
+        selectedoccasions_lower:
+          postData.selectedoccasions?.map((occasion: string) =>
+            occasion.toLowerCase()
+          ) ?? [],
+        metadata: postData.metadata ?? [],
+        created_at: postData.created_at,
+        userPfp: pfpUrl,
       };
-      setPost(postData);
+      setPost(formattedPost);
     }
     setLoading(false);
   };
 
-  // 2) Fetch brand tags from "image_brand_tags"
   const fetchBrandTags = async () => {
     if (!id) return;
 
@@ -103,12 +169,139 @@ export default function PostPage() {
     }
   };
 
+  const fetchReactions = async () => {
+    if (!id) return;
+
+    const { data, error } = await supabase
+      .from("reactions")
+      .select(
+        `
+        id,
+        user_id,
+        reaction,
+        profiles (
+          username,
+          pfp
+        )
+      `
+      )
+      .eq("image_id", id);
+
+    if (error) {
+      console.error("Error fetching reactions:", error);
+      return;
+    }
+
+    console.log("Fetched reactions:", data); // You should now see ALL users
+
+    const formatted = data.map((r: any) => ({
+      id: r.id,
+      userId: r.user_id,
+      emoji: r.reaction,
+      username: r.profiles?.username || "Unknown",
+      userPfp: r.profiles?.pfp || defaultPfp,
+    }));
+
+    setReactions(formatted);
+  };
+
   useEffect(() => {
     fetchPost();
     fetchBrandTags();
+    fetchReactions();
   }, [id]);
 
-  // Basic loading / error checks
+  useEffect(() => {
+    const fetchCurrentUserPfp = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("pfp")
+          .eq("id", session.user.id)
+          .single();
+        if (profile?.pfp) {
+          setCurrentUserPfp(profile.pfp);
+        }
+      }
+    };
+    fetchCurrentUserPfp();
+  }, []);
+
+  const fetchComments = async () => {
+    if (!id) return;
+
+    const { data, error } = await supabase
+      .from("comments")
+      .select("id, text, created_at, parent_id, profiles(username, pfp)")
+      .eq("image_id", id)
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching comments:", error);
+      return;
+    }
+
+    const formatted = data.map((c: any) => ({
+      id: c.id,
+      text: c.text,
+      createdAt: new Date(c.created_at).toLocaleString(),
+      parentId: c.parent_id,
+      username: c.profiles?.username || "Unknown",
+      pfp: c.profiles?.pfp || defaultPfp,
+    }));
+
+    setComments(formatted);
+    setCommentCount(formatted.length);
+  };
+
+  const handleReaction = async (emoji: string) => {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+
+    const userId = session.user.id;
+
+    const existingReaction = reactions.find((r) => r.userId === userId);
+
+    if (existingReaction?.emoji === emoji) {
+      // remove reaction
+      await supabase.from("reactions").delete().match({
+        image_id: id,
+        user_id: userId,
+      });
+    } else {
+      // upsert new reaction or update existing one
+      const { error: upsertError } = await supabase.from("reactions").upsert(
+        {
+          image_id: id,
+          user_id: userId,
+          reaction: emoji,
+        },
+        {
+          onConflict: "image_id,user_id",
+        }
+      );
+
+      if (upsertError) {
+        console.error("Error updating reaction:", upsertError);
+      }
+    }
+
+    await fetchReactions(); // refresh the reactions list
+  };
+
+  const toggleComments = () => {
+    setShowComments(!showComments);
+  };
+
+  const toggleTags = () => {
+    setShowTags((prev) => !prev);
+  };
+
   if (!id) {
     return (
       <View style={styles.container}>
@@ -134,26 +327,29 @@ export default function PostPage() {
     );
   }
 
-  // Combine arrays for tag “pills” (if you still want them at the bottom, separate from brandTags)
   const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
-
-  // Toggle showing brand tags on the photo
-  const toggleTags = () => {
-    setShowTags((prev) => !prev);
-  };
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Top Bar with username and back arrow */}
+      {/* Top Bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
-        </Pressable>
-        <Text style={styles.username}>{post.username}</Text>
+        <View style={styles.headerContent}>
+          <Pressable style={styles.backButton} onPress={() => router.back()}>
+            <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
+          </Pressable>
+          <Image
+            source={{ uri: post.userPfp || defaultPfp }}
+            style={styles.profileImage}
+          />
+          <Text style={styles.username}>{post.username}</Text>
+        </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* Image Container with brand tags overlay */}
+      <ScrollView
+        contentContainerStyle={styles.scrollContainer}
+        keyboardDismissMode="on-drag"
+      >
+        {/* Image Container with Reactions */}
         <View
           style={styles.imageContainer}
           onLayout={(e) => {
@@ -167,15 +363,55 @@ export default function PostPage() {
             resizeMode="cover"
           />
 
-          {/* Tag icon in bottom-right corner */}
+          {/* Reaction Indicators (Left Side) */}
+          {reactions.length > 0 && (
+            <View style={styles.reactionIndicators}>
+              {reactions.slice(0, 3).map((reaction, index) => (
+                <View
+                  key={reaction.id}
+                  style={[
+                    styles.reactionIndicator,
+                    { zIndex: reactions.length - index },
+                  ]}
+                >
+                  <Image
+                    source={{ uri: reaction.userPfp }}
+                    style={styles.reactionPfp}
+                  />
+                  <View style={styles.emojiBadge}>
+                    <Text style={styles.emojiText}>{reaction.emoji}</Text>
+                  </View>
+                </View>
+              ))}
+              {reactions.length > 3 && (
+                <View style={styles.moreReactions}>
+                  <Text style={styles.moreReactionsText}>
+                    +{reactions.length - 3}
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Emoji Reactions Button (Right Side) */}
+          <View style={styles.reactionsContainer}>
+            <EmojiReactions
+              onReaction={handleReaction}
+              initialReaction={
+                reactions.find((r) => r.userId === session?.user?.id)?.emoji ||
+                null
+              }
+            />
+          </View>
+
+          {/* Tag Button */}
           <Pressable style={styles.tagIconContainer} onPress={toggleTags}>
             <MaterialIcons name="tag" size={24} color="#F5EEE3" />
           </Pressable>
 
-          {/* Conditionally render brand tags */}
+          {/* Brand Tags Overlay */}
           {showTags &&
             brandTags.map((tag) => {
-              // Multiply x_position/y_position by container width/height to place the pill
               const leftPos = tag.x_position * photoLayout.width;
               const topPos = tag.y_position * photoLayout.height;
               return (
@@ -189,10 +425,10 @@ export default function PostPage() {
             })}
         </View>
 
-        {/* Post Title (User’s caption) */}
+        {/* Post Content */}
         <Text style={styles.postTitle}>{post.caption}</Text>
 
-        {/* Tag “pills” at the bottom (for brand + occasions from your arrays) */}
+        {/* Tags */}
         {combinedTags.length > 0 && (
           <View style={styles.tagsContainer}>
             {combinedTags.map((tag, index) => (
@@ -202,7 +438,38 @@ export default function PostPage() {
             ))}
           </View>
         )}
+
+        {/* Timestamp */}
+        {post.created_at && (
+          <View style={styles.timestampContainer}>
+            <TimeStamp createdAt={post.created_at} />
+          </View>
+        )}
       </ScrollView>
+
+      {/* Commenting Bar */}
+      <CommentingBar
+        commentCount={commentCount}
+        onCommentPress={toggleComments}
+        onCommentPosted={fetchComments} // <- this is key
+        currentUserPfp={currentUserPfp}
+        replyingTo={null}
+        onCancelReply={() => setReplyingTo(null)}
+        postId={post.id} // <- must pass this so CommentingBar can insert
+      />
+
+      {/* Comments Modal */}
+      <Comments
+        showComments={showComments}
+        setShowComments={setShowComments}
+        comments={comments}
+        commentCount={commentCount}
+        currentUserPfp={currentUserPfp}
+        replyingTo={replyingTo}
+        setReplyingTo={setReplyingTo}
+        onCommentPosted={fetchComments}
+        postId={post.id}
+      />
     </SafeAreaView>
   );
 }
@@ -213,29 +480,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#15181B",
   },
   topBar: {
+    backgroundColor: "#2D3338",
+    width: "100%",
+    height: 123,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    position: "absolute",
+    zIndex: 10,
+  },
+  headerContent: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 15,
-    paddingTop: 30,
-    paddingBottom: 30,
-    backgroundColor: "#2D3338",
+    flex: 1,
   },
   backButton: {
-    marginRight: 20,
+    padding: 8,
+    marginBottom: 0,
+  },
+  profileImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 5,
+    marginLeft: 10,
   },
   username: {
     color: "#7F8A95",
     fontSize: 24,
     fontWeight: "500",
+    marginLeft: 8,
   },
   scrollContainer: {
     padding: 20,
+    paddingTop: 80,
   },
-  // Container that wraps the image + the brand tags overlay + the tag icon
   imageContainer: {
     position: "relative",
     width: "100%",
-    height: 500, // or any fixed aspect ratio
+    height: 500,
     marginBottom: 20,
     backgroundColor: "#333",
   },
@@ -243,7 +527,57 @@ const styles = StyleSheet.create({
     width: "100%",
     height: "100%",
   },
-  // The button in the bottom-right corner for toggling tags
+  reactionIndicators: {
+    position: "absolute",
+    left: 10,
+    bottom: 10,
+    flexDirection: "column-reverse",
+    alignItems: "flex-start",
+    gap: 2,
+  },
+  reactionIndicator: {
+    marginBottom: 3,
+  },
+  reactionPfp: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#15181B",
+  },
+  emojiBadge: {
+    position: "absolute",
+    bottom: -5,
+    right: -5,
+    backgroundColor: "#15181B",
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#2D3338",
+  },
+  emojiText: {
+    fontSize: 12,
+  },
+  moreReactions: {
+    backgroundColor: "rgba(0,0,0,0.7)",
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 5,
+  },
+  moreReactionsText: {
+    color: "white",
+    fontSize: 12,
+  },
+  reactionsContainer: {
+    position: "absolute",
+    bottom: 45,
+    right: 0,
+    zIndex: 10,
+  },
   tagIconContainer: {
     position: "absolute",
     bottom: 10,
@@ -251,8 +585,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.6)",
     borderRadius: 20,
     padding: 8,
+    zIndex: 9,
   },
-  // A small “pill” for brand tags on the photo
   brandTagPill: {
     position: "absolute",
     backgroundColor: "#202325",
@@ -265,9 +599,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   postTitle: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: "#A5C6E8",
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#F5EEE3",
     marginBottom: 14,
   },
   tagsContainer: {
@@ -276,7 +610,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tagPill: {
-    backgroundColor: "#262A2F",
+    backgroundColor: "#98A7B7",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 4,
@@ -284,7 +618,11 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   tagText: {
-    color: "#6D757E",
-    fontSize: 14,
+    color: "#141618",
+    fontSize: 10,
+  },
+  timestampContainer: {
+    marginTop: -10,
+    marginBottom: 10,
   },
 });

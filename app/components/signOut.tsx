@@ -13,7 +13,7 @@ type SignOutButtonProps = {
 
 export default function SignOutButton({
   iconSize = 28,
-  iconColor = '#63B0FC',
+  iconColor = '#747E89',
   buttonPadding = 0,
   buttonStyle = {},
   iconStyle = {}
