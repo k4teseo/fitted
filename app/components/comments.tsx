@@ -45,7 +45,6 @@ export default function Comments({
   onCommentPosted,
   postId,
 }: CommentsProps) {
-  console.log("🧠 Incoming comments from postPage:", comments);
   const getReplies = (commentId: string) => {
     return comments.filter((comment) => comment.parentId === commentId);
   };

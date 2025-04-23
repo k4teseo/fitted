@@ -1,12 +1,12 @@
 // components/EmojiReactions.tsx
-import React, { useState } from "react";
-import { 
-  View, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Animated, 
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  TouchableOpacity,
+  StyleSheet,
+  Animated,
   Easing,
-  Text 
+  Text,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
 
@@ -17,9 +17,14 @@ type EmojiReactionsProps = {
   initialReaction?: string | null;
 };
 
-const EmojiReactions = ({ onReaction, initialReaction = null }: EmojiReactionsProps) => {
+const EmojiReactions = ({
+  onReaction,
+  initialReaction = null,
+}: EmojiReactionsProps) => {
   const [expanded, setExpanded] = useState(false);
-  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(initialReaction);
+  const [selectedEmoji, setSelectedEmoji] = useState<string | null>(
+    initialReaction
+  );
   const [animation] = useState(new Animated.Value(0));
 
   const toggleExpanded = () => {
@@ -41,13 +46,19 @@ const EmojiReactions = ({ onReaction, initialReaction = null }: EmojiReactionsPr
 
   const emojiRowStyle = {
     opacity: animation,
-    transform: [{
-      translateY: animation.interpolate({
-        inputRange: [0, 1],
-        outputRange: [20, 0], // Moves up from bottom
-      }),
-    }],
+    transform: [
+      {
+        translateY: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [20, 0], // Moves up from bottom
+        }),
+      },
+    ],
   };
+
+  useEffect(() => {
+    setSelectedEmoji(initialReaction);
+  }, [initialReaction]);
 
   return (
     <View style={styles.container}>
@@ -62,11 +73,8 @@ const EmojiReactions = ({ onReaction, initialReaction = null }: EmojiReactionsPr
           </TouchableOpacity>
         ))}
       </Animated.View>
-      
-      <TouchableOpacity
-        onPress={toggleExpanded}
-        style={styles.mainButton}
-      >
+
+      <TouchableOpacity onPress={toggleExpanded} style={styles.mainButton}>
         {selectedEmoji ? (
           <Text style={styles.emoji}>{selectedEmoji}</Text>
         ) : (
@@ -82,7 +90,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: 10,
     right: 10,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   mainButton: {
     width: 40,
@@ -94,8 +102,8 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   emojiRow: {
-    position: 'absolute',
-    bottom: 50, 
+    position: "absolute",
+    bottom: 50,
     right: -3,
     flexDirection: "column",
     backgroundColor: "#2F3439",

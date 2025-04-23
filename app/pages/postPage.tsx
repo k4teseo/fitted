@@ -174,13 +174,25 @@ export default function PostPage() {
 
     const { data, error } = await supabase
       .from("reactions")
-      .select("id, user_id, reaction, profiles(username, pfp)")
+      .select(
+        `
+        id,
+        user_id,
+        reaction,
+        profiles (
+          username,
+          pfp
+        )
+      `
+      )
       .eq("image_id", id);
 
     if (error) {
       console.error("Error fetching reactions:", error);
       return;
     }
+
+    console.log("Fetched reactions:", data); // You should now see ALL users
 
     const formatted = data.map((r: any) => ({
       id: r.id,
@@ -251,49 +263,35 @@ export default function PostPage() {
     } = await supabase.auth.getSession();
     if (!session?.user?.id) return;
 
-    const existingReaction = reactions.find(
-      (r) => r.userId === session.user.id
-    );
-    let updatedReactions = [...reactions];
+    const userId = session.user.id;
 
-    if (existingReaction) {
-      if (existingReaction.emoji === emoji) {
-        // Remove reaction
-        updatedReactions = reactions.filter(
-          (r) => r.userId !== session.user.id
-        );
-      } else {
-        // Update reaction
-        updatedReactions = reactions.map((r) =>
-          r.userId === session.user.id ? { ...r, emoji } : r
-        );
-      }
-    } else {
-      // Add new reaction
-      updatedReactions.push({
-        id: Date.now().toString(),
-        userId: session.user.id,
-        emoji,
-        userPfp: currentUserPfp,
-        username: "You",
-      });
-    }
+    const existingReaction = reactions.find((r) => r.userId === userId);
 
-    setReactions(updatedReactions);
-
-    // Update in Supabase
     if (existingReaction?.emoji === emoji) {
-      await supabase
-        .from("reactions")
-        .delete()
-        .match({ image_id: id, user_id: session.user.id });
-    } else {
-      await supabase.from("reactions").upsert({
+      // remove reaction
+      await supabase.from("reactions").delete().match({
         image_id: id,
-        user_id: session.user.id,
-        reaction: emoji,
+        user_id: userId,
       });
+    } else {
+      // upsert new reaction or update existing one
+      const { error: upsertError } = await supabase.from("reactions").upsert(
+        {
+          image_id: id,
+          user_id: userId,
+          reaction: emoji,
+        },
+        {
+          onConflict: "image_id,user_id",
+        }
+      );
+
+      if (upsertError) {
+        console.error("Error updating reaction:", upsertError);
+      }
     }
+
+    await fetchReactions(); // refresh the reactions list
   };
 
   const toggleComments = () => {
