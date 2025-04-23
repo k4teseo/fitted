@@ -10,23 +10,6 @@ import { useCurrentUser } from '../hook/useCurrentUser'; // Import the custom ho
 
 const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
-const dummyCollections = [
-    {
-      id: 'Everyday Wear',
-      name: 'Saved',
-      outfitCount: 10,
-      previewImage: 'https://via.placeholder.com/150', // replace with a sample image URL
-      isSaved: true,
-    },
-    {
-      id: 'winter',
-      name: 'Winter',
-      outfitCount: 10,
-      previewImage: 'https://via.placeholder.com/150',
-      isSaved: true,
-    },
-  ];
-
 export default function ProfilePage() {
     const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
     const { width, height } = useWindowDimensions();
@@ -34,12 +17,18 @@ export default function ProfilePage() {
     const [friendCount, setFriendCount] = useState(0);
     const [outfitsCount, setOutfitsCount] = useState(0);
     const [recentOutfit, setRecentOutfit] = useState<any>(null);
+    const [collections, setCollections] = useState<any[]>([]);
 
     const currentUserId = useCurrentUser(); // Use the custom hook to get the current user ID
     const [userId, setUserId] = useState<string | null>(null);
     const [username, setUsername] = useState("");
     const [name, setName] = useState("");
     const [profileImageUrl, setProfileImageUrl] = useState(defaultPfp);
+
+    const allCards = [
+        { type: 'recent', data: recentOutfit },
+        ...collections.map((c) => ({ type: 'collection', data: c }))
+    ];
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -92,6 +81,17 @@ export default function ProfilePage() {
                         uri: publicUrl
                     });
                 }
+            }
+            // Fetch collections data
+            const { data: userCollections, error: collectionsError } = await supabase
+                .from('collections')
+                .select('*')
+                .eq('user_id', currentUserId);
+
+            if (collectionsError) {
+                console.error('Error fetching collections:', collectionsError);
+            } else {
+                setCollections(userCollections);
             }
         };
 
@@ -227,11 +227,10 @@ export default function ProfilePage() {
             borderTopRightRadius: width * 0.09,
         },
         outfitCardContainer: {
-            width: width * 0.4,
+            width: width * 0.45,
+            marginRight: width * 0.025,
             marginBottom: 20,
-            marginLeft: 10,
-            marginTop: 10,
-        },
+        },        
         outfitCard: {
             width: width * 0.4,
             height: width * 0.6,
@@ -259,27 +258,11 @@ export default function ProfilePage() {
             fontSize: 16,
             fontWeight: '600',
         },
-        collectionsContainer: {
+        gridContainer: {
             flexDirection: 'row',
             flexWrap: 'wrap',
             justifyContent: 'space-between',
-            paddingHorizontal: 16,
-          },
-          
-          collectionCard: {
-            width: '48%',
-            marginBottom: 20,
-            borderRadius: 12,
-            overflow: 'hidden',
-            backgroundColor: '#f3f3f3',
-            position: 'relative',
-        },
-        starOverlay: {
-            position: 'absolute',
-            top: 8,
-            right: 8,
-            zIndex: 1,
-          },
+        },        
     });
 
     return (
@@ -332,62 +315,50 @@ export default function ProfilePage() {
 
             {/* Body Section with Outfits Preview */}
             <View style={styles.body}>
-                <View style={styles.outfitCardContainer}>
-                {recentOutfit ? (
-                        <>
-                            <Pressable onPress={navigateToMyOutfits}>
-                                <View style={styles.outfitCard}>
-                                    <Image 
-                                        source={{ uri: recentOutfit.uri }} 
-                                        style={styles.outfitImage}
-                                        resizeMode="cover"
-                                    />
-                                </View>
-                            </Pressable>
-                            <View style={styles.outfitLabelContainer}>
-                                <Text style={styles.outfitLabel}>My Outfits</Text>
-                                <Text style={styles.outfitCount}>{outfitsCount}</Text>
-                            </View>
-                        </>
-                    ) : (
-                        <Text style={{ color: '#919CA9' }}>No outfits yet</Text>
-                    )}
-                </View>
-                <View>
-                    <View style={styles.collectionsContainer}>
-                        {dummyCollections.map((collection) => (
-                            <TouchableOpacity
-                                key={collection.id}
-                                style={styles.collectionCard}
-                                onPress={() => router.push({
-                                    pathname: "./collectionDetail",
-                                    params: { 
-                                        collectionId: collection.id,
-                                        collectionName: collection.name
-                                    }
-                                })}
-                            >
-                                {collection.isSaved && (
-                                <View style={styles.starOverlay}>
-                                    <Text style={{ fontSize: 16 }}>⭐️</Text>
-                                </View> 
-                                )}
-                                {collection.previewImage && (
-                                    <View style={{ width: '100%', height: 100, overflow: 'hidden' }}>
-                                        <Image
-                                        source={{ uri: collection.previewImage }}
-                                        style={{ width: '100%', height: '100%' }}
-                                        resizeMode="cover"
-                                        />
-                                    </View>
-                                    )}
-                                <View style={{ padding: 10 }}>
-                                    <Text style={{ color: "#C7D1DB", fontSize: 16 }}>{collection.name}</Text>
-                                    <Text style={{ color: "#9AA8B6", fontSize: 14 }}>{collection.outfitCount} outfits</Text>
-                                </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                <View style={styles.gridContainer}>
+                    {allCards.map((item, index) => {
+                    const isRecent = item.type === 'recent';
+                    const cardData = item.data;
+                    return (
+                        <Pressable
+                        key={isRecent ? 'recent' : cardData.id}
+                        onPress={
+                            isRecent
+                            ? navigateToMyOutfits
+                            : () =>
+                                router.push({
+                                    pathname: './collectionDetail',
+                                    params: {
+                                    collectionId: cardData.id,
+                                    collectionName: cardData.name,
+                                    },
+                                })
+                        }
+                        >
+                        <View style={styles.outfitCard}>
+                            <Image
+                            source={{
+                                uri:
+                                isRecent
+                                    ? cardData.uri
+                                    : cardData.previewImage ||
+                                    'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/No-Image-Placeholder.svg/1024px-No-Image-Placeholder.svg.png',
+                            }}
+                            style={styles.outfitImage}
+                            resizeMode="cover"
+                            />
+                        </View>
+                        <View style={styles.outfitLabelContainer}>
+                            <Text style={styles.outfitLabel}>
+                            {isRecent ? 'All Outfits' : cardData.name}
+                            </Text>
+                            <Text style={styles.outfitCount}>
+                            {isRecent ? outfitsCount : cardData.outfitCount}
+                            </Text>
+                        </View>
+                        </Pressable>
+                    );
+                    })}
                 </View>
             </View>
             <BottomNavBar activeTab={activeTab} setActiveTab={setActiveTab} />
