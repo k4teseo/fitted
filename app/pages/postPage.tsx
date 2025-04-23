@@ -65,7 +65,7 @@ export default function PostPage() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const { width, height } = useWindowDimensions();
-
+  const [session, setSession] = useState<any>(null);
   const [post, setPost] = useState<PostData | null>(null);
   const [loading, setLoading] = useState(true);
   const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
@@ -78,37 +78,23 @@ export default function PostPage() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [reactions, setReactions] = useState<Reaction[]>([]);
 
-  // Mock Reactions
-  const mockReactions: Reaction[] = [
-    {
-      id: "1",
-      userId: "user1",
-      emoji: "❤️",
-      userPfp: "https://randomuser.me/api/portraits/women/44.jpg",
-      username: "fashionista",
-    },
-    {
-      id: "2",
-      userId: "user2",
-      emoji: "😂",
-      userPfp: "https://randomuser.me/api/portraits/men/32.jpg",
-      username: "styleguy",
-    },
-    {
-      id: "3",
-      userId: "user3",
-      emoji: "😲",
-      userPfp: currentUserPfp,
-      username: "current_user",
-    },
-  ];
-
   useEffect(() => {
     fetchPost();
     fetchBrandTags();
-    fetchReaction();
+    fetchReactions();
     fetchComments();
   }, [id]);
+
+  useEffect(() => {
+    const getSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
+    };
+
+    getSession();
+  }, []);
 
   const fetchPost = async () => {
     if (!id) return;
@@ -183,45 +169,34 @@ export default function PostPage() {
     }
   };
 
-  const fetchReaction = async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (session?.user?.id && id) {
-      const { data } = await supabase
-        .from("reactions")
-        .select("reaction")
-        .eq("image_id", id)
-        .eq("user_id", session.user.id)
-        .single();
+  const fetchReactions = async () => {
+    if (!id) return;
 
-      if (data) {
-        setReactions((prev) => {
-          const existing = prev.find((r) => r.userId === session.user.id);
-          if (existing) {
-            return prev.map((r) =>
-              r.userId === session.user.id ? { ...r, emoji: data.reaction } : r
-            );
-          }
-          return [
-            ...prev,
-            {
-              id: Date.now().toString(),
-              userId: session.user.id,
-              emoji: data.reaction,
-              userPfp: currentUserPfp,
-              username: "You",
-            },
-          ];
-        });
-      }
+    const { data, error } = await supabase
+      .from("reactions")
+      .select("id, user_id, reaction, profiles(username, pfp)")
+      .eq("image_id", id);
+
+    if (error) {
+      console.error("Error fetching reactions:", error);
+      return;
     }
+
+    const formatted = data.map((r: any) => ({
+      id: r.id,
+      userId: r.user_id,
+      emoji: r.reaction,
+      username: r.profiles?.username || "Unknown",
+      userPfp: r.profiles?.pfp || defaultPfp,
+    }));
+
+    setReactions(formatted);
   };
 
   useEffect(() => {
     fetchPost();
     fetchBrandTags();
-    fetchReaction();
+    fetchReactions();
   }, [id]);
 
   useEffect(() => {
@@ -425,7 +400,7 @@ export default function PostPage() {
             <EmojiReactions
               onReaction={handleReaction}
               initialReaction={
-                reactions.find((r) => r.username === "current_user")?.emoji ||
+                reactions.find((r) => r.userId === session?.user?.id)?.emoji ||
                 null
               }
             />
