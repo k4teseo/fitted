@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   replyInputContainer: {
-    marginTop: 10,
+    marginTop: 75,
     marginBottom: 10,
   },
 });

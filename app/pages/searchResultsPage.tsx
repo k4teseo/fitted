@@ -287,7 +287,8 @@ export default function SearchResultsPage() {
     },
     contentContainer: {
       paddingTop: height * 0.14,
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
+      paddingBottom: 85,
     },
     tabContainer: {
       flexDirection: "row",
@@ -319,16 +320,18 @@ export default function SearchResultsPage() {
       position: "relative",
     },
     gridItem: {
-      flex: 1,
       backgroundColor: "#2D3338",
       borderRadius: 13,
-      margin: 8,
+      margin: 2,
+      marginBottom: 10,
+      marginRight: 10,
       overflow: "hidden",
     },
     postUserRow: {
       flexDirection: "row",
       alignItems: "center",
       marginBottom: 4,
+      width: '100%',
     },
     avatarSmall: {
       width: 20,
@@ -337,12 +340,14 @@ export default function SearchResultsPage() {
       marginRight: 8,
     },
     imagePlaceholder: {
+      width: '100%',
       height: 200,
-      width: 174,
       backgroundColor: "#444",
     },
     gridContent: {
       padding: 10,
+      alignSelf: 'flex-start',
+      width: '100%',
     },
     // Post username style (smaller)
     postusername: {
@@ -366,7 +371,7 @@ export default function SearchResultsPage() {
     },
     tag: {
       marginTop: 8,
-      backgroundColor: "#98A7B7",
+      backgroundColor: "#63B1FF",
       alignSelf: "flex-start",
       color: "#262A2F",
       fontSize: 9,
@@ -442,11 +447,14 @@ export default function SearchResultsPage() {
     },
   });
 
-  const renderPostItem = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity
-      style={styles.gridItem}
-      onPress={() => handlePostPress(item.id)}
-    >
+  const renderPostItem = ({ item }: { item: SearchResult }) => {
+    const itemWidth = (width - 32) / 2; // Calculate width based on screen
+    
+    return (
+      <TouchableOpacity
+        style={[styles.gridItem, { width: itemWidth }]}
+        onPress={() => handlePostPress(item.id)}
+      >
       <Image
         source={{
           uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`,
@@ -454,27 +462,28 @@ export default function SearchResultsPage() {
         style={styles.imagePlaceholder}
         resizeMode="cover"
       />
-      <View style={styles.gridContent}>
-        <View style={styles.postUserRow}>
-          <Image
-            source={{
-              uri:
-                userResults.find((u) => u.username === item.username)?.avatar ||
-                defaultPfp,
-            }}
-            style={styles.avatarSmall}
-          />
-          <Text style={styles.postusername}>{item.username}</Text>
-        </View>
-        <Text style={styles.caption} numberOfLines={1}>
-          {item.caption}
-        </Text>
-        {item.selectedoccasions?.length > 0 && (
-          <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.gridContent}>
+          <View style={styles.postUserRow}>
+            <Image
+              source={{
+                uri:
+                  userResults.find((u) => u.username === item.username)?.avatar ||
+                  defaultPfp,
+              }}
+              style={styles.avatarSmall}
+            />
+            <Text style={styles.postusername}>{item.username}</Text>
+          </View>
+          <Text style={styles.caption} numberOfLines={1}>
+            {item.caption}
+          </Text>
+          {item.selectedoccasions?.length > 0 && (
+            <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
+          )}
+          </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderUserItem = ({ item }: { item: UserResult }) => (
     <View style={styles.userRow}>

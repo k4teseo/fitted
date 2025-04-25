@@ -7,6 +7,9 @@ import {
   StyleSheet,
   Image,
   Pressable,
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
@@ -34,77 +37,90 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
   postId,
 }) => {
   const [commentText, setCommentText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSend = async () => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim() || isSubmitting) return;
 
-    const {
-      data: { session },
-      error: sessionError,
-    } = await supabase.auth.getSession();
+    setIsSubmitting(true);
 
-    if (sessionError || !session?.user?.id) {
-      console.error("❌ Auth session error:", sessionError);
-      return;
+    try {
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
+      if (sessionError || !session?.user?.id) {
+        console.error("❌ Auth session error:", sessionError);
+        return;
+      }
+
+      const userId = session.user.id;
+
+      const { error: insertError } = await supabase
+        .from("comments")
+        .insert({
+          image_id: postId,
+          user_id: userId,
+          text: commentText,
+          parent_id: replyingTo || null,
+      });
+
+      if (insertError) throw insertError;
+
+      setCommentText("");
+      onCommentPosted();
+      if (onCancelReply) onCancelReply();
+    } catch (error) {
+      console.error("❌ Failed to post comment:", error);
+    } finally {
+      setIsSubmitting(false);
     }
-
-    const userId = session.user.id;
-
-    const commentPayload = {
-      image_id: postId,
-      user_id: userId,
-      text: commentText,
-      parent_id: replyingTo || null,
-    };
-
-    console.log("📤 Sending comment payload to Supabase:", commentPayload);
-    console.log("auth.uid()", userId);
-    console.log("comment payload user_id", userId);
-
-    const { data, error: insertError } = await supabase
-      .from("comments")
-      .insert(commentPayload)
-      .select(); // get inserted rows back
-
-    if (insertError) {
-      console.error("❌ Failed to insert comment into Supabase:", insertError);
-      return;
-    }
-
-    console.log("✅ Comment inserted successfully:", data);
-
-    setCommentText("");
-    onCommentPosted();
-    if (onCancelReply) onCancelReply();
   };
 
-  if (replyingTo) {
-    return (
-      <View style={styles.replyContainer}>
-        <Pressable onPress={onCancelReply} style={styles.cancelButton}>
-          <MaterialIcons name="close" size={20} color="#6D757E" />
-        </Pressable>
-        <TextInput
-          style={styles.replyInput}
-          placeholder="Write your reply..."
-          placeholderTextColor="#6D757E"
-          value={commentText}
-          onChangeText={setCommentText}
-          onSubmitEditing={handleSend}
-          autoFocus
-        />
-        <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-          <Ionicons name="arrow-up-circle" size={30} color="#60A5FA" />
-        </TouchableOpacity>
-      </View>
-    );
-  }
+  const renderInputBar = () => {
+    if (replyingTo) {
+      return (
+        <View style={styles.replyContainer}>
+          <Pressable 
+            onPress={onCancelReply} 
+            style={styles.cancelButton}
+            accessibilityLabel="Cancel reply"
+          >
+            <MaterialIcons name="close" size={20} color="#6D757E" />
+          </Pressable>
+          <TextInput
+            style={styles.replyInput}
+            placeholder="Write your reply..."
+            placeholderTextColor="#6D757E"
+            value={commentText}
+            onChangeText={setCommentText}
+            onSubmitEditing={handleSend}
+            autoFocus
+            editable={!isSubmitting}
+          />
+          <TouchableOpacity 
+            onPress={handleSend} 
+            style={styles.sendButton}
+            disabled={isSubmitting}
+            accessibilityLabel="Send reply"
+          >
+            {isSubmitting ? (
+              <ActivityIndicator size="small" color="#60A5FA" />
+            ) : (
+              <Ionicons name="arrow-up-circle" size={30} color="#60A5FA" />
+            )}
+          </TouchableOpacity>
+        </View>
+      );
+    }
 
   return (
     <View style={styles.container}>
       <Image
         source={{ uri: currentUserPfp || defaultPfp }}
         style={styles.profileImage}
+        accessibilityIgnoresInvertColors
       />
       <TextInput
         style={styles.input}
@@ -112,26 +128,41 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
         placeholderTextColor="#6D757E"
         value={commentText}
         onChangeText={setCommentText}
+        editable={!isSubmitting}
       />
       {commentText ? (
-        <TouchableOpacity onPress={handleSend}>
+        <TouchableOpacity 
+          onPress={handleSend}
+          disabled={isSubmitting}
+          accessibilityLabel="Send comment"
+        >
+          {isSubmitting ? (
+            <ActivityIndicator size="small" color="#60A5FA" />
+          ) : (
           <Ionicons name="arrow-up-circle" size={30} color="#60A5FA" />
+          )}
         </TouchableOpacity>
       ) : (
         <View style={styles.actions}>
-          <TouchableOpacity onPress={onCommentPress}>
+          <TouchableOpacity 
+            onPress={onCommentPress}
+            accessibilityLabel="View comments"
+          >
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={20}
               color="#6D757E"
             />
           </TouchableOpacity>
-          <Text style={styles.count}>{commentCount}</Text>
+          <Text style={styles.count} accessibilityLabel={`${commentCount} comments`}>
+            {commentCount}
+          </Text>
           <FontAwesome
             name="star-o"
             size={20}
             color="#6D757E"
             style={styles.star}
+            accessibilityLabel="Like post"
           />
         </View>
       )}
@@ -139,7 +170,24 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
   );
 };
 
+return (
+  <KeyboardAvoidingView
+    behavior={Platform.OS === "ios" ? "padding" : "height"}
+    keyboardVerticalOffset={Platform.select({ ios: 0, android: 0 })}
+    style={styles.keyboardAvoidingView}
+  >
+    {renderInputBar()}
+  </KeyboardAvoidingView>
+);
+};
+
 const styles = StyleSheet.create({
+  keyboardAvoidingView: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
   container: {
     position: "absolute",
     bottom: 0,
@@ -148,7 +196,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#212529",
     flexDirection: "row",
     alignItems: "center",
-    paddingTop: 15,
+    paddingTop: 20,
     paddingBottom: 35,
     paddingHorizontal: 25,
     minHeight: 70,

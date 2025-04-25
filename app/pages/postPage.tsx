@@ -649,7 +649,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tagPill: {
-    backgroundColor: "#98A7B7",
+    backgroundColor: "#63B1FF",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 4,

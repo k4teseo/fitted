@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   tagPill: {
-    backgroundColor: "#9BABBC",
+    backgroundColor: "#63B1FF",
     borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
