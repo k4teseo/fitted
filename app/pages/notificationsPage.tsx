@@ -14,6 +14,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser } from '../hook/useCurrentUser';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TimeStamp from '../components/TimeStamp';
 
 type UserProfile = {
@@ -64,6 +65,20 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     }
     return a.read ? 1 : -1;
   });
+
+  // Load read status from AsyncStorage
+  const loadReadStatus = async () => {
+    try {
+      const storedReadStatus = await AsyncStorage.getItem('readComments');
+      if (storedReadStatus) {
+        return JSON.parse(storedReadStatus);
+      }
+      return {};
+    } catch (error) {
+      console.error('Error loading read status:', error);
+      return {};
+    }
+  };
 
   const fetchFriendRequests = async () => {
     if (!currentUserId) return;
@@ -133,6 +148,9 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
       return;
     }
     
+    // Load previously read status
+    const readStatus = await loadReadStatus();
+
     const formattedComments: Comment[] = (commentsData || []).map(comment => {
       const profile = Array.isArray(comment.profiles) 
         ? comment.profiles[0] || { username: 'Unknown', pfp: defaultPfp }
@@ -153,7 +171,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
           ? supabase.storage.from('images').getPublicUrl(image.image_path)?.data?.publicUrl 
           : '',
         postId: comment.image_id,
-        read: false,
+        read: readStatus[comment.id] || false, // Use stored read status
         created_at: comment.created_at
       };
     });
@@ -193,7 +211,8 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const handleNotificationPress = (item: Comment) => {
+  const handleNotificationPress = async (item: Comment) => {
+    // Update local state
     setComments(prevComments => 
       prevComments.map(comment => 
         comment.id === item.id 
@@ -201,7 +220,17 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
           : comment
       )
     );
-  router.push(`./postPage?id=${item.postId}`);
+    
+    // Save to persistent storage
+    try {
+      const readStatus = await loadReadStatus();
+      readStatus[item.id] = true;
+      await AsyncStorage.setItem('readComments', JSON.stringify(readStatus));
+    } catch (error) {
+      console.error('Error saving read status:', error);
+    }
+    
+    router.push(`./postPage?id=${item.postId}`);
   };
 
   useEffect(() => {
@@ -230,7 +259,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
         <Text style={styles.usernameText}>{item.sender_profile?.username}</Text>
         <Text style={styles.notificationText}>
           {"wants to be your friend "}
-          <TimeStamp createdAt={item.created_at} />
+          <TimeStamp createdAt={item.created_at} style={{ fontSize: 10}} />
         </Text>
         {item.text && (
           <Text style={styles.commentPreview}>"{item.text}"</Text>
@@ -269,7 +298,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
         <Text style={styles.usernameText}>{item.user.username}</Text>
         <Text style={styles.notificationText}>
           {"commented on your post "}
-          <TimeStamp createdAt={item.created_at} />
+          <TimeStamp createdAt={item.created_at} style={{ fontSize: 10}}/>
         </Text>
         <Text style={styles.commentPreview}>"{item.text}"</Text>
       </View>
@@ -335,6 +364,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     },
     content: {
       paddingHorizontal: width * 0.05,
+      flex: 1,
     },
     notificationItem: {
       flexDirection: 'row',
@@ -429,7 +459,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     },
     emptyState: {
       flex: 1,
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       paddingTop: height * 0.3,
     },

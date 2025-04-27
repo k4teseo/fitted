@@ -240,7 +240,7 @@ export default function AddOccasion() {
       {/* Top Bar */}
       <View style={styles.topBar}>
         <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+          <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
         </Pressable>
         <View style={{ flex: 1 }}>
           <Text style={styles.topTitle}>Add Occasion</Text>
@@ -427,8 +427,8 @@ const styles = StyleSheet.create({
   },
   // Small circle or area for the X
   xCircle: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
