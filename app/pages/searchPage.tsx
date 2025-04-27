@@ -10,22 +10,46 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import { useRouter, useFocusEffect } from "expo-router";
 import SearchBar from "../components/searchbar";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { supabase } from "@/lib/supabase";
+import { useCurrentUser } from "../hook/useCurrentUser";
 
 export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [showAllRecent, setShowAllRecent] = useState(false);
+  const currentUserId = useCurrentUser();
 
   const router = useRouter();
   const { width, height } = useWindowDimensions();
 
   useEffect(() => {
     const loadRecentSearches = async () => {
+      if (!currentUserId) return;
+
       try {
-        const savedSearches = await AsyncStorage.getItem("recentSearches");
-        if (savedSearches) {
-          setRecentSearches(JSON.parse(savedSearches));
+        // First try to get the user's searches
+        const { data, error } = await supabase
+          .from('user_searches')
+          .select('searches')
+          .eq('user_id', currentUserId);
+    
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // User has existing searches
+          setRecentSearches(data[0].searches || []);
+        } else {
+          // No record exists yet - create one
+          const { error: insertError } = await supabase
+            .from('user_searches')
+          .insert([{ 
+            user_id: currentUserId, 
+            searches: [] 
+          }]);
+          
+          if (insertError) throw insertError;
+          
+          setRecentSearches([]);
         }
       } catch (error) {
         console.error("Failed to load recent searches", error);
@@ -33,54 +57,91 @@ export default function SearchPage() {
     };
 
     loadRecentSearches();
-  }, []);
+  }, [currentUserId]);
 
   useFocusEffect(
     useCallback(() => {
       const clearSearchIfNeeded = async () => {
-        const shouldClear = await AsyncStorage.getItem("shouldClearSearch");
-        if (shouldClear === "true") {
+        const shouldClear = await supabase
+          .from('user_settings')
+          .select('clear_search')
+          .eq('user_id', currentUserId)
+          .single();
+
+        if (shouldClear.data?.clear_search) {
           setSearchQuery("");
-          await AsyncStorage.removeItem("shouldClearSearch");
+          await supabase
+            .from('user_settings')
+            .update({ clear_search: false })
+            .eq('user_id', currentUserId);
         }
       };
-      clearSearchIfNeeded();
-    }, [])
-  )
+      
+      if (currentUserId) {
+        clearSearchIfNeeded();
+      }
+    }, [currentUserId])
+  );
 
   const updateRecentSearches = async (searchTerm: string) => {
-    // Create a new array without the existing term (case insensitive)
-    const updatedSearches = recentSearches.filter(
-      (s) => s.toLowerCase() !== searchTerm.toLowerCase()
-    );
+    if (!currentUserId) return [];
     
-    // Add the search term to the beginning of the array
-    const newRecentSearches = [searchTerm, ...updatedSearches].slice(0, 10);
-    
-    setRecentSearches(newRecentSearches);
-    await AsyncStorage.setItem("recentSearches", JSON.stringify(newRecentSearches));
-    return newRecentSearches;
+    try {
+      // Remove existing term (case insensitive)
+      const updatedSearches = recentSearches.filter(
+        s => s.toLowerCase() !== searchTerm.toLowerCase()
+      );
+      
+      // Add new term to beginning
+      const newRecentSearches = [searchTerm, ...updatedSearches].slice(0, 10);
+      
+      // Update in database
+      const { error } = await supabase
+        .from('user_searches')
+        .update({ searches: newRecentSearches })
+        .eq('user_id', currentUserId);
+
+      if (error) throw error;
+      
+      setRecentSearches(newRecentSearches);
+      return newRecentSearches;
+    } catch (error) {
+      console.error("Failed to update recent searches", error);
+      return recentSearches;
+    }
   };
 
   const deleteRecentSearch = async (index: number) => {
-    // Create a new array without the item at the specified index
-    const updatedSearches = recentSearches.filter((_, i) => i !== index);
-    setRecentSearches(updatedSearches);
-
+    if (!currentUserId) return;
+    
     try {
-      await AsyncStorage.setItem(
-        "recentSearches",
-        JSON.stringify(updatedSearches)
-      );
+      const updatedSearches = recentSearches.filter((_, i) => i !== index);
+      
+      const { error } = await supabase
+        .from('user_searches')
+        .update({ searches: updatedSearches })
+        .eq('user_id', currentUserId);
+
+      if (error) throw error;
+      
+      setRecentSearches(updatedSearches);
     } catch (error) {
-      console.error("Failed to save recent searches", error);
+      console.error("Failed to delete recent search", error);
     }
   };
 
   const clearAllRecentSearches = async () => {
-    setRecentSearches([]);
+    if (!currentUserId) return;
+    
     try {
-      await AsyncStorage.removeItem("recentSearches");
+      const { error } = await supabase
+        .from('user_searches')
+        .update({ searches: [] })
+        .eq('user_id', currentUserId);
+
+      if (error) throw error;
+      
+      setRecentSearches([]);
     } catch (error) {
       console.error("Failed to clear recent searches", error);
     }
@@ -88,7 +149,7 @@ export default function SearchPage() {
 
   const handleSubmit = async (text?: string) => {
     const searchTerm = text || searchQuery.trim();
-    if (searchTerm) {
+    if (searchTerm ) {
       await updateRecentSearches(searchTerm);
       setSearchQuery("");
       router.push({
@@ -174,7 +235,7 @@ export default function SearchPage() {
       marginRight: 12,
     },
     itemText: {
-      color: "#F5EEE3",
+      color: "#7F8D9A",
       fontSize: 14,
     },
     deleteButton: {
@@ -187,6 +248,17 @@ export default function SearchPage() {
     },
     contentContainer: {
       paddingTop: height * 0.14,
+      flex: 1,
+    },
+    emptyStateContainer: {
+      flex: 1,
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      paddingTop: 40 
+    },
+    emptyStateText: {
+      color: '#7F8D9A',
+      fontSize: 16,
     },
   });
 
@@ -282,14 +354,9 @@ export default function SearchPage() {
             )}
           </>
         ) : (
-          <Text
-            style={[
-              styles.itemText,
-              { paddingHorizontal: 30, paddingVertical: 12 },
-            ]}
-          >
-            No recent searches
-          </Text>
+          <View style={styles.emptyStateContainer}>
+            <Text style={styles.emptyStateText}>No recent searches</Text>
+          </View>
         )}
       </View>
     </View>

@@ -177,7 +177,7 @@ export default function SearchResultsPage() {
 
   const handlePostPress = (postId: string) => {
     router.push({
-      pathname: "./PostPage",
+      pathname: "./postPage",
       params: { id: postId },
     });
   };
