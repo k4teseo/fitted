@@ -123,7 +123,7 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
         accessibilityIgnoresInvertColors
       />
       <TextInput
-        style={styles.input}
+        style={[styles.input, commentText ? styles.activeInput : null]}
         placeholder="Hype your friend up..."
         placeholderTextColor="#6D757E"
         value={commentText}
@@ -151,7 +151,7 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
             <Ionicons
               name="chatbubble-ellipses-outline"
               size={20}
-              color="#6D757E"
+              color="#A5C6E8"
             />
           </TouchableOpacity>
           <Text style={styles.count} accessibilityLabel={`${commentCount} comments`}>
@@ -160,7 +160,7 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
           <FontAwesome
             name="star-o"
             size={20}
-            color="#6D757E"
+            color="#A5C6E8"
             style={styles.star}
             accessibilityLabel="Like post"
           />
@@ -216,13 +216,18 @@ const styles = StyleSheet.create({
     color: "#7F8A95",
     marginRight: 10,
     fontSize: 12,
+    borderWidth: .2,
+    borderColor: "#A5C6E8"
+  },
+  activeInput: {
+    color: "#F5EEE3", // Brighter color when typing
   },
   actions: {
     flexDirection: "row",
     alignItems: "center",
   },
   count: {
-    color: "#6D757E",
+    color: "#A5C6E8",
     marginLeft: 3,
     marginRight: 15,
     fontSize: 12,

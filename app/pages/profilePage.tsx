@@ -255,7 +255,7 @@ export default function ProfilePage() {
     editProfileButton: {
       backgroundColor: "transparent",
       borderWidth: 0.5,
-      borderColor: "#858E9A",
+      borderColor: "#63B1FF",
       paddingVertical: height * 0.008,
       borderRadius: 4,
       alignItems: "center",
@@ -266,7 +266,7 @@ export default function ProfilePage() {
       marginBottom: height * 0.03,
     },
     editProfileButtonText: {
-      color: "#919CA9",
+      color: "#63B1FF",
       fontSize: 14,
       fontWeight: "400",
     },

@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 14,
   },
-  postButtonText: { color: "#F5EEE3", fontSize: 18, fontWeight: "600" },
+  postButtonText: { color: "#262A2F", fontSize: 16, fontWeight: "600" },
   scrollViewContainer: {
     flexGrow: 1,
     paddingTop: 20,

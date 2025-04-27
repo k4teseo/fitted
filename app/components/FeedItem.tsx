@@ -22,15 +22,49 @@ type FeedItemProps = {
   onReaction?: (postId: string, emoji: string) => void;
 };
 
+// Calculate max width available for tags (card width - padding - timestamp width)
+const CARD_WIDTH = 345;
+const TIMESTAMP_WIDTH = 30; // Approximate width of timestamp
+const TAG_PADDING = 16 * 2; // Horizontal padding of userInfo
+const TAG_MARGIN = 12; // Margin between tags
+const MAX_TAGS_WIDTH = CARD_WIDTH - TAG_PADDING - TIMESTAMP_WIDTH;
+
 const FeedItem = ({ item, userPfp, onReaction }: FeedItemProps) => {
   const router = useRouter();
-  const visibleTags = (item.selectedoccasions ?? []).slice(0, 2);
 
   const handleReaction = (emoji: string) => {
     if (onReaction) {
       onReaction(item.id, emoji);
     }
   };
+
+ // Function to calculate how many tags can fit
+ const getVisibleTags = () => {
+  const allTags = [
+    ...(item.selectedoccasions?.map(tag => ({ type: 'occasion', text: tag })) || []),
+    ...(item.selectedbrands?.map(tag => ({ type: 'brand', text: tag })) || [])
+  ];
+
+  let remainingWidth = MAX_TAGS_WIDTH;
+    const visibleTags = [];
+    
+    for (const tag of allTags) {
+      // Approximate tag width based on text length
+      const tagWidth = tag.text.length * 7 + 24; // 7px per character + padding
+      
+      if (remainingWidth >= tagWidth) {
+        visibleTags.push(tag);
+        remainingWidth -= tagWidth + TAG_MARGIN;
+      } else {
+        break;
+      }
+    }
+
+    return visibleTags;
+  };
+
+  const visibleTags = getVisibleTags();
+
 
   return (
     <TouchableOpacity
@@ -61,15 +95,19 @@ const FeedItem = ({ item, userPfp, onReaction }: FeedItemProps) => {
         <Text style={styles.caption}>{item.caption}</Text>
 
         <View style={styles.tagsRow}>
-          {visibleTags.length > 0 && (
-            <View style={{ flexDirection: "row" }}>
-              {visibleTags.map((tag, index) => (
-                <View key={index} style={styles.tagPill}>
-                  <Text style={styles.tagText}>{tag}</Text>
-                </View>
-              ))}
-            </View>
-          )}
+          <View style={styles.tagsContainer}>
+            {visibleTags.map((tag, index) => (
+              <View 
+                key={index} 
+                style={[
+                  styles.tagPill,
+                  tag.type === 'occasion' ? styles.occasionPill : styles.brandPill
+                ]}
+              >
+                <Text style={styles.tagText}>{tag.text}</Text>
+              </View>
+            ))}
+          </View>
           {item.createdAt && (
             <TimeStamp createdAt={item.createdAt} style={styles.timestamp} />
           )}
@@ -109,11 +147,11 @@ const styles = StyleSheet.create({
   reactionsContainer: {
     position: "absolute",
     bottom: 10,
-    right: 10,
+    right: 2,
     zIndex: 10,
   },
   userInfo: {
-    backgroundColor: "#202325",
+    backgroundColor: "#2D3338",
     padding: 16,
   },
   profileRow: {
@@ -139,15 +177,26 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     fontSize: 16,
     color: "#F5EEE3",
-    marginBottom: 8,
+    marginBottom: 3,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: 'wrap',
+    flex: 1,
+    marginRight: 8,
   },
   tagPill: {
-    backgroundColor: "#63B1FF",
     borderRadius: 4,
     paddingHorizontal: 12,
     paddingVertical: 6,
     marginRight: 12,
-    marginBottom: 6,
+    marginBottom: 4,
+  },
+  occasionPill: {
+    backgroundColor: "#63B0FC",
+  },
+  brandPill: {
+    backgroundColor: "#63B0FC", 
   },
   tagText: {
     color: "#262A2F",

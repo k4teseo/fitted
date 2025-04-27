@@ -15,6 +15,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import TagsIcon from "@/assets/images/TagsIcon";
 import SaveToCollection from "../components/SaveToCollection";
 import TimeStamp from "../components/TimeStamp";
 import CommentingBar from "../components/CommentingBar";
@@ -419,7 +420,7 @@ export default function PostPage() {
 
           {/* Tag Button */}
           <Pressable style={styles.tagIconContainer} onPress={toggleTags}>
-            <MaterialIcons name="tag" size={24} color="#F5EEE3" />
+            <TagsIcon />
           </Pressable>
 
           {/* Brand Tags Overlay */}
@@ -522,8 +523,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#2D3338",
     width: "100%",
     height: 123,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "flex-end",
     position: "absolute",
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
   },
   username: {
     color: "#7F8A95",
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: "500",
     marginLeft: 8,
   },
@@ -588,14 +589,11 @@ const styles = StyleSheet.create({
     position: "absolute",
     bottom: -5,
     right: -5,
-    backgroundColor: "#15181B",
-    borderRadius: 10,
+    backgroundColor: "transparent",
     width: 20,
     height: 20,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2D3338",
   },
   emojiText: {
     fontSize: 12,
@@ -613,17 +611,17 @@ const styles = StyleSheet.create({
   },
   reactionsContainer: {
     position: "absolute",
-    bottom: 45,
+    bottom: 50,
     right: 0,
-    zIndex: 10,
+    zIndex: 9,
   },
   tagIconContainer: {
     position: "absolute",
     bottom: 10,
     right: 10,
-    backgroundColor: "rgba(0,0,0,0.6)",
+    backgroundColor: "#2D3338",
     borderRadius: 20,
-    padding: 8,
+    padding: 10,
     zIndex: 9,
   },
   brandTagPill: {
@@ -649,7 +647,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   tagPill: {
-    backgroundColor: "#63B1FF",
+    backgroundColor: "#98A7B7",
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 4,
