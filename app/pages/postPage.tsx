@@ -459,17 +459,6 @@ export default function PostPage() {
           </View>
         )}
       </ScrollView>
-      {/* Save to Collection Bottom Sheet */}
-      {showCollections && (
-        <SaveToCollection
-          collections={dummyCollections} // Replace with your actual collections
-          onSave={(collectionId) => {
-            console.log("Saved to collection:", collectionId);
-            setShowCollections(false);
-          }}
-          onClose={() => setShowCollections(false)}
-        />
-      )}
 
       {/* Commenting Bar */}
       <CommentingBar

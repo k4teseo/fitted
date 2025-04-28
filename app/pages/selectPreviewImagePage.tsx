@@ -191,7 +191,8 @@ const styles = StyleSheet.create({
   },
 
   columnWrapper: {
-    gap: 8,
+    gap: 10,
+    marginBottom: 10,
   },
   grid: {
     paddingBottom: 16,

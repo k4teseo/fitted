@@ -168,7 +168,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   columnWrapper: {
-    gap: 8,
+    gap: 10,
+    marginBottom: 10,
   },
   outfitItem: {
     flex: 1,
@@ -180,7 +181,7 @@ const styles = StyleSheet.create({
   image: { 
     width: '100%', 
     height: '100%', 
-    borderRadius: 10 
+    borderRadius: 10, 
   },
   selected: {
     borderColor: '#4DA6FD',

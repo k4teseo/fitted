@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
 } from "react-native";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { router } from "expo-router";
+import { useFocusEffect } from "expo-router";
 
 const defaultPfp =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
@@ -17,11 +19,11 @@ const defaultPfp =
 type CommentingBarProps = {
   commentCount: number;
   onCommentPress: () => void;
-  onCommentPosted: () => void; // ✅ tells parent to refresh comments
+  onCommentPosted: () => void; 
   currentUserPfp?: string;
   replyingTo?: string | null;
   onCancelReply?: () => void;
-  postId: string; // ✅ needed to insert
+  postId: string; 
 };
 
 const CommentingBar: React.FC<CommentingBarProps> = ({
@@ -35,7 +37,71 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
 }) => {
   const [commentText, setCommentText] = useState("");
   const [isSaved, setIsSaved] = useState(false);
-  const [showCollections, setShowCollections] = useState(false);
+
+  const handleCollectionsPress = async () => {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+    if (sessionError || !session?.user?.id) {
+      console.error("Auth session error:", sessionError);
+      return;
+    }
+  
+    const userId = session.user.id;
+  
+    // If the post is already saved, remove it from the collection
+    if (isSaved) {
+      const { error: removeError } = await supabase
+        .from("saved_posts")
+        .delete()
+        .eq("image_id", postId)
+        .eq("user_id", userId);
+  
+      if (removeError) {
+        console.error("Failed to remove post from collection:", removeError);
+        return;
+      }
+  
+      // Update the UI to reflect the change (post is no longer saved)
+      setIsSaved(false);
+    } else {
+      // If the post is not saved, navigate to the SaveToCollection page
+      router.push({
+        pathname: "../components/SaveToCollection",
+        params: { postId },
+      });
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkIfSaved = async () => {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+        if (sessionError || !session?.user?.id) {
+          console.error("Auth session error:", sessionError);
+          return;
+        }
+  
+        const userId = session.user.id;
+  
+        const { data, error } = await supabase
+          .from("saved_posts")
+          .select("*")
+          .eq("image_id", postId)
+          .eq("user_id", userId)
+          .maybeSingle();
+  
+        if (error) {
+          console.error("Failed to check if post is saved:", error);
+          return;
+        }
+  
+        setIsSaved(!!data); // Set saved status based on whether the data exists
+      };
+  
+      checkIfSaved(); // Check if saved whenever we come back
+    }, [postId]) // Re-run when postId changes
+  );
 
   const handleSend = async () => {
     if (!commentText.trim()) return;
@@ -46,7 +112,7 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
     } = await supabase.auth.getSession();
 
     if (sessionError || !session?.user?.id) {
-      console.error("❌ Auth session error:", sessionError);
+      console.error("Auth session error:", sessionError);
       return;
     }
 
@@ -59,21 +125,21 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
       parent_id: replyingTo || null,
     };
 
-    console.log("📤 Sending comment payload to Supabase:", commentPayload);
+    console.log("Sending comment payload to Supabase:", commentPayload);
     console.log("auth.uid()", userId);
     console.log("comment payload user_id", userId);
 
     const { data, error: insertError } = await supabase
       .from("comments")
       .insert(commentPayload)
-      .select(); // get inserted rows back
+      .select(); // Get inserted rows back
 
     if (insertError) {
-      console.error("❌ Failed to insert comment into Supabase:", insertError);
+      console.error("Failed to insert comment into Supabase:", insertError);
       return;
     }
 
-    console.log("✅ Comment inserted successfully:", data);
+    console.log("Comment inserted successfully:", data);
 
     setCommentText("");
     onCommentPosted();
@@ -129,19 +195,14 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
             />
           </TouchableOpacity>
           <Text style={styles.count}>{commentCount}</Text>
-          <TouchableOpacity
-            onPress={() => {
-              if (!isSaved) setShowCollections(true);
-              setIsSaved(!isSaved);
-            }}
-          >
+          <TouchableOpacity onPress={handleCollectionsPress}>
             <FontAwesome
               name={isSaved ? "star" : "star-o"}
               size={20}
               color={isSaved ? "#FFD700" : "#6D757E"}
               style={styles.star}
             />
-</TouchableOpacity>
+          </TouchableOpacity>
         </View>
       )}
     </View>
