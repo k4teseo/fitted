@@ -45,6 +45,39 @@ export default function SearchResultsPage() {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
   const currentUserId = useCurrentUser();
+  const [friendIds, setFriends] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      const { data: user } = await supabase.auth.getUser();
+      const currentUserId = user.user?.id;
+
+      const { data: friends, error } = await supabase
+        .from("friends")
+        .select("user_id_1, user_id_2, status")
+        .or(
+          `user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`
+        )
+        .eq("status", "accepted");
+      if (error) {
+        console.error("Error fetching friends:", error);
+        return;
+      }
+      const mappedFriends = friends.map((friend) => {
+        const friendId =
+          friend.user_id_1 === currentUserId
+            ? friend.user_id_2
+            : friend.user_id_1;
+        return {
+          id: friendId,
+          status: friend.status,
+        };
+      } 
+      );
+      setFriends(mappedFriends);
+    }
+    fetchFriends();
+  }, [])
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -71,7 +104,17 @@ export default function SearchResultsPage() {
         if (error) {
           console.error("Supabase error:", error);
         } else {
-          setSearchResults(data || []);
+          const friendsPost = data?.filter((item) => {
+            const isFriend = friendIds.some(
+              (friend) =>
+                friend.id === item.user_id &&
+                  friend.status === "accepted"
+            );
+            const isSelf = item.user_id === currentUserId;
+            return isFriend || isSelf;
+          }
+          );
+          setSearchResults(friendsPost || []);
         }
       } finally {
         setLoading(false);
@@ -80,7 +123,7 @@ export default function SearchResultsPage() {
 
     const debounceTimer = setTimeout(fetchResults, 500);
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, friendIds, currentUserId]);
 
   const handleSubmit = (text?: string) => {
     const searchTerm = text || searchQuery.trim();
@@ -193,6 +236,7 @@ export default function SearchResultsPage() {
       await supabase
         .from("friends")
         .select("id, status")
+        .order("created_at", { ascending: false }) 
         .or(
           `and(user_id_1.eq.${userId},user_id_2.eq.${currentUserId}),and(user_id_1.eq.${currentUserId},user_id_2.eq.${userId})`
         );
