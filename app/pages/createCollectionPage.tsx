@@ -130,6 +130,11 @@ const CreateCollectionPage = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
+
       <Text style={styles.header}>Finalize Your Collection</Text>
 
       <View style={styles.previewContainer}>
@@ -148,11 +153,11 @@ const CreateCollectionPage = () => {
         )}
 
         <TextInput
-        style={[styles.textInput, styles.collectionNameInput]}
-        placeholder="Collection Name"
-        placeholderTextColor="#888"
-        value={collectionName}
-        onChangeText={setCollectionName}
+          style={[styles.textInput, styles.collectionNameInput]}
+          placeholder="Collection Name"
+          placeholderTextColor="#888"
+          value={collectionName}
+          onChangeText={setCollectionName}
         />
       </View>
 
@@ -198,6 +203,15 @@ const styles = StyleSheet.create({
     color: '#F5EEE3',
     marginBottom: 24,
     textAlign: 'center',
+  },
+  backButton: {
+    marginTop: -20,
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#4DA6FD',
+    fontSize: 32, // Bigger arrow for better visibility
   },
   label: {
     color: '#F5EEE3',
