@@ -80,15 +80,16 @@ export default function CollectionDetail() {
             marginBottom: 20,
         },
         outfitItem: {
-            width: itemWidth,
+            flex: 1,
             aspectRatio: 0.8,
             borderRadius: 4,
             overflow: 'hidden',
-            marginBottom: 3, // Gap between items
+            marginBottom: 8,
+            maxWidth: (width - 32 - 16) / 3, // each image can only be 1/3 width
         },
         columnWrapper: {
-            justifyContent: 'space-between',
             marginBottom: 8, // Reduced gap between rows
+            gap: 8,
         },
         grid: {
             flex: 1,

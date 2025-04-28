@@ -71,7 +71,8 @@ const CreateCollectionPage = () => {
       );
       return;
     }
-
+  
+    // Insert new collection
     const { data: newCollection, error: collectionError } = await supabase
       .from('collections')
       .insert([
@@ -85,24 +86,25 @@ const CreateCollectionPage = () => {
       ])
       .select()
       .single();
-
+  
     if (collectionError || !newCollection) {
       console.error('Collection creation failed:', collectionError);
       Alert.alert('Upload Failed', 'There was an issue creating the collection.');
       return;
     }
-
+  
+    // Insert saved outfits
     const savedPostEntries = selectedOutfits.map((imageId) => ({
       user_id: currentUserId,
       collection_id: newCollection.id,
       image_id: imageId,
       saved_at: new Date().toISOString(),
     }));
-
+  
     const { error: savedPostError } = await supabase
       .from('saved_posts')
       .insert(savedPostEntries);
-
+  
     if (savedPostError) {
       console.error('Saving outfits failed:', savedPostError);
       Alert.alert(
@@ -110,11 +112,21 @@ const CreateCollectionPage = () => {
         'Collection was created, but some outfits may not have been saved.'
       );
     } else {
-      Alert.alert('Success', 'Collection created!');
+      // RPC to halve the outfit count
+      const { data, error: rpcError } = await supabase.rpc('halve_outfit_count', {
+        collection_id: newCollection.id,
+      });
+  
+      if (rpcError) {
+        console.error('Error halving outfit count:', rpcError);
+        Alert.alert('Error', 'There was an issue halving the outfit count.');
+      } else {
+        Alert.alert('Success', 'Collection Created!');
+      }
     }
-
+  
     router.back();
-  };
+  };  
 
   return (
     <View style={styles.container}>
