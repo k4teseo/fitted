@@ -20,6 +20,7 @@ const SelectOutfitsPage = () => {
   const router = useRouter();
   const [selectableOutfits, setSelectableOutfits] = useState<Outfit[]>([]);
   const [loading, setLoading] = useState(true); // Loading spinner state
+  const [loadedImages, setLoadedImages] = useState(0); // Count of loaded images
   const currentUserId = useCurrentUser();
   const { selectedOutfits, setSelectedOutfits } = useCollectionContext();
 
@@ -86,7 +87,6 @@ const SelectOutfitsPage = () => {
       }));
 
       setSelectableOutfits(outfitsWithSignedUrls);
-      setLoading(false); // Finished loading the data, now hide the loading spinner
     };
 
     fetchUserOutfits(currentUserId);
@@ -98,6 +98,16 @@ const SelectOutfitsPage = () => {
     );
   };
 
+  const handleImageLoadEnd = () => {
+    setLoadedImages((prev) => {
+      const newLoaded = prev + 1;
+      if (newLoaded === selectableOutfits.length) {
+        setLoading(false);
+      }
+      return newLoaded;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
@@ -106,27 +116,28 @@ const SelectOutfitsPage = () => {
       <Text style={styles.label}>Select Outfits for Collection</Text>
 
       {/* Loading indicator */}
-      {loading ? (
+      {loading && (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#4DA6FD" />
         </View>
-      ) : (
-        <FlatList
-          data={selectableOutfits}
-          keyExtractor={(item) => item.id}
-          numColumns={3}
-          contentContainerStyle={{ paddingTop: 16 }}
-          columnWrapperStyle={styles.columnWrapper}  // Add columnWrapperStyle here
-          renderItem={({ item }) => (
-            <TouchableOpacity onPress={() => handleSelectOutfit(item.id)} style={styles.outfitItem}>
-              <Image
-                source={{ uri: item.signed_url }}
-                style={[styles.image, selectedOutfits.includes(item.id) && styles.selected]}
-              />
-            </TouchableOpacity>
-          )}
-        />
       )}
+
+      <FlatList
+        data={selectableOutfits}
+        keyExtractor={(item) => item.id}
+        numColumns={3}
+        contentContainerStyle={{ paddingTop: 16 }}
+        columnWrapperStyle={styles.columnWrapper}
+        renderItem={({ item }) => (
+          <TouchableOpacity onPress={() => handleSelectOutfit(item.id)} style={styles.outfitItem}>
+            <Image
+              source={{ uri: item.signed_url }}
+              style={[styles.image, selectedOutfits.includes(item.id) && styles.selected]}
+              onLoadEnd={handleImageLoadEnd} // Track when the image has loaded
+            />
+          </TouchableOpacity>
+        )}
+      />
 
       {/* Show loading spinner overlay if still loading */}
       {loading && (
@@ -140,8 +151,6 @@ const SelectOutfitsPage = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#15181B", padding: 16 },
-  
-  // Label styling (now consistent with other page)
   label: {
     color: "#F5EEE3",
     fontWeight: "bold",
@@ -149,8 +158,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontSize: 22,
   },
-
-  // Back button and text styling (now consistent with other page)
   backButton: {
     marginTop: 50,
     marginBottom: 20,
@@ -158,21 +165,18 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: "#4DA6FD",
-    fontSize: 32, // Bigger arrow for better visibility
+    fontSize: 32,
   },
-
   columnWrapper: {
-    gap: 8, // Adjust the gap between columns
+    gap: 8,
   },
-
   outfitItem: {
     flex: 1,
-    aspectRatio: 1, // Keep images square
-    maxWidth: '32%', // 3 images per row
+    aspectRatio: 1,
+    maxWidth: '32%',
     borderRadius: 10,
     overflow: 'hidden',
   },
-  
   image: { 
     width: '100%', 
     height: '100%', 
@@ -182,8 +186,6 @@ const styles = StyleSheet.create({
     borderColor: '#4DA6FD',
     borderWidth: 2,
   },
-
-  // Loading container styles
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

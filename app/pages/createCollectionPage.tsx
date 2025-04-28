@@ -21,11 +21,14 @@ const CreateCollectionPage = () => {
     collectionName,
     setCollectionName,
     previewImage,
+    setPreviewImage,
     selectedOutfits,
+    setSelectedOutfits,
   } = useCollectionContext();
 
   const [outfitImages, setOutfitImages] = useState<string[]>([]);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (previewImage) {
@@ -63,6 +66,15 @@ const CreateCollectionPage = () => {
     fetchOutfitImages();
   }, [selectedOutfits]);
 
+  useEffect(() => {
+    // Reset context state when navigating away or when the component unmounts
+    return () => {
+      setCollectionName('');        // Reset collection name
+      setPreviewImage('');         // Reset preview image
+      setSelectedOutfits([]);        // Reset selected outfits
+    };
+  }, []); // Empty dependency array ensures this effect runs only on unmount
+
   const handleCreateCollection = async () => {
     if (!collectionName || !previewImage || selectedOutfits.length === 0) {
       Alert.alert(
@@ -71,7 +83,7 @@ const CreateCollectionPage = () => {
       );
       return;
     }
-  
+
     // Insert new collection
     const { data: newCollection, error: collectionError } = await supabase
       .from('collections')
@@ -86,13 +98,13 @@ const CreateCollectionPage = () => {
       ])
       .select()
       .single();
-  
+
     if (collectionError || !newCollection) {
       console.error('Collection creation failed:', collectionError);
       Alert.alert('Upload Failed', 'There was an issue creating the collection.');
       return;
     }
-  
+
     // Insert saved outfits
     const savedPostEntries = selectedOutfits.map((imageId) => ({
       user_id: currentUserId,
@@ -100,11 +112,11 @@ const CreateCollectionPage = () => {
       image_id: imageId,
       saved_at: new Date().toISOString(),
     }));
-  
+
     const { error: savedPostError } = await supabase
       .from('saved_posts')
       .insert(savedPostEntries);
-  
+
     if (savedPostError) {
       console.error('Saving outfits failed:', savedPostError);
       Alert.alert(
@@ -116,7 +128,7 @@ const CreateCollectionPage = () => {
       const { data, error: rpcError } = await supabase.rpc('halve_outfit_count', {
         collection_id: newCollection.id,
       });
-  
+
       if (rpcError) {
         console.error('Error halving outfit count:', rpcError);
         Alert.alert('Error', 'There was an issue halving the outfit count.');
@@ -124,9 +136,9 @@ const CreateCollectionPage = () => {
         Alert.alert('Success', 'Collection Created!');
       }
     }
-  
+
     router.back();
-  };  
+  };
 
   return (
     <View style={styles.container}>
