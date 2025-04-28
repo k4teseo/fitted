@@ -79,7 +79,6 @@ export default function ProfilePage() {
         const publicUrl = supabase.storage
           .from("images")
           .getPublicUrl(mostRecent.image_path).data.publicUrl;
-        console.log(publicUrl); // Add this line to check if the URL is correct
         if (publicUrl) {
           // Only set recentOutfit if publicUrl is valid
           setRecentOutfit({

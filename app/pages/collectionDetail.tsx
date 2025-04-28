@@ -6,18 +6,18 @@ import {
     Image,
     StyleSheet,
     TouchableOpacity,
-    useWindowDimensions
+    useWindowDimensions,
+    Alert
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { supabase } from "@/lib/supabase";
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 
-
 export default function CollectionDetail() {
     const { width } = useWindowDimensions();
     const router = useRouter();
     const { collectionId, collectionName } = useLocalSearchParams();
-    const [ posts, setPosts ] = useState<any[]>([]);
+    const [posts, setPosts] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchPosts = async () => {
@@ -34,10 +34,9 @@ export default function CollectionDetail() {
         };
 
         fetchPosts();
-    }
-    , [collectionId]);
+    }, [collectionId]);
 
-    const itemWidth = (width - 32 - 16) / 3; 
+    const itemWidth = (width - 32 - 16) / 3;
 
     const styles = StyleSheet.create({
         header: {
@@ -62,11 +61,11 @@ export default function CollectionDetail() {
             overflow: "hidden",
             alignSelf: "center",
             width: 345,
-    },
+        },
         imageContainer: {
             width: "100%",
             height: 400,
-    },
+        },
         backButton: {
             marginTop: 55,
             marginRight: 15,
@@ -94,12 +93,16 @@ export default function CollectionDetail() {
         grid: {
             flex: 1,
         },
-    
-    //     postImage: {
-    //         width: "100%",
-    //         height: "100%",
-    //         resizeMode: "cover",
-    // },
+        deleteButton: {
+            position: 'absolute',
+            top: 45,
+            right: 5,
+            padding: 10,
+            borderRadius: 50,
+        },
+        deleteIcon: {
+            color: '#fff',
+        },
     });
 
     const navigateToPost = (postId: string) => {
@@ -107,6 +110,48 @@ export default function CollectionDetail() {
             pathname: './postPage',
             params: { id: postId }
         });
+    };
+
+    // Delete the collection and its posts
+    const handleDelete = async () => {
+        Alert.alert(
+            'Delete Collection',
+            'Are you sure you want to delete this collection and all its posts?',
+            [
+                {
+                    text: 'Cancel',
+                    style: 'cancel',
+                },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        // Delete all posts in the collection
+                        const { error: deletePostsError } = await supabase
+                            .from('saved_posts')
+                            .delete()
+                            .eq('collection_id', collectionId);
+
+                        if (deletePostsError) {
+                            console.error('Error deleting posts:', deletePostsError.message);
+                        }
+
+                        // Delete the collection
+                        const { error: deleteCollectionError } = await supabase
+                            .from('collections')
+                            .delete()
+                            .eq('id', collectionId);
+
+                        if (deleteCollectionError) {
+                            console.error('Error deleting collection:', deleteCollectionError.message);
+                        } else {
+                            // Navigate back after successful deletion
+                            router.back();
+                        }
+                    },
+                },
+            ]
+        );
     };
 
     return (
@@ -119,29 +164,32 @@ export default function CollectionDetail() {
                     <MaterialIcons name="navigate-before" size={30} color="white" />
                 </TouchableOpacity>
                 <Text style={styles.title}> {collectionName} </Text>
+                
+                {/* Delete button */}
+                <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
+                    <MaterialIcons name="delete" size={24} style={styles.deleteIcon} />
+                </TouchableOpacity>
             </View>
-                    <FlatList
-                        data={posts}
-                        keyExtractor={(item) => item.id}
-                        numColumns={3}
-                        columnWrapperStyle={styles.columnWrapper}
-                        contentContainerStyle={styles.grid}
-                        renderItem={({ item }) => (
-                            <TouchableOpacity 
-                                style={styles.outfitItem}
-                                onPress={() => navigateToPost(item.image_id)}
-                            >
-                                    <Image 
-                                        source={{ uri: supabase.storage.from('images').getPublicUrl(item.images.image_path).data.publicUrl }}
-                                        style ={styles.outfitImage} 
-                                        resizeMode="cover"
-                                    />
-                            </TouchableOpacity>
-                        )}
-                    />
-                </View>
-        //     </View>
-        // </View>
+
+            <FlatList
+                data={posts}
+                keyExtractor={(item) => item.image_id}
+                numColumns={3}
+                columnWrapperStyle={styles.columnWrapper}
+                contentContainerStyle={styles.grid}
+                renderItem={({ item }) => (
+                    <TouchableOpacity 
+                        style={styles.outfitItem}
+                        onPress={() => navigateToPost(item.image_id)}
+                    >
+                        <Image 
+                            source={{ uri: supabase.storage.from('images').getPublicUrl(item.images.image_path).data.publicUrl }}
+                            style={styles.outfitImage} 
+                            resizeMode="cover"
+                        />
+                    </TouchableOpacity>
+                )}
+            />
+        </View>
     );
 };
-

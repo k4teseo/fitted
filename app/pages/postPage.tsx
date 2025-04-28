@@ -11,13 +11,14 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   useWindowDimensions,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import SaveToCollection from "../components/SaveToCollection";
 import TimeStamp from "../components/TimeStamp";
-import CommentingBar from "../components/CommentingBar";
+import PostNavBar from "../components/postNavBar";
 import Comments from "../components/comments";
 import EmojiReactions from "../components/EmojiReactions";
 
@@ -205,8 +206,6 @@ export default function PostPage() {
       return;
     }
 
-    console.log("Fetched reactions:", data); // You should now see ALL users
-
     const formatted = data.map((r: any) => ({
       id: r.id,
       userId: r.user_id,
@@ -342,6 +341,47 @@ export default function PostPage() {
 
   const combinedTags = [...post.selectedbrands, ...post.selectedoccasions];
 
+  const handleDelete = async () => {
+    Alert.alert(
+        'Delete Post',
+        'Are you sure you want to delete this post?',
+        [
+            {
+                text: 'Cancel',
+                style: 'cancel',
+            },
+            {
+                text: 'Delete',
+                style: 'destructive',
+                onPress: async () => {
+                    if (!id) return;
+
+                    // Delete the image from the 'images' table
+                    const { error: deleteImageError } = await supabase
+                        .from('images')
+                        .delete()
+                        .eq('id', id);
+
+                    if (deleteImageError) {
+                        console.error('Error deleting post:', deleteImageError);
+                        return;
+                    }
+
+                    // Delete related comments and reactions
+                    await supabase.from('comments').delete().eq('image_id', id);
+                    await supabase.from('reactions').delete().eq('image_id', id);
+
+                    // Remove the image from any saved collections (saved_posts table)
+                    await supabase.from('saved_posts').delete().eq('image_id', id);
+
+                    // Redirect to the home or feed page after deletion
+                    router.push('./feedPage'); // Or wherever you want to send the user
+                },
+            },
+        ]
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Top Bar */}
@@ -355,6 +395,9 @@ export default function PostPage() {
             style={styles.profileImage}
           />
           <Text style={styles.username}>{post.username}</Text>
+          <Pressable style={styles.deleteButton} onPress={handleDelete}>
+            <MaterialIcons name="delete" size={24} color="#F5EEE3" />
+          </Pressable>
         </View>
       </View>
 
@@ -451,7 +494,7 @@ export default function PostPage() {
             ))}
           </View>
         )}
-        
+
         {/* Timestamp */}
         {post.created_at && (
           <View style={styles.timestampContainer}>
@@ -461,14 +504,14 @@ export default function PostPage() {
       </ScrollView>
 
       {/* Commenting Bar */}
-      <CommentingBar
+      <PostNavBar
         commentCount={commentCount}
         onCommentPress={toggleComments}
         onCommentPosted={fetchComments} // <- this is key
         currentUserPfp={currentUserPfp}
         replyingTo={null}
         onCancelReply={() => setReplyingTo(null)}
-        postId={post.id} // <- must pass this so CommentingBar can insert
+        postId={post.id} 
       />
 
       {/* Comments Modal */}
@@ -649,5 +692,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#222",
     borderRadius: 20,
     padding: 8,
+  },
+  deleteButton: {
+    padding: 20,
+    marginLeft: 100,
+    borderRadius: 20,
   },
 });

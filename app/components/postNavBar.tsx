@@ -16,7 +16,7 @@ import { useFocusEffect } from "expo-router";
 const defaultPfp =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
-type CommentingBarProps = {
+type postNavBarProps = {
   commentCount: number;
   onCommentPress: () => void;
   onCommentPosted: () => void; 
@@ -26,7 +26,7 @@ type CommentingBarProps = {
   postId: string; 
 };
 
-const CommentingBar: React.FC<CommentingBarProps> = ({
+const PostNavBar: React.FC<postNavBarProps> = ({
   commentCount,
   onCommentPress,
   onCommentPosted,
@@ -89,8 +89,9 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
           .select("*")
           .eq("image_id", postId)
           .eq("user_id", userId)
-          .maybeSingle();
-  
+          .limit(1)  // Limit the results to 1
+          .single(); // Either 1 row or null
+
         if (error) {
           console.error("Failed to check if post is saved:", error);
           return;
@@ -278,4 +279,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CommentingBar;
+export default PostNavBar;
