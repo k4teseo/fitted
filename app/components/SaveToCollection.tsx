@@ -1,88 +1,138 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { supabase } from '@/lib/supabase';
+import { useCurrentUser } from '../hook/useCurrentUser';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import Ionicons for back arrow
 
 type Collection = {
-    id: string;
-    name: string;
+  id: string;
+  name: string;
 };
 
-const SaveToCollection = ({ collections = [], onSave, onClose }: { collections: Collection[], onSave: (id: string) => void; onClose: () => void }) => {
-  const [selectedCollection, setSelectedCollection] = useState<string | null>(null);
+const SaveToCollectionPage = () => {
+  const router = useRouter();
+  const { postId } = useLocalSearchParams(); // <-- Grab postId from URL
+  const userId = useCurrentUser();
 
-  const handleSave = () => {
-    if (selectedCollection) {
-      onSave(selectedCollection);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCollections = async () => {
+      if (!userId) return;
+
+      const { data, error } = await supabase
+        .from('collections')
+        .select('id, name')
+        .eq('user_id', userId);
+
+      if (error) {
+        console.error('Error fetching collections:', error);
+        Alert.alert('Error', 'Could not load collections.');
+      } else {
+        setCollections(data || []);
+      }
+      setLoading(false);
+    };
+
+    fetchCollections();
+  }, [userId]);
+
+  const handleSaveToCollection = async (collectionId: string) => {
+    if (!userId || !postId) return;
+
+    const { error } = await supabase
+      .from('saved_posts')
+      .insert([
+        {
+          user_id: userId,
+          collection_id: collectionId,
+          image_id: postId,
+          saved_at: new Date().toISOString(),
+        },
+      ]);
+
+    if (error) {
+      console.error('Error saving post to collection:', error);
+      Alert.alert('Save Failed', 'Could not save to collection.');
+    } else {
+      Alert.alert('Saved', 'Post added to collection!');
+      router.back(); // Go back after saving
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator color="#4DA6FD" size="large" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Save to Collection</Text>
+      {/* Back arrow */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
+        </TouchableOpacity>
+      <View style={styles.headerContainer}>
+        <Text style={styles.header}>Select a Collection</Text>
+      </View>
+
       {collections.map((collection) => (
         <TouchableOpacity
           key={collection.id}
-          style={[
-            styles.collectionItem,
-            selectedCollection === collection.id && styles.selected,
-          ]}
-          onPress={() => setSelectedCollection(collection.id)}
+          style={styles.collectionItem}
+          onPress={() => handleSaveToCollection(collection.id)}
         >
           <Text style={styles.collectionName}>{collection.name}</Text>
         </TouchableOpacity>
       ))}
-      <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-        <Text style={styles.saveButtonText}>Save</Text>
-      </TouchableOpacity>
     </View>
   );
-}
+};
 
-export default SaveToCollection;
+export default SaveToCollectionPage;
 
 const styles = StyleSheet.create({
-    container: {
-      backgroundColor: '#111',  // dark mode bottom sheet
-      padding: 20,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
-      position: 'absolute',
-      bottom: 0,
-      width: '100%',
-    },
-    title: {
-      color: 'white',
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 16,
-    },
-    collectionItem: {
-      backgroundColor: '#222',
-      padding: 12,
-      borderRadius: 10,
-      marginBottom: 10,
-    },
-    selected: {
-      backgroundColor: '#333',
-      borderWidth: 1,
-      borderColor: '#4CAF50', // highlight green
-    },
-    collectionName: {
-      color: 'white',
-      fontSize: 16,
-    },
-    saveButton: {
-      backgroundColor: '#4CAF50',
-      padding: 14,
-      borderRadius: 10,
-      alignItems: 'center',
-      marginTop: 20,
-    },
-    saveButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    disabledButton: {
-      backgroundColor: '#555',
-    },
-  });
+  container: {
+    flex: 1,
+    backgroundColor: '#15181B',
+    padding: 24,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#15181B',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: -47,
+    marginBottom: 20,
+  },
+  backButton: {
+    marginTop: 55,
+    marginRight: 15,
+    marginBottom: 20,
+  },
+  header: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#F5EEE3',
+    textAlign: 'center',
+    flex: 1,
+  },
+  collectionItem: {
+    backgroundColor: '#222',
+    padding: 16,
+    borderRadius: 10,
+    marginBottom: 12,
+  },
+  collectionName: {
+    color: '#F5EEE3',
+    fontSize: 16,
+  },
+});

@@ -1,16 +1,5 @@
-// app/profilePage.tsx
 import React, { useState, useEffect } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  useWindowDimensions,
-  StyleSheet,
-  Pressable,
-  ScrollView,
-} from "react-native";
+import { View, Text, TouchableOpacity, Image, useWindowDimensions, StyleSheet, Pressable, ScrollView } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import BottomNavBar from "../components/BottomNavBar";
@@ -19,13 +8,10 @@ import NotificationsPage from "./notificationsPage";
 import SignOutButton from "../components/signOut";
 import { useCurrentUser } from "../hook/useCurrentUser"; // Import the custom hook
 
-const defaultPfp =
-  "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
+const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
 export default function ProfilePage() {
-  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">(
-    "profile"
-  );
+  const [activeTab, setActiveTab] = useState<"home" | "add" | "profile">("profile");
   const { width, height } = useWindowDimensions();
   const [showFriendRequests, setShowFriendRequests] = useState(false);
   const [friendCount, setFriendCount] = useState(0);
@@ -46,95 +32,94 @@ export default function ProfilePage() {
     ...collections.map((c) => ({ type: "collection", data: c })),
   ];
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!currentUserId) return;
+  const fetchData = async () => {
+    if (!currentUserId) return;
 
-      // Fetch profile data
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("username, pfp, name")
-        .eq("id", currentUserId)
-        .single();
+    // Fetch profile data
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("username, pfp, name")
+      .eq("id", currentUserId)
+      .single();
 
-      if (profileError) {
-        console.error("Error fetching profile:", profileError.message);
-      } else {
-        setName(profile.name || "User");
-        setUsername(`@${profile.username}` || "@unknown");
-        setProfileImageUrl(profile.pfp || defaultPfp);
-      }
+    if (profileError) {
+      console.error("Error fetching profile:", profileError.message);
+    } else {
+      setName(profile.name || "User");
+      setUsername(`@${profile.username}` || "@unknown");
+      setProfileImageUrl(profile.pfp || defaultPfp);
+    }
 
-      // Fetch friend count
-      const { data: friends, error: friendsError } = await supabase
-        .from("friends")
-        .select("*", { count: "exact" })
-        .or(`user_id_1.eq.${currentUserId}, user_id_2.eq.${currentUserId}`)
-        .eq("status", "accepted");
+    // Fetch friend count
+    const { data: friends, error: friendsError } = await supabase
+      .from("friends")
+      .select("*", { count: "exact" })
+      .or(`user_id_1.eq.${currentUserId}, user_id_2.eq.${currentUserId}`)
+      .eq("status", "accepted");
 
-      if (friendsError) {
-        console.error("Error fetching friend count:", friendsError);
-      } else {
-        setFriendCount(friends.length);
-      }
+    if (friendsError) {
+      console.error("Error fetching friend count:", friendsError);
+    } else {
+      setFriendCount(friends.length);
+    }
 
-      // Fetch outfits data
-      const { data: outfits, error: outfitsError } = await supabase
-        .from("images")
-        .select("id, image_path, created_at")
-        .eq("user_id", currentUserId)
-        .order("created_at", { ascending: false });
+    // Fetch outfits data
+    const { data: outfits, error: outfitsError } = await supabase
+      .from("images")
+      .select("id, image_path, created_at")
+      .eq("user_id", currentUserId)
+      .order("created_at", { ascending: false });
 
-      if (outfitsError) {
-        console.error("Error fetching outfits:", outfitsError);
-      } else {
-        setOutfitsCount(outfits.length);
-        if (outfits.length > 0) {
-          const mostRecent = outfits[0];
-          const publicUrl = supabase.storage
-            .from("images")
-            .getPublicUrl(mostRecent.image_path).data.publicUrl;
-          console.log(publicUrl); // Add this line to check if the URL is correct
-          if (publicUrl) {
-            // Only set recentOutfit if publicUrl is valid
-            setRecentOutfit({
-              id: mostRecent.id,
-              uri: publicUrl,
-            });
-          }
+    if (outfitsError) {
+      console.error("Error fetching outfits:", outfitsError);
+    } else {
+      setOutfitsCount(outfits.length);
+      if (outfits.length > 0) {
+        const mostRecent = outfits[0];
+        const publicUrl = supabase.storage
+          .from("images")
+          .getPublicUrl(mostRecent.image_path).data.publicUrl;
+        if (publicUrl) {
+          // Only set recentOutfit if publicUrl is valid
+          setRecentOutfit({
+            id: mostRecent.id,
+            uri: publicUrl,
+          });
         }
       }
-      // Fetch collections data
-      const { data: userCollections, error: collectionsError } = await supabase
-        .from("collections")
-        .select("*")
-        .eq("user_id", currentUserId);
+    }
+    // Fetch collections data
+    const { data: userCollections, error: collectionsError } = await supabase
+      .from("collections")
+      .select("*")
+      .eq("user_id", currentUserId);
 
-      if (collectionsError) {
-        console.error("Error fetching collections:", collectionsError);
-      } else {
-        const updatedCollections = userCollections.map((collection) => {
-          const imagePath = collection.previewImage;
-          const publicUrl = imagePath
-            ? supabase.storage.from("images").getPublicUrl(imagePath).data
-                .publicUrl
-            : null;
+    if (collectionsError) {
+      console.error("Error fetching collections:", collectionsError);
+    } else {
+      const updatedCollections = userCollections.map((collection) => {
+        const imagePath = collection.previewImage;
+        const publicUrl = imagePath
+          ? supabase.storage.from("images").getPublicUrl(imagePath).data
+              .publicUrl
+          : null;
 
-          return {
-            ...collection,
-            previewImage: publicUrl,
-          };
-        });
+        return {
+          ...collection,
+          previewImage: publicUrl,
+        };
+      });
 
-        setCollections(updatedCollections);
-      }
-    };
+      setCollections(updatedCollections);
+    }
+  };
 
+  useFocusEffect(() => {
+    fetchData();
     if (currentUserId) {
-      fetchUserData();
       setUserId(currentUserId);
     }
-  }, [currentUserId]);
+  });
 
   // Fetch notifications
   useEffect(() => {
@@ -255,7 +240,7 @@ export default function ProfilePage() {
     editProfileButton: {
       backgroundColor: "transparent",
       borderWidth: 0.5,
-      borderColor: "#858E9A",
+      borderColor: "#63B1FF",
       paddingVertical: height * 0.008,
       borderRadius: 4,
       alignItems: "center",
@@ -266,7 +251,7 @@ export default function ProfilePage() {
       marginBottom: height * 0.03,
     },
     editProfileButtonText: {
-      color: "#919CA9",
+      color: "#63B1FF",
       fontSize: 14,
       fontWeight: "400",
     },
@@ -295,8 +280,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       justifyContent: "space-between",
       width: width * 0.4,
-      marginTop: 8,
-      marginBottom: 10,
+      marginTop: 10,
+      marginBottom: 25,
     },
     outfitLabel: {
       color: "#C7D1DB",
@@ -328,6 +313,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
+      paddingLeft: 8,
+      paddingRight: 8,
     },
     addCard: {
       backgroundColor: "#2A2F36", // Different color for the "Add" card

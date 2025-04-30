@@ -1,5 +1,5 @@
 // components/Comments.tsx
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import CommentingBar from "./CommentingBar";
+import PostNavBar from "./postNavBar";
 
 type Comment = {
   id: string;
@@ -45,12 +45,36 @@ export default function Comments({
   onCommentPosted,
   postId,
 }: CommentsProps) {
+  const [activeReplyIds, setActiveReplyIds] = useState<Set<string>>(new Set());
+
   const getReplies = (commentId: string) => {
     return comments.filter((comment) => comment.parentId === commentId);
   };
 
+  const toggleReplyIcon = (commentId: string) => {
+    setActiveReplyIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(commentId)) {
+        newSet.delete(commentId);
+        setReplyingTo(null); // close reply bar when untoggling
+      } else {
+        newSet.add(commentId);
+        setReplyingTo(commentId); // Open reply bar when toggled on
+      }
+      return newSet;
+    });
+  };
+
+  const handleCloseComments = () => {
+    setShowComments(false);
+    setReplyingTo(null);
+    setActiveReplyIds(new Set());
+  };
+
   const renderComment = (comment: Comment, isReply = false) => {
     const replies = getReplies(comment.id);
+    const isActive = activeReplyIds.has(comment.id);
+
     return (
       <View
         key={comment.id}
@@ -74,11 +98,11 @@ export default function Comments({
               {comment.createdAt}
             </Text>
             {!isReply && (
-              <Pressable onPress={() => setReplyingTo(comment.id)}>
+              <Pressable onPress={() => toggleReplyIcon(comment.id)}>
                 <MaterialIcons
                   name="reply"
                   size={16}
-                  color="#6D757E"
+                  color={isActive ? "#3399FF" : "#6D757E"}
                   style={styles.replyIcon}
                 />
               </Pressable>
@@ -93,13 +117,20 @@ export default function Comments({
 
           {replyingTo === comment.id && (
             <View style={styles.replyInputContainer}>
-              <CommentingBar
+              <PostNavBar
                 commentCount={0}
                 onCommentPress={() => {}}
                 onCommentPosted={onCommentPosted}
                 currentUserPfp={currentUserPfp}
                 replyingTo={comment.id}
-                onCancelReply={() => setReplyingTo(null)}
+                onCancelReply={() => {
+                  setReplyingTo(null);
+                  setActiveReplyIds((prev) => {
+                    const newSet = new Set(prev);
+                    newSet.delete(comment.id);
+                    return newSet;
+                  });
+                }}
                 postId={postId}
               />
             </View>
@@ -118,12 +149,12 @@ export default function Comments({
       animationType="slide"
       transparent={true}
       visible={showComments}
-      onRequestClose={() => setShowComments(false)}
+      onRequestClose={handleCloseComments}
     >
       <View style={styles.commentsModal}>
         <View style={styles.commentsHeader}>
           <Text style={styles.commentsTitle}>Comments ({commentCount})</Text>
-          <Pressable onPress={() => setShowComments(false)}>
+          <Pressable onPress={handleCloseComments}>
             <MaterialIcons name="close" size={24} color="#F5EEE3" />
           </Pressable>
         </View>
@@ -217,7 +248,7 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   replyInputContainer: {
-    marginTop: 10,
+    marginTop: 75,
     marginBottom: 10,
   },
 });

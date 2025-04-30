@@ -78,7 +78,7 @@ const EmojiReactions = ({
         {selectedEmoji ? (
           <Text style={styles.emoji}>{selectedEmoji}</Text>
         ) : (
-          <MaterialIcons name="add-reaction" size={24} color="#6D757E" />
+          <MaterialIcons name="add-reaction" size={21} color="#A5C6E8" />
         )}
       </TouchableOpacity>
     </View>

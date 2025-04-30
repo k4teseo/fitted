@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     width: "auto",
   },
-  tagButtonSelected: { backgroundColor: "#A5C6E8", borderColor: "#F5EEE3" },
+  tagButtonSelected: { backgroundColor: "#B4CFEA", borderColor: "#F5EEE3" },
   tagText: { color: "#9AA8B6", fontSize: 12 },
   tagTextSelected: { color: "#0F1112", fontWeight: "500" },
   brandCountText: { fontSize: 12, color: "#999", marginLeft: 6 },
