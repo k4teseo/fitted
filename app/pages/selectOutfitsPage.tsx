@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, Image, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, Image, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
 import { useCollectionContext } from '../context/collectionContext';
 import { useCurrentUser } from '../hook/useCurrentUser';
 import { supabase } from '@/lib/supabase';
@@ -19,6 +19,8 @@ interface SavedPost {
 const SelectOutfitsPage = () => {
   const router = useRouter();
   const [selectableOutfits, setSelectableOutfits] = useState<Outfit[]>([]);
+  const [loading, setLoading] = useState(true); // Loading spinner state
+  const [loadedImages, setLoadedImages] = useState(0); // Count of loaded images
   const currentUserId = useCurrentUser();
   const { selectedOutfits, setSelectedOutfits } = useCollectionContext();
 
@@ -42,8 +44,8 @@ const SelectOutfitsPage = () => {
       }
 
       const uploadedOutfits: { id: string; image_path: string }[] = uploadedOutfitsRaw || [];
-
       const savedOutfits: { id: string; image_path: string }[] = [];
+
       (savedPostsRaw || []).forEach((post: SavedPost) => {
         if (post.images && post.images.length > 0) {
           const firstImage = post.images[0];
@@ -96,37 +98,107 @@ const SelectOutfitsPage = () => {
     );
   };
 
+  const handleImageLoadEnd = () => {
+    setLoadedImages((prev) => {
+      const newLoaded = prev + 1;
+      if (newLoaded === selectableOutfits.length) {
+        setLoading(false);
+      }
+      return newLoaded;
+    });
+  };
+
   return (
     <View style={styles.container}>
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
         <Text style={styles.backButtonText}>←</Text>
       </TouchableOpacity>
       <Text style={styles.label}>Select Outfits for Collection</Text>
+
+      {/* Loading indicator */}
+      {loading && (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#4DA6FD" />
+        </View>
+      )}
+
       <FlatList
         data={selectableOutfits}
         keyExtractor={(item) => item.id}
         numColumns={3}
         contentContainerStyle={{ paddingTop: 16 }}
+        columnWrapperStyle={styles.columnWrapper}
         renderItem={({ item }) => (
-          <TouchableOpacity onPress={() => handleSelectOutfit(item.id)}>
+          <TouchableOpacity onPress={() => handleSelectOutfit(item.id)} style={styles.outfitItem}>
             <Image
               source={{ uri: item.signed_url }}
               style={[styles.image, selectedOutfits.includes(item.id) && styles.selected]}
+              onLoadEnd={handleImageLoadEnd} // Track when the image has loaded
             />
           </TouchableOpacity>
         )}
       />
+
+      {/* Show loading spinner overlay if still loading */}
+      {loading && (
+        <View style={styles.absoluteLoading}>
+          <ActivityIndicator size="large" color="#4DA6FD" />
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#15181B", padding: 16 },
-  label: { color: "#F5EEE3", fontWeight: 'bold', marginTop: 16 },
-  image: { width: 100, height: 100, margin: 10, borderRadius: 10 },
-  selected: { borderColor: '#4DA6FD', borderWidth: 2 },
-  backButton: { marginBottom: 10 },
-  backButtonText: { color: '#4DA6FD', fontSize: 16 }
+  label: {
+    color: "#F5EEE3",
+    fontWeight: "bold",
+    marginTop: 24,
+    marginBottom: 8,
+    fontSize: 22,
+  },
+  backButton: {
+    marginTop: 50,
+    marginBottom: 20,
+    alignSelf: "flex-start",
+  },
+  backButtonText: {
+    color: "#4DA6FD",
+    fontSize: 32,
+  },
+  columnWrapper: {
+    gap: 10,
+    marginBottom: 10,
+  },
+  outfitItem: {
+    flex: 1,
+    aspectRatio: 1,
+    maxWidth: '32%',
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  image: { 
+    width: '100%', 
+    height: '100%', 
+    borderRadius: 10, 
+  },
+  selected: {
+    borderColor: '#4DA6FD',
+    borderWidth: 2,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: "#15181B",
+  },
+  absoluteLoading: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: "#15181B",
+  },
 });
 
 export default SelectOutfitsPage;

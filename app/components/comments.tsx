@@ -10,7 +10,7 @@ import {
   ScrollView,
 } from "react-native";
 import { MaterialIcons } from "@expo/vector-icons";
-import CommentingBar from "./CommentingBar";
+import PostNavBar from "./postNavBar";
 
 type Comment = {
   id: string;
@@ -117,7 +117,7 @@ export default function Comments({
 
           {replyingTo === comment.id && (
             <View style={styles.replyInputContainer}>
-              <CommentingBar
+              <PostNavBar
                 commentCount={0}
                 onCommentPress={() => {}}
                 onCommentPosted={onCommentPosted}

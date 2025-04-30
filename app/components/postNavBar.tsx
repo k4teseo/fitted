@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -13,21 +13,23 @@ import {
 } from "react-native";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
+import { router } from "expo-router";
+import { useFocusEffect } from "expo-router";
 
 const defaultPfp =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
-type CommentingBarProps = {
+type postNavBarProps = {
   commentCount: number;
   onCommentPress: () => void;
-  onCommentPosted: () => void; // ✅ tells parent to refresh comments
+  onCommentPosted: () => void; 
   currentUserPfp?: string;
   replyingTo?: string | null;
   onCancelReply?: () => void;
-  postId: string; // ✅ needed to insert
+  postId: string; 
 };
 
-const CommentingBar: React.FC<CommentingBarProps> = ({
+const PostNavBar: React.FC<postNavBarProps> = ({
   commentCount,
   onCommentPress,
   onCommentPosted,
@@ -38,6 +40,73 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
 }) => {
   const [commentText, setCommentText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  const handleCollectionsPress = async () => {
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+    if (sessionError || !session?.user?.id) {
+      console.error("Auth session error:", sessionError);
+      return;
+    }
+  
+    const userId = session.user.id;
+  
+    // If the post is already saved, remove it from the collection
+    if (isSaved) {
+      const { error: removeError } = await supabase
+        .from("saved_posts")
+        .delete()
+        .eq("image_id", postId)
+        .eq("user_id", userId);
+  
+      if (removeError) {
+        console.error("Failed to remove post from collection:", removeError);
+        return;
+      }
+  
+      // Update the UI to reflect the change (post is no longer saved)
+      setIsSaved(false);
+    } else {
+      // If the post is not saved, navigate to the SaveToCollection page
+      router.push({
+        pathname: "../components/SaveToCollection",
+        params: { postId },
+      });
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      const checkIfSaved = async () => {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+  
+        if (sessionError || !session?.user?.id) {
+          console.error("Auth session error:", sessionError);
+          return;
+        }
+  
+        const userId = session.user.id;
+  
+        const { data, error } = await supabase
+          .from("saved_posts")
+          .select("*")
+          .eq("image_id", postId)
+          .eq("user_id", userId)
+          .limit(1)  // Limit the results to 1
+          .single(); // Either 1 row or null
+
+        if (error) {
+          console.error("Failed to check if post is saved:", error);
+          return;
+        }
+  
+        setIsSaved(!!data); // Set saved status based on whether the data exists
+      };
+  
+      checkIfSaved(); // Check if saved whenever we come back
+    }, [postId]) // Re-run when postId changes
+  );
 
   const handleSend = async () => {
     if (!commentText.trim() || isSubmitting) return;
@@ -57,14 +126,16 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
 
       const userId = session.user.id;
 
+      const commentPayload = {
+        image_id: postId,
+        user_id: userId,
+        text: commentText,
+        parent_id: replyingTo || null,
+      };
+
       const { error: insertError } = await supabase
         .from("comments")
-        .insert({
-          image_id: postId,
-          user_id: userId,
-          text: commentText,
-          parent_id: replyingTo || null,
-      });
+        .insert(commentPayload);
 
       if (insertError) throw insertError;
 
@@ -154,16 +225,18 @@ const CommentingBar: React.FC<CommentingBarProps> = ({
               color="#A5C6E8"
             />
           </TouchableOpacity>
-          <Text style={styles.count} accessibilityLabel={`${commentCount} comments`}>
-            {commentCount}
-          </Text>
-          <FontAwesome
-            name="star-o"
-            size={20}
-            color="#A5C6E8"
-            style={styles.star}
-            accessibilityLabel="Like post"
-          />
+            <Text style={styles.count} accessibilityLabel={`${commentCount} comments`}>
+              {commentCount}
+            </Text>
+            <TouchableOpacity onPress={handleCollectionsPress}>
+              <FontAwesome
+                name={isSaved ? "star" : "star-o"}
+                size={20}
+                color={isSaved ? "#FFD700" : "#6D757E"}
+                style={styles.star}
+                accessibilityLabel={isSaved ? "Remove from saved" : "Save to collection"}
+              />
+          </TouchableOpacity>
         </View>
       )}
     </View>
@@ -261,4 +334,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CommentingBar;
+export default PostNavBar;

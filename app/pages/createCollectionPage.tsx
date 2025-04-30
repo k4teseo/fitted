@@ -21,11 +21,14 @@ const CreateCollectionPage = () => {
     collectionName,
     setCollectionName,
     previewImage,
+    setPreviewImage,
     selectedOutfits,
+    setSelectedOutfits,
   } = useCollectionContext();
 
   const [outfitImages, setOutfitImages] = useState<string[]>([]);
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+
 
   useEffect(() => {
     if (previewImage) {
@@ -63,6 +66,15 @@ const CreateCollectionPage = () => {
     fetchOutfitImages();
   }, [selectedOutfits]);
 
+  useEffect(() => {
+    // Reset context state when navigating away or when the component unmounts
+    return () => {
+      setCollectionName('');        // Reset collection name
+      setPreviewImage('');         // Reset preview image
+      setSelectedOutfits([]);        // Reset selected outfits
+    };
+  }, []); // Empty dependency array ensures this effect runs only on unmount
+
   const handleCreateCollection = async () => {
     if (!collectionName || !previewImage || selectedOutfits.length === 0) {
       Alert.alert(
@@ -72,6 +84,7 @@ const CreateCollectionPage = () => {
       return;
     }
 
+    // Insert new collection
     const { data: newCollection, error: collectionError } = await supabase
       .from('collections')
       .insert([
@@ -92,6 +105,7 @@ const CreateCollectionPage = () => {
       return;
     }
 
+    // Insert saved outfits
     const savedPostEntries = selectedOutfits.map((imageId) => ({
       user_id: currentUserId,
       collection_id: newCollection.id,
@@ -110,7 +124,17 @@ const CreateCollectionPage = () => {
         'Collection was created, but some outfits may not have been saved.'
       );
     } else {
-      Alert.alert('Success', 'Collection created!');
+      // RPC to halve the outfit count
+      const { data, error: rpcError } = await supabase.rpc('halve_outfit_count', {
+        collection_id: newCollection.id,
+      });
+
+      if (rpcError) {
+        console.error('Error halving outfit count:', rpcError);
+        Alert.alert('Error', 'There was an issue halving the outfit count.');
+      } else {
+        Alert.alert('Success', 'Collection Created!');
+      }
     }
 
     router.back();
@@ -118,6 +142,11 @@ const CreateCollectionPage = () => {
 
   return (
     <View style={styles.container}>
+      {/* Back Button */}
+      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <Text style={styles.backButtonText}>←</Text>
+      </TouchableOpacity>
+
       <Text style={styles.header}>Finalize Your Collection</Text>
 
       <View style={styles.previewContainer}>
@@ -136,11 +165,11 @@ const CreateCollectionPage = () => {
         )}
 
         <TextInput
-        style={[styles.textInput, styles.collectionNameInput]}
-        placeholder="Collection Name"
-        placeholderTextColor="#888"
-        value={collectionName}
-        onChangeText={setCollectionName}
+          style={[styles.textInput, styles.collectionNameInput]}
+          placeholder="Collection Name"
+          placeholderTextColor="#888"
+          value={collectionName}
+          onChangeText={setCollectionName}
         />
       </View>
 
@@ -186,6 +215,15 @@ const styles = StyleSheet.create({
     color: '#F5EEE3',
     marginBottom: 24,
     textAlign: 'center',
+  },
+  backButton: {
+    marginTop: -20,
+    marginBottom: 20,
+    alignSelf: 'flex-start',
+  },
+  backButtonText: {
+    color: '#4DA6FD',
+    fontSize: 32, // Bigger arrow for better visibility
   },
   label: {
     color: '#F5EEE3',
