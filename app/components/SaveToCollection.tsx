@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } fr
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser } from '../hook/useCurrentUser';
-import { Ionicons } from '@expo/vector-icons'; // Import Ionicons for back arrow
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'; // Import Ionicons for back arrow
 
 type Collection = {
   id: string;
@@ -74,7 +74,7 @@ const SaveToCollectionPage = () => {
     <View style={styles.container}>
       {/* Back arrow */}
       <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={30} color="#F5EEE3" />
+          <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
         </TouchableOpacity>
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Select a Collection</Text>
@@ -110,12 +110,13 @@ const styles = StyleSheet.create({
   headerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: -47,
     marginBottom: 20,
   },
   backButton: {
-    marginTop: 20,
-    marginRight: 10,
+    marginTop: 55,
+    marginRight: 15,
+    marginBottom: 20,
   },
   header: {
     fontSize: 20,

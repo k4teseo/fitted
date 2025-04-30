@@ -232,7 +232,7 @@ const PostNavBar: React.FC<postNavBarProps> = ({
               <FontAwesome
                 name={isSaved ? "star" : "star-o"}
                 size={20}
-                color={isSaved ? "#FFD700" : "#6D757E"}
+                color={isSaved ? "#FFD700" : "#A5C6E8"}
                 style={styles.star}
                 accessibilityLabel={isSaved ? "Remove from saved" : "Save to collection"}
               />

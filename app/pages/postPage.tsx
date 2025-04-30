@@ -397,7 +397,7 @@ export default function PostPage() {
           />
           <Text style={styles.username}>{post.username}</Text>
           <Pressable style={styles.deleteButton} onPress={handleDelete}>
-            <MaterialIcons name="delete" size={24} color="#F5EEE3" />
+            <MaterialIcons name="delete-outline" size={24} color="#A5C6E8" />
           </Pressable>
         </View>
       </View>
@@ -540,7 +540,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2D3338",
     width: "100%",
     height: 123,
-    paddingVertical: 10,
+    paddingVertical: 2,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "flex-end",
@@ -685,7 +685,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginTop: 10,
   },
-
   starButton: {
     backgroundColor: "#222",
     borderRadius: 20,
@@ -693,7 +692,6 @@ const styles = StyleSheet.create({
   },
   deleteButton: {
     padding: 20,
-    marginLeft: 100,
-    borderRadius: 20,
+    marginLeft: 'auto',
   },
 });

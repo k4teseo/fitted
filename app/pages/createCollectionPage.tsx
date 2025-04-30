@@ -273,8 +273,9 @@ const styles = StyleSheet.create({
   selectedOutfitsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     marginBottom: 8,
+    paddingLeft: 0,
     gap: 12,
   },
   outfitCardContainer: {

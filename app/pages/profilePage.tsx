@@ -280,8 +280,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       justifyContent: "space-between",
       width: width * 0.4,
-      marginTop: 8,
-      marginBottom: 10,
+      marginTop: 10,
+      marginBottom: 25,
     },
     outfitLabel: {
       color: "#C7D1DB",
@@ -313,6 +313,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
+      paddingLeft: 8,
+      paddingRight: 8,
     },
     addCard: {
       backgroundColor: "#2A2F36", // Different color for the "Add" card
