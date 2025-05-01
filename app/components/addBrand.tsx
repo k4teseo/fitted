@@ -156,6 +156,14 @@ export default function AddBrand() {
     });
   };
 
+  // Update the back button press handler
+  const handleBackPress = () => {
+    router.replace({
+      pathname: "/components/tagBrandsOnPhoto",
+      params: { imageUri },
+    });
+  };
+
   // Add a new custom brand then navigate back to TagBrandsOnPhoto
   const handleAddBrand = async () => {
     try {
@@ -251,8 +259,8 @@ export default function AddBrand() {
     <View style={styles.container}>
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+        <Pressable style={styles.backButton} onPress={handleBackPress}>
+          <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
         </Pressable>
         <Text style={styles.topTitle}>Add Brand</Text>
         <View style={{ width: 24 }} />
@@ -395,7 +403,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
   selectedBrand: {
-    backgroundColor: "#B4CFEA",
+    backgroundColor: "#A5C6E8",
   },
   selectedBrandText: {
     color: "#262A2F",
@@ -405,8 +413,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   xCircle: {
-    width: 24,
-    height: 24,
+    width: 20,
+    height: 20,
     borderRadius: 12,
     backgroundColor: "rgba(255,255,255,0.1)",
     alignItems: "center",

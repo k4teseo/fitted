@@ -45,6 +45,39 @@ export default function SearchResultsPage() {
     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
 
   const currentUserId = useCurrentUser();
+  const [friendIds, setFriends] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      const { data: user } = await supabase.auth.getUser();
+      const currentUserId = user.user?.id;
+
+      const { data: friends, error } = await supabase
+        .from("friends")
+        .select("user_id_1, user_id_2, status")
+        .or(
+          `user_id_1.eq.${currentUserId},user_id_2.eq.${currentUserId}`
+        )
+        .eq("status", "accepted");
+      if (error) {
+        console.error("Error fetching friends:", error);
+        return;
+      }
+      const mappedFriends = friends.map((friend) => {
+        const friendId =
+          friend.user_id_1 === currentUserId
+            ? friend.user_id_2
+            : friend.user_id_1;
+        return {
+          id: friendId,
+          status: friend.status,
+        };
+      } 
+      );
+      setFriends(mappedFriends);
+    }
+    fetchFriends();
+  }, [])
 
   useEffect(() => {
     const fetchResults = async () => {
@@ -71,7 +104,17 @@ export default function SearchResultsPage() {
         if (error) {
           console.error("Supabase error:", error);
         } else {
-          setSearchResults(data || []);
+          const friendsPost = data?.filter((item) => {
+            const isFriend = friendIds.some(
+              (friend) =>
+                friend.id === item.user_id &&
+                  friend.status === "accepted"
+            );
+            const isSelf = item.user_id === currentUserId;
+            return isFriend || isSelf;
+          }
+          );
+          setSearchResults(friendsPost || []);
         }
       } finally {
         setLoading(false);
@@ -80,7 +123,7 @@ export default function SearchResultsPage() {
 
     const debounceTimer = setTimeout(fetchResults, 500);
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery]);
+  }, [searchQuery, friendIds, currentUserId]);
 
   const handleSubmit = (text?: string) => {
     const searchTerm = text || searchQuery.trim();
@@ -177,7 +220,7 @@ export default function SearchResultsPage() {
 
   const handlePostPress = (postId: string) => {
     router.push({
-      pathname: "./PostPage",
+      pathname: "./postPage",
       params: { id: postId },
     });
   };
@@ -193,6 +236,7 @@ export default function SearchResultsPage() {
       await supabase
         .from("friends")
         .select("id, status")
+        .order("created_at", { ascending: false }) 
         .or(
           `and(user_id_1.eq.${userId},user_id_2.eq.${currentUserId}),and(user_id_1.eq.${currentUserId},user_id_2.eq.${userId})`
         );
@@ -287,7 +331,8 @@ export default function SearchResultsPage() {
     },
     contentContainer: {
       paddingTop: height * 0.14,
-      paddingHorizontal: 10,
+      paddingHorizontal: 8,
+      paddingBottom: 85,
     },
     tabContainer: {
       flexDirection: "row",
@@ -319,16 +364,18 @@ export default function SearchResultsPage() {
       position: "relative",
     },
     gridItem: {
-      flex: 1,
       backgroundColor: "#2D3338",
       borderRadius: 13,
-      margin: 8,
+      margin: 2,
+      marginBottom: 10,
+      marginRight: 10,
       overflow: "hidden",
     },
     postUserRow: {
       flexDirection: "row",
       alignItems: "center",
       marginBottom: 4,
+      width: '100%',
     },
     avatarSmall: {
       width: 20,
@@ -337,12 +384,14 @@ export default function SearchResultsPage() {
       marginRight: 8,
     },
     imagePlaceholder: {
+      width: '100%',
       height: 200,
-      width: 174,
       backgroundColor: "#444",
     },
     gridContent: {
       padding: 10,
+      alignSelf: 'flex-start',
+      width: '100%',
     },
     // Post username style (smaller)
     postusername: {
@@ -366,7 +415,7 @@ export default function SearchResultsPage() {
     },
     tag: {
       marginTop: 8,
-      backgroundColor: "#98A7B7",
+      backgroundColor: "#63B1FF",
       alignSelf: "flex-start",
       color: "#262A2F",
       fontSize: 9,
@@ -442,11 +491,14 @@ export default function SearchResultsPage() {
     },
   });
 
-  const renderPostItem = ({ item }: { item: SearchResult }) => (
-    <TouchableOpacity
-      style={styles.gridItem}
-      onPress={() => handlePostPress(item.id)}
-    >
+  const renderPostItem = ({ item }: { item: SearchResult }) => {
+    const itemWidth = (width - 32) / 2; // Calculate width based on screen
+    
+    return (
+      <TouchableOpacity
+        style={[styles.gridItem, { width: itemWidth }]}
+        onPress={() => handlePostPress(item.id)}
+      >
       <Image
         source={{
           uri: `https://fmwseavpzhcsksgagmnn.supabase.co/storage/v1/object/public/images/${item.image_path}`,
@@ -454,27 +506,28 @@ export default function SearchResultsPage() {
         style={styles.imagePlaceholder}
         resizeMode="cover"
       />
-      <View style={styles.gridContent}>
-        <View style={styles.postUserRow}>
-          <Image
-            source={{
-              uri:
-                userResults.find((u) => u.username === item.username)?.avatar ||
-                defaultPfp,
-            }}
-            style={styles.avatarSmall}
-          />
-          <Text style={styles.postusername}>{item.username}</Text>
-        </View>
-        <Text style={styles.caption} numberOfLines={1}>
-          {item.caption}
-        </Text>
-        {item.selectedoccasions?.length > 0 && (
-          <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
-        )}
-      </View>
-    </TouchableOpacity>
-  );
+        <View style={styles.gridContent}>
+          <View style={styles.postUserRow}>
+            <Image
+              source={{
+                uri:
+                  userResults.find((u) => u.username === item.username)?.avatar ||
+                  defaultPfp,
+              }}
+              style={styles.avatarSmall}
+            />
+            <Text style={styles.postusername}>{item.username}</Text>
+          </View>
+          <Text style={styles.caption} numberOfLines={1}>
+            {item.caption}
+          </Text>
+          {item.selectedoccasions?.length > 0 && (
+            <Text style={styles.tag}>{item.selectedoccasions[0]}</Text>
+          )}
+          </View>
+      </TouchableOpacity>
+    );
+  };
 
   const renderUserItem = ({ item }: { item: UserResult }) => (
     <View style={styles.userRow}>

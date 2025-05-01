@@ -36,6 +36,7 @@ export default function SearchBar({
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const [isHandlingPress, setIsHandlingPress] = useState(false);
 
   const handleSubmit = () => {
     Keyboard.dismiss();
@@ -91,15 +92,20 @@ export default function SearchBar({
   }, [value]);
 
   const handleSuggestionPress = async (suggestion: string) => {
+    setIsHandlingPress(true);
     onChangeText(suggestion);
     setSelectedSuggestion(suggestion);
+
+    // Close keyboard and suggestions
     setShowSuggestions(false);
     Keyboard.dismiss();
   
-    setTimeout(() => {
+    // Trigger submit after UI updates
+    requestAnimationFrame(() => {
       onSubmit(suggestion);
-      setSelectedSuggestion(null); 
-    }, 0);
+      setSelectedSuggestion(null);
+      setIsHandlingPress(false);
+    });
   };
 
   const styles = StyleSheet.create({

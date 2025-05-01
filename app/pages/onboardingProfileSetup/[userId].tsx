@@ -124,7 +124,7 @@ const OnboardingProfileSetup = () => {
   };
 
   const handleGoToFeed = () => {
-    router.replace("./feedPage");
+    router.replace("../feedPage");
   };
 
   const validateDate = (month: number, day: number, year: number) => {

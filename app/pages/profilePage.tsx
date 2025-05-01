@@ -240,7 +240,7 @@ export default function ProfilePage() {
     editProfileButton: {
       backgroundColor: "transparent",
       borderWidth: 0.5,
-      borderColor: "#858E9A",
+      borderColor: "#63B1FF",
       paddingVertical: height * 0.008,
       borderRadius: 4,
       alignItems: "center",
@@ -251,7 +251,7 @@ export default function ProfilePage() {
       marginBottom: height * 0.03,
     },
     editProfileButtonText: {
-      color: "#919CA9",
+      color: "#63B1FF",
       fontSize: 14,
       fontWeight: "400",
     },
@@ -280,8 +280,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       justifyContent: "space-between",
       width: width * 0.4,
-      marginTop: 8,
-      marginBottom: 10,
+      marginTop: 10,
+      marginBottom: 25,
     },
     outfitLabel: {
       color: "#C7D1DB",
@@ -313,6 +313,8 @@ export default function ProfilePage() {
       flexDirection: "row",
       flexWrap: "wrap",
       justifyContent: "space-between",
+      paddingLeft: 8,
+      paddingRight: 8,
     },
     addCard: {
       backgroundColor: "#2A2F36", // Different color for the "Add" card

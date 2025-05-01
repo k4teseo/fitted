@@ -1,5 +1,5 @@
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { useState, useEffect } from "react";
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -33,6 +33,7 @@ export default function UploadPage() {
     setSelectedBrands,
     setSelectedOccasions,
     brandTags,
+    setBrandTags,
   } = useUploadContext(); // Use Context
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
@@ -70,8 +71,6 @@ export default function UploadPage() {
     }
   };
 
-  const [loading, setLoading] = useState(false);
-
   if (loading) return <LoadingScreen />;
 
   if (!imageUri) {
@@ -82,7 +81,7 @@ export default function UploadPage() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+            <MaterialIcons name="navigate-before" size={24} color="#F5EEE3" />
           </TouchableOpacity>
         </View>
         <Text style={{ color: "#fff", textAlign: "center", marginTop: 40 }}>
@@ -177,14 +176,11 @@ export default function UploadPage() {
         }
       }
 
-      // Clear context selections
-      setSelectedBrands([]);
-      setSelectedOccasions([]);
-
       console.log(
         "Post uploaded successfully with metadata and brand tags:",
         caption
       );
+      resetAllTags(); // Clear all tags before navigating away
       router.replace("./feedPage");
     } catch (error) {
       console.error("Error during upload:", error);
@@ -204,7 +200,7 @@ export default function UploadPage() {
             style={styles.backButton}
             onPress={() => router.back()}
           >
-            <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+            <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.postButton} onPress={handlePost}>
             <Text style={styles.postButtonText}>Post</Text>
@@ -260,7 +256,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 14,
   },
-  postButtonText: { color: "#F5EEE3", fontSize: 18, fontWeight: "600" },
+  postButtonText: { color: "#262A2F", fontSize: 16, fontWeight: "600" },
   scrollViewContainer: {
     flexGrow: 1,
     paddingTop: 20,
@@ -298,7 +294,7 @@ const styles = StyleSheet.create({
   separator: {
     width: "82%",
     height: 0.5,
-    backgroundColor: "#F5EEE3",
+    backgroundColor: "#626A73",
     alignSelf: "center",
     marginBottom: -10,
     opacity: 0.3,

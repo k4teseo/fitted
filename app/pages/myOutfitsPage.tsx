@@ -74,7 +74,7 @@ import { supabase } from '@/lib/supabase';
             flex: 1,
         },
         columnWrapper: {
-            justifyContent: 'space-between',
+            justifyContent: 'flex-start',
             marginBottom: 8, // Reduced gap between rows
         },
         outfitItem: {
@@ -82,6 +82,7 @@ import { supabase } from '@/lib/supabase';
             aspectRatio: 0.8,
             borderRadius: 4,
             overflow: 'hidden',
+            marginRight: 10,
             marginBottom: 3, // Gap between items
         },
         outfitImage: {

@@ -14,6 +14,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { supabase } from '@/lib/supabase';
 import { useCurrentUser } from '../hook/useCurrentUser';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import TimeStamp from '../components/TimeStamp';
 
 type UserProfile = {
@@ -50,77 +51,140 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
   const { width, height } = useWindowDimensions();
   const [slideAnim] = useState(new Animated.Value(width));
   const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [activeTab, setActiveTab] = useState<'Friends' | 'Comments'>('Friends');
   const router = useRouter();
 
   const defaultPfp = "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Default_pfp.svg/2048px-Default_pfp.svg.png";
   const currentUserId = useCurrentUser();
 
-  // Mock comment notifications data
-  const mockComments: Comment[] = [
-    {
-      id: '1',
-      user: {
-        username: 'sofia.cat',
-        pfp: defaultPfp,
-      },
-      text: 'I love your outfit! It really suits you',
-      time: '2d',
-      postImage: 'https://s3-alpha-sig.figma.com/img/fd56/c8cc/a6f9319a89631f8e4ba0478a9d744aea?Expires=1745798400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=EFIubt0Dx5uLe4LBcYaYRp~3nJV5a0RzX8~z--kwcAEU-QHUVVZ5P1AYKrg7L44l4YAOvby--FWw~4DIQVQw0bj7Dy-hEK5GyKVYSeynj2rAHIvO6MDQXOYWTCyJl302fCrvVDYD7Pw-WabIrU6j3gPlBlqMmx8wuJ7I6VYuYl4ok0Dt96OqCrJxa0lX3on4eK48I8L~~IO03u1kq3D9SMEBZL4dBjgKUu4PZQuuw1U-2SUccttECjUdOV7EERx2ljA-w093nXo6eNymaC9cA9v9Bo6zK5y08Pp3TOt7LsX4BjQmOmixC~5E1DMdADFPeLN5NeQT5JOYsqPpjWQBog__',
-      read: false,
-      postId: '123',
-      created_at: new Date(Date.now() - 172800000).toISOString(),
-    },
-    {
-      id: '2',
-      user: {
-        username: 'urban_ghost',
-        pfp: defaultPfp,
-      },
-      text: 'Such a cool jacket',
-      time: '2d',
-      postImage: 'https://s3-alpha-sig.figma.com/img/fd56/c8cc/a6f9319a89631f8e4ba0478a9d744aea?Expires=1745798400&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=EFIubt0Dx5uLe4LBcYaYRp~3nJV5a0RzX8~z--kwcAEU-QHUVVZ5P1AYKrg7L44l4YAOvby--FWw~4DIQVQw0bj7Dy-hEK5GyKVYSeynj2rAHIvO6MDQXOYWTCyJl302fCrvVDYD7Pw-WabIrU6j3gPlBlqMmx8wuJ7I6VYuYl4ok0Dt96OqCrJxa0lX3on4eK48I8L~~IO03u1kq3D9SMEBZL4dBjgKUu4PZQuuw1U-2SUccttECjUdOV7EERx2ljA-w093nXo6eNymaC9cA9v9Bo6zK5y08Pp3TOt7LsX4BjQmOmixC~5E1DMdADFPeLN5NeQT5JOYsqPpjWQBog__',
-      read: true,
-      postId: '456',
-      created_at: new Date(Date.now() - 172800000).toISOString(),
-    },
-  ];
+  // Sort comments with unread notifications first, then by date (newest first)
+  const sortedComments = [...comments].sort((a, b) => {
+    if (a.read === b.read) {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    }
+    return a.read ? 1 : -1;
+  });
 
+  // Load read status from AsyncStorage
+  const loadReadStatus = async () => {
+    try {
+      const storedReadStatus = await AsyncStorage.getItem('readComments');
+      if (storedReadStatus) {
+        return JSON.parse(storedReadStatus);
+      }
+      return {};
+    } catch (error) {
+      console.error('Error loading read status:', error);
+      return {};
+    }
+  };
+
+  const fetchFriendRequests = async () => {
+    if (!currentUserId) return;
+
+  const { data: requests, error } = await supabase 
+    .from('friends')
+    .select('id, created_at, user_id_2, sender_profile:profiles!user_id_2(pfp, username), status')
+    .eq('user_id_1', currentUserId)
+    .or('status.eq.pending,status.eq.accepted')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error fetching friend requests:', error);
+    return;
+  }
+
+    const formattedRequests: FriendRequest[] = (requests || []).map(request => {
+      const senderProfile = Array.isArray(request.sender_profile) 
+        ? request.sender_profile[0] || {}
+        : request.sender_profile || {};
+      
+      return {
+        ...request,
+        sender_profile: {
+          username: senderProfile.username || 'Unknown',
+          pfp: senderProfile.pfp || defaultPfp
+        },
+        read: false,
+        text: '',
+      };
+    });
+
+    setFriendRequests(formattedRequests);
+  };
+
+  const fetchComments = async () => {
+    if (!currentUserId) return;
+    
+    const { data: userPosts, error: postsError } = await supabase
+      .from('images')
+      .select('id, image_path')
+      .eq('user_id', currentUserId);
+    
+    if (postsError || !userPosts) {
+      console.error('Error fetching user posts:', postsError);
+      return;
+    }
+    
+    const postIds = userPosts.map(post => post.id);
+    
+    const { data: commentsData, error: commentsError } = await supabase
+      .from('comments')
+      .select(`
+        id,
+        text,
+        created_at,
+        user_id,
+        image_id,
+        images(image_path),
+        profiles!user_id(username, pfp)
+      `)
+        .in('image_id', postIds)
+        .order('created_at', { ascending: false });
+    
+    if (commentsError) {
+      console.error('Error fetching comments:', commentsError);
+      return;
+    }
+    
+    // Load previously read status
+    const readStatus = await loadReadStatus();
+
+    const formattedComments: Comment[] = (commentsData || []).map(comment => {
+      const profile = Array.isArray(comment.profiles) 
+        ? comment.profiles[0] || { username: 'Unknown', pfp: defaultPfp }
+        : comment.profiles || { username: 'Unknown', pfp: defaultPfp };
+    
+      const image = Array.isArray(comment.images)
+        ? comment.images[0] || { image_path: '' }
+        : comment.images || { image_path: '' };
+    
+      return {
+        id: comment.id,
+        user: {
+          username: profile.username,
+          pfp: profile.pfp
+        },
+        text: comment.text,
+        postImage: image.image_path 
+          ? supabase.storage.from('images').getPublicUrl(image.image_path)?.data?.publicUrl 
+          : '',
+        postId: comment.image_id,
+        read: readStatus[comment.id] || false, // Use stored read status
+        created_at: comment.created_at
+      };
+    });
+    
+    setComments(formattedComments);
+  };
+  
   useEffect(() => {
     const fetchNotifications = async () => {
-      if (!currentUserId) return;
-
-      const { data: requests, error } = await supabase 
-        .from('friends')
-        .select('id, created_at, user_id_2, sender_profile:profiles!user_id_2(pfp, username), status')
-        .eq('user_id_1', currentUserId)
-        .or('status.eq.pending,status.eq.accepted')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching friend requests:', error);
-        return;
-      }
-
-      const formattedRequests: FriendRequest[] = (requests || []).map(request => {
-        const senderProfile = Array.isArray(request.sender_profile) 
-          ? request.sender_profile[0] || {}
-          : request.sender_profile || {};
-      
-        return {
-          ...request,
-          sender_profile: {
-            username: senderProfile.username || 'Unknown',
-            pfp: senderProfile.pfp || defaultPfp
-          },
-          read: false,
-          text: '',
-        };
-      });
-
-      setFriendRequests(formattedRequests);
+      await fetchFriendRequests();
+      await fetchComments();
     };
-
+  
     fetchNotifications();
   }, [currentUserId]);
 
@@ -147,10 +211,26 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     }
   };
 
-  const handleNotificationPress = (item: Comment) => {
-    if (activeTab === 'Comments') {
-      router.push(`./postPage?id=${item.postId}`);
+  const handleNotificationPress = async (item: Comment) => {
+    // Update local state
+    setComments(prevComments => 
+      prevComments.map(comment => 
+        comment.id === item.id 
+          ? { ...comment, read: true } 
+          : comment
+      )
+    );
+    
+    // Save to persistent storage
+    try {
+      const readStatus = await loadReadStatus();
+      readStatus[item.id] = true;
+      await AsyncStorage.setItem('readComments', JSON.stringify(readStatus));
+    } catch (error) {
+      console.error('Error saving read status:', error);
     }
+    
+    router.push(`./postPage?id=${item.postId}`);
   };
 
   useEffect(() => {
@@ -179,7 +259,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
         <Text style={styles.usernameText}>{item.sender_profile?.username}</Text>
         <Text style={styles.notificationText}>
           {"wants to be your friend "}
-          <TimeStamp createdAt={item.created_at} />
+          <TimeStamp createdAt={item.created_at} style={{ fontSize: 10}} />
         </Text>
         {item.text && (
           <Text style={styles.commentPreview}>"{item.text}"</Text>
@@ -218,7 +298,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
         <Text style={styles.usernameText}>{item.user.username}</Text>
         <Text style={styles.notificationText}>
           {"commented on your post "}
-          <TimeStamp createdAt={item.created_at} />
+          <TimeStamp createdAt={item.created_at} style={{ fontSize: 10}}/>
         </Text>
         <Text style={styles.commentPreview}>"{item.text}"</Text>
       </View>
@@ -284,13 +364,14 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     },
     content: {
       paddingHorizontal: width * 0.05,
+      flex: 1,
     },
     notificationItem: {
       flexDirection: 'row',
       alignItems: 'center',
       padding: 15,
       borderRadius: 12,
-      marginBottom: 10,
+      marginBottom: 12,
     },
     pendingRequest: {
       backgroundColor: '#1E2328',
@@ -320,7 +401,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     usernameText: {
       color: '#9AA8B6',
       fontWeight: '600',
-      fontSize: 16,
+      fontSize: 14,
       marginBottom: 3,
     },
     notificationText: {
@@ -378,7 +459,7 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
     },
     emptyState: {
       flex: 1,
-      justifyContent: 'center',
+      justifyContent: 'flex-start',
       alignItems: 'center',
       paddingTop: height * 0.3,
     },
@@ -455,9 +536,9 @@ const NotificationsPage = ({ onClose }: { onClose: () => void }) => {
             </View>
           )
         ) : (
-          mockComments.length > 0 ? (
+          sortedComments.length > 0 ? (
             <FlatList
-              data={mockComments}
+              data={sortedComments}
               keyExtractor={(item) => item.id}
               renderItem={renderCommentItem}
               contentContainerStyle={{ paddingBottom: 20 }}

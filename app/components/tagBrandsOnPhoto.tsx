@@ -59,6 +59,14 @@ export default function TagBrandsOnPhoto() {
     }
   }, [brandName, x, y, setBrandTags]);
 
+  // Update the back button press handler
+  const handleBackPress = () => {
+    router.replace({
+      pathname: "/pages/upload",
+      params: { imageUri },
+    });
+  };
+
   // On photo tap, navigate to AddBrand with calculated relative coordinates.
   const handlePhotoPress = (evt: GestureResponderEvent) => {
     if (!photoLayout.width || !photoLayout.height) return;
@@ -128,8 +136,8 @@ export default function TagBrandsOnPhoto() {
       )}
       {/* Top Bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <MaterialIcons name="arrow-back" size={24} color="#F5EEE3" />
+        <Pressable style={styles.backButton} onPress={handleBackPress}>
+          <MaterialIcons name="navigate-before" size={30} color="#F5EEE3" />
         </Pressable>
         <Text style={styles.topTitle}>Add Brand</Text>
         <View style={{ width: 24 }} />
@@ -196,10 +204,6 @@ export default function TagBrandsOnPhoto() {
           />
         )}
       </View>
-
-      <Pressable style={styles.doneButton} onPress={handleDone}>
-        <Text style={styles.doneText}>Done</Text>
-      </Pressable>
     </View>
   );
 }
@@ -264,6 +268,7 @@ const styles = StyleSheet.create({
   tagsListContainer: {
     paddingHorizontal: 16,
     paddingVertical: 10,
+    marginBottom: 35,
   },
   tagsListHeader: {
     color: "#F5EEE3",
@@ -280,7 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     paddingHorizontal: 10,
     paddingVertical: 8,
-    marginBottom: 6,
+    marginBottom: 10,
   },
   tagsListItemText: { 
     color: "#F5EEE3", 
@@ -303,6 +308,6 @@ const styles = StyleSheet.create({
     fontSize: 14, 
     textAlign: "center",
     marginTop: 20,
-    marginBottom: 20
+    marginBottom: 50
   },
 });
