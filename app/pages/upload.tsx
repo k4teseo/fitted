@@ -36,7 +36,6 @@ export default function UploadPage() {
   } = useUploadContext(); // Use Context
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
-  const { openAIEnabled } = useUploadContext();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -104,11 +103,13 @@ export default function UploadPage() {
     setLoading(true);
 
     try {
+      console.log(imageUri);
       const response = await fetch(imageUri);
+      console.log(response.status);
       const blob = await response.blob();
       const arrayBuffer = await new Response(blob).arrayBuffer();
       const fileName = `public/${Date.now()}.jpg`;
-
+      console.log(imageUri);
       const { error: uploadError } = await supabase.storage
         .from("images")
         .upload(fileName, arrayBuffer, {
@@ -130,10 +131,9 @@ export default function UploadPage() {
         console.error("Failed to retrieve public image URL.");
         return;
       }
-
-      const metadata = openAIEnabled
-        ? await analyzeOutfit(publicImageUrl).catch(() => [])
-        : [];
+      console.log(publicImageUrl);
+      
+      const metadata = await analyzeOutfit(publicImageUrl).catch(() => [])
 
       console.log("Extracted metadata:", metadata);
 
