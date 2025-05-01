@@ -38,6 +38,23 @@ export default function UploadPage() {
   const [user, setUser] = useState<User | null>(null);
   const [username, setUsername] = useState("");
 
+  const [loading, setLoading] = useState(false);
+ 
+   // Clear all tags when the upload page loses focus
+   useFocusEffect(
+     useCallback(() => {
+       return () => {
+         resetAllTags();
+       };
+     }, [])
+   );
+ 
+   const resetAllTags = () => {
+     setSelectedBrands([]);
+     setSelectedOccasions([]);
+     setBrandTags([]);
+   };
+
   useEffect(() => {
     const fetchUser = async () => {
       const {
