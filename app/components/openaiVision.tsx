@@ -5,12 +5,13 @@ import Constants from "expo-constants";
 
 // Function to analyze outfit details
 export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
+  console.log("inside function");
   try {
     const apiKey = Constants.expoConfig?.extra?.OPENAI_API_KEY;
     if (!apiKey) {
       throw new Error("Missing OpenAI API Key");
     }
-
+    console.log("open ai key", apiKey);
     // Initialize OpenAI Vision Model
     const model = new ChatOpenAI({
       modelName: "gpt-4o",
@@ -26,6 +27,8 @@ export const analyzeOutfit = async (imageUri: string): Promise<string[]> => {
             Example Output:
             ["red hoodie", "Nike sneakers", "denim jeans"]
         `);
+
+    console.log(prompt, imageUri);
 
     // Generate metadata
     const metadata = await model.invoke([

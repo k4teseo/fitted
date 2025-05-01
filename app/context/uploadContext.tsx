@@ -14,8 +14,6 @@ type UploadContextType = {
   setSelectedOccasions: React.Dispatch<React.SetStateAction<string[]>>;
   brandTags: BrandTag[];
   setBrandTags: React.Dispatch<React.SetStateAction<BrandTag[]>>;
-  openAIEnabled: boolean;
-  setOpenAIEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 const UploadContext = createContext<UploadContextType | undefined>(undefined);
@@ -24,11 +22,10 @@ export const UploadProvider = ({ children }: { children: ReactNode }) => {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedOccasions, setSelectedOccasions] = useState<string[]>([]);
   const [brandTags, setBrandTags] = useState<BrandTag[]>([]);
-  const [openAIEnabled, setOpenAIEnabled] = useState(false);
 
   return (
     <UploadContext.Provider
-      value={{ selectedBrands, setSelectedBrands, selectedOccasions, setSelectedOccasions, brandTags, setBrandTags, openAIEnabled, setOpenAIEnabled  }}
+      value={{ selectedBrands, setSelectedBrands, selectedOccasions, setSelectedOccasions, brandTags, setBrandTags,  }}
     >
       {children}
     </UploadContext.Provider>
