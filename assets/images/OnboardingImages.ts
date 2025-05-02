@@ -1,8 +1,8 @@
 const images = [
-  "https://s3-alpha-sig.figma.com/img/4796/a1aa/d8067b3b9d6f627cb1b398b62868f431?Expires=1745193600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=Ncz2qCfRf82Yjn7cvqG5O8bYZVMUbZMzK9PF10IPolHHjRjFFvlraCSs1r57Mh7Mvgdpg3M-spgc5KNvFPCf8fdcavsN8eIzHbRGZZa6AV90HX5Y0OCnic0RLnm4ayaXSgeBWlPitWQdfLb8GGD1wN2SzTDeriM0znRQlnqxpLN4c-PEqSzXFanaNHVYOyWUGmoFs96E1Adc3SWwVcbsYEaigELLcIN3L4Ayk5~prYDkuIle8wQhFnO9Iuz9IhXhQM07rGg7L4da8pGg-A3B~-9OQFvDSalCBjkSKmjAek1eD1g0JgYmSEPcu3kmtvk~OT26tiqyoPvryAs6O4ZRVA__",
-  "https://s3-alpha-sig.figma.com/img/a8b5/a104/c8a90b8e0f894198a94d121dbdefb6ca?Expires=1745193600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=G~Gfix5pfeIRhQGLbl0dRs2iugzMHbUnit3mJ540AowNpticysmdqG6ewBcuK4GAQNDbYZ1TLQfds0Dc7jGDuv8YLkqvjDWhgMEIvKMGh1irbcUySHaT9-L5gKEPSbvRX8fRbSXTk1nzYXt0K0B~5BmMI-GG7JBZLQLcpGYX7lPG06w6ETExwl09yJzX9TWqfOqJTRHygj8FQCDnW8hkNSFxole2Nf6dvU2csfeyjnozMRi2SLec3xgHFTGIAsdY86RC0nTSEy1cSC~1FFBoSXv6EE~ITFNTadmUDrYLtDPdziPRfsek2Y1Nh24H8~uPZbmQXl4NvTtU~qQVqm5kCw__",
-  "https://s3-alpha-sig.figma.com/img/19be/9e80/d980258ece1a381752e82f381ef0799f?Expires=1745193600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=T7AYjREMn09s0p1HyAeq2YOSvFskIt9nmXgpB6mIYMPhlc3PygQdiDQ~aimfrhFkowPqe4k4MHXAHbuDf0lymdy0QI7ISsaVlVRUIM96WLaqv310J-K3TUbZ3ZY1fse2pJ0efp~pl~7N80xMgcXtW7jG59je1gYEgKG3e7F3QjebOkdpHOdDEABRt2qo98aWBozgJBNR4mrLH0OHoK9ZjD8LWj98WYyMB9UXhck1dN2djmJRPYdko0R7KaiG~lXGC3if5oqOOclt9AXHTcYGmBJjlTGOd390M~GrHok~48DF0mp8-qAVcaoJbRl1rb6ykrlUG0ENEclnIwsSNbeuKg__",
-  "https://s3-alpha-sig.figma.com/img/01c7/a343/77f8fac8094bd29bb18e865848fcdb09?Expires=1745193600&Key-Pair-Id=APKAQ4GOSFWCW27IBOMQ&Signature=ECNaNFznd2iRHfyEBQUm8quvZk8LDZcpbBzRNdy7PRN~BOBV8PGdafVec457b3ngmR32ESozF2oW4BWFf4xz02IqzM8F-pR8wvPqInUQBMVDyFMvC0OnjK54q2TCbd3G0RMVFbO4s~ioBPFbt6NyB85zV5GuMr05TEiiHIuCAllawUuWC-sfSvKLUHe0rPhMFPNdTJAI-MW2SUsbVThhfkd2Ad7kbqKKTuKmj-OJ-u-sl72JRhZAsbVVLl17o7jyF3p~vuRhEeWoZD0qcsSYCpFygJhmx0I7spUs37Puf-sLCeNRoqU5~P5MnTkaU-lryLVZRzesbeeUY~NfOMn9hw__",
+  require("./image1.jpg"),
+  require("./image2.jpg"),
+  require("./image3.jpg"),
+  require("./image4.jpg"),
 ];
 
 export default images;
